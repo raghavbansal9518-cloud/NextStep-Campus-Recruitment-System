@@ -160,6 +160,36 @@ public class ApplicationDAO {
         }
     }
 
+    /**
+     * Retrieves all applications submitted in the system.
+     * Joins with students, jobs, and companies to populate complete metadata.
+     * Used by placement officers for recruitment management and reports.
+     * 
+     * @return List of all Application records
+     * @throws SQLException on database errors
+     */
+    public List<Application> findAllApplications() throws SQLException {
+        List<Application> list = new ArrayList<>();
+        String sql = "SELECT a.id, a.student_id, a.job_id, a.status, a.applied_at, " +
+                     "s.student_id AS student_roll_no, s.full_name AS student_name, " +
+                     "j.title AS job_title, c.name AS company_name " +
+                     "FROM applications a " +
+                     "JOIN students s ON a.student_id = s.id " +
+                     "JOIN jobs j ON a.job_id = j.id " +
+                     "JOIN companies c ON j.company_id = c.id " +
+                     "ORDER BY a.applied_at DESC";
+
+        try (Connection conn = DatabaseConnection.getConnection();
+             PreparedStatement stmt = conn.prepareStatement(sql);
+             ResultSet rs = stmt.executeQuery()) {
+
+            while (rs.next()) {
+                list.add(mapRowToApplication(rs));
+            }
+        }
+        return list;
+    }
+
     private Application mapRowToApplication(ResultSet rs) throws SQLException {
         int id = rs.getInt("id");
         int studentId = rs.getInt("student_id");
@@ -174,6 +204,16 @@ public class ApplicationDAO {
         Application app = new Application(id, studentId, jobId, status, appliedAt);
         app.setJobTitle(jobTitle);
         app.setCompanyName(companyName);
+
+        try {
+            app.setStudentName(rs.getString("student_name"));
+        } catch (SQLException ignored) {
+        }
+        try {
+            app.setStudentRollNumber(rs.getString("student_roll_no"));
+        } catch (SQLException ignored) {
+        }
+
         return app;
     }
 }

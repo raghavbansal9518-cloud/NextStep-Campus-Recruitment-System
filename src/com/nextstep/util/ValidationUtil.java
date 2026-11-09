@@ -1,9 +1,12 @@
 package com.nextstep.util;
 
+import java.util.Collections;
+import java.util.List;
+
 /**
  * ValidationUtil
  * 
- * Lightweight, beginner-friendly validation methods for input verification.
+ * Lightweight, beginner-friendly validation and generic utility methods.
  * Aligned with Semester 3 Java curriculum.
  */
 public class ValidationUtil {
@@ -75,5 +78,27 @@ public class ValidationUtil {
      */
     public static boolean isValidGraduationYear(int year) {
         return year >= 2020 && year <= 2035;
+    }
+
+    /**
+     * Generic pagination utility method to safely slice any collection of items.
+     * Demonstrates Java Generic Methods with type parameter <T> (Course Handout: Lectures 47–48).
+     * 
+     * @param <T> Element type
+     * @param list Source list
+     * @param page 1-based page number
+     * @param pageSize Number of items per page
+     * @return Sublist containing paginated items, or empty list if out of bounds
+     */
+    public static <T> List<T> paginate(List<T> list, int page, int pageSize) {
+        if (list == null || list.isEmpty() || page < 1 || pageSize < 1) {
+            return Collections.emptyList();
+        }
+        int fromIndex = (page - 1) * pageSize;
+        if (fromIndex >= list.size()) {
+            return Collections.emptyList();
+        }
+        int toIndex = Math.min(fromIndex + pageSize, list.size());
+        return list.subList(fromIndex, toIndex);
     }
 }
