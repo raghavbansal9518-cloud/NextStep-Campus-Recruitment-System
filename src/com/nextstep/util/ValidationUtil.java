@@ -82,7 +82,7 @@ public class ValidationUtil {
 
     /**
      * Generic pagination utility method to safely slice any collection of items.
-     * Demonstrates Java Generic Methods with type parameter <T>.
+     * Demonstrates Java Generic Methods with type parameter <T> (Course Handout: Lectures 47–48).
      * 
      * @param <T> Element type
      * @param list Source list

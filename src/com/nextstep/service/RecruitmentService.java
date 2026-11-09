@@ -28,14 +28,10 @@ import java.util.stream.Collectors;
  * Handles recruitment operations, eligibility verification, application lifecycle,
  * and reporting.
  * 
- * College Viva Concepts:
- * - Business Layer: Decouples eligibility logic from data access and UI.
- * - Encapsulation: EligibilityResult encapsulates the decision and diagnostic reasons.
- * - Defensive Programming: Validates job status and eligibility prior to database write.
- * - Lambda Expressions: Sorts collections using concise comparator lambdas.
- * - Java Streams: Demonstrates filter, map, distinct, sorted, count, and anyMatch.
- * - Collectors: Demonstrates groupingBy, partitioningBy, and counting.
- * - File I/O: CSV export, parsing into ArrayList, validation, and updating records using try-with-resources.
+ * Course Handout (25CSE0202) Syllabus Mapping:
+ * - Lambda Expressions: Lectures 43–44 (Custom comparator for compensation sorting).
+ * - Stream API & Collectors: Lectures 45–46 (filter, map, distinct, sorted, count, anyMatch, groupingBy, partitioningBy).
+ * - File I/O & CSV: Lectures 49–54 (CSV export, validation, parsing, updating, and writing via try-with-resources).
  */
 public class RecruitmentService {
 
@@ -293,7 +289,7 @@ public class RecruitmentService {
 
     /**
      * Returns open jobs sorted by CTC in descending order (highest package first).
-     * Demonstrates Lambda Expression in Collections.sort().
+     * Demonstrates Lambda Expression in Collections.sort() (Lectures 43–44).
      * 
      * @return List of jobs sorted by compensation
      * @throws SQLException on database errors
@@ -311,7 +307,7 @@ public class RecruitmentService {
 
     /**
      * Retrieves unique hiring company names with open positions, sorted alphabetically.
-     * Demonstrates Stream pipeline: filter -> map -> distinct -> sorted -> collect.
+     * Demonstrates Stream pipeline: filter -> map -> distinct -> sorted -> collect (Lectures 45–46).
      * 
      * @return Sorted list of distinct company names
      * @throws SQLException on database errors
@@ -327,7 +323,7 @@ public class RecruitmentService {
 
     /**
      * Counts the total number of currently active recruitment drives.
-     * Demonstrates Stream terminal operation count().
+     * Demonstrates Stream terminal operation count() (Lectures 45–46).
      */
     public long countOpenJobs() throws SQLException {
         return jobDAO.findAllJobs().stream()
@@ -337,7 +333,7 @@ public class RecruitmentService {
 
     /**
      * Checks if any active drive is available in a given city/location.
-     * Demonstrates Stream terminal operation anyMatch().
+     * Demonstrates Stream terminal operation anyMatch() (Lectures 45–46).
      */
     public boolean hasOpeningInLocation(String location) throws SQLException {
         if (location == null || location.trim().isEmpty()) {
@@ -351,7 +347,7 @@ public class RecruitmentService {
 
     /**
      * Generates a recruitment summary mapping each ApplicationStatus to its count.
-     * Demonstrates Collectors.groupingBy() and Collectors.counting().
+     * Demonstrates Collectors.groupingBy() and Collectors.counting() (Lectures 45–46).
      * 
      * @param actor The logged-in placement officer
      * @return Map of ApplicationStatus to count of applications
@@ -366,7 +362,7 @@ public class RecruitmentService {
 
     /**
      * Partitions applications into Placed (SELECTED) vs Other (in-progress/pending).
-     * Demonstrates Collectors.partitioningBy() and Collectors.counting().
+     * Demonstrates Collectors.partitioningBy() and Collectors.counting() (Lectures 45–46).
      * 
      * @param actor The logged-in placement officer
      * @return Map where Boolean.TRUE = placed applications count, FALSE = remaining count
@@ -383,13 +379,111 @@ public class RecruitmentService {
     }
 
     // =========================================================================
-    // SEMESTER 3 JAVA CONCEPTS: FILE I/O & CSV PROCESSING
+    // SEMESTER 3 JAVA CONCEPTS: FILE I/O & CSV PROCESSING (Lectures 49–54)
     // =========================================================================
+
+    /**
+     * Escapes a field according to standard RFC-4180 CSV formatting rules.
+     * Encloses the field in double quotes if it contains commas, double quotes, or newlines,
+     * escaping any internal double quotes as "".
+     * 
+     * @param field Raw string field
+     * @return Properly quoted and escaped CSV field
+     */
+    public static String escapeCsvField(String field) {
+        if (field == null) {
+            return "";
+        }
+        if (field.contains(",") || field.contains("\"") || field.contains("\n") || field.contains("\r")) {
+            return "\"" + field.replace("\"", "\"\"") + "\"";
+        }
+        return field;
+    }
+
+    /**
+     * Parses a CSV line into tokens, respecting double-quoted fields that contain commas
+     * and unescaping doubled quotes ("" -> ").
+     * 
+     * @param line Raw CSV text line
+     * @return List of parsed field tokens
+     */
+    public static List<String> parseCsvLine(String line) {
+        List<String> tokens = new ArrayList<>();
+        if (line == null) {
+            return tokens;
+        }
+
+        StringBuilder sb = new StringBuilder();
+        boolean inQuotes = false;
+
+        for (int i = 0; i < line.length(); i++) {
+            char c = line.charAt(i);
+
+            if (c == '\"') {
+                if (inQuotes && i + 1 < line.length() && line.charAt(i + 1) == '\"') {
+                    sb.append('\"'); // Unescape "" to "
+                    i++; // Skip second quote
+                } else {
+                    inQuotes = !inQuotes; // Toggle quote state
+                }
+            } else if (c == ',' && !inQuotes) {
+                tokens.add(sb.toString().trim());
+                sb.setLength(0);
+            } else {
+                sb.append(c);
+            }
+        }
+        tokens.add(sb.toString().trim());
+        return tokens;
+    }
+
+    /**
+     * Searches a list of parsed applications by a keyword matching roll number,
+     * student name, job title, or company name.
+     * Demonstrates Java Streams filter and map.
+     * 
+     * @param applications List of applications to search
+     * @param keyword Search term
+     * @return Filtered list of matching applications
+     */
+    public List<Application> searchApplications(List<Application> applications, String keyword) {
+        if (applications == null || keyword == null || keyword.trim().isEmpty()) {
+            return applications != null ? applications : Collections.emptyList();
+        }
+        String term = keyword.trim().toLowerCase();
+        return applications.stream()
+                .filter(a -> (a.getStudentRollNumber() != null && a.getStudentRollNumber().toLowerCase().contains(term))
+                          || (a.getStudentName() != null && a.getStudentName().toLowerCase().contains(term))
+                          || (a.getJobTitle() != null && a.getJobTitle().toLowerCase().contains(term))
+                          || (a.getCompanyName() != null && a.getCompanyName().toLowerCase().contains(term)))
+                .collect(Collectors.toList());
+    }
+
+    /**
+     * Updates an in-memory application's recruitment status within a parsed list.
+     * 
+     * @param applications Parsed list of applications
+     * @param applicationId ID of application to update
+     * @param newStatus New application status
+     * @return boolean true if an application was found and updated
+     */
+    public boolean updateImportedRecordStatus(List<Application> applications, int applicationId, ApplicationStatus newStatus) {
+        if (applications == null || newStatus == null) {
+            return false;
+        }
+        for (Application app : applications) {
+            if (app.getId() == applicationId) {
+                app.setStatus(newStatus);
+                return true;
+            }
+        }
+        return false;
+    }
 
     /**
      * Exports all recruitment applications to a CSV report file.
      * Restricted to PLACEMENT_OFFICER role.
-     * Demonstrates Java File I/O (BufferedWriter, FileWriter, try-with-resources).
+     * Demonstrates Java File I/O (BufferedWriter, FileWriter, try-with-resources) and RFC-4180 escaping.
      * 
      * @param actor The logged-in placement officer
      * @param destinationPath Path to destination CSV file (defaults to reports/applications_report.csv if null)
@@ -419,17 +513,23 @@ public class RecruitmentService {
             writer.write("Application ID,Student Roll No,Student Name,Job Title,Company,Status,Applied At");
             writer.newLine();
 
-            // Write Data Rows
+            // Write Data Rows using RFC-4180 escaping
             for (Application app : applications) {
                 String rollNo = (app.getStudentRollNumber() != null) ? app.getStudentRollNumber() : String.valueOf(app.getStudentId());
-                String name = (app.getStudentName() != null) ? app.getStudentName().replace(",", " ") : "N/A";
-                String title = (app.getJobTitle() != null) ? app.getJobTitle().replace(",", " ") : "N/A";
-                String company = (app.getCompanyName() != null) ? app.getCompanyName().replace(",", " ") : "N/A";
+                String name = (app.getStudentName() != null) ? app.getStudentName() : "N/A";
+                String title = (app.getJobTitle() != null) ? app.getJobTitle() : "N/A";
+                String company = (app.getCompanyName() != null) ? app.getCompanyName() : "N/A";
                 String status = (app.getStatus() != null) ? app.getStatus().name() : "N/A";
                 String appliedAt = (app.getAppliedAt() != null) ? app.getAppliedAt().toString() : "N/A";
 
-                writer.write(String.format("%d,%s,%s,%s,%s,%s,%s",
-                        app.getId(), rollNo, name, title, company, status, appliedAt));
+                writer.write(String.format("%s,%s,%s,%s,%s,%s,%s",
+                        escapeCsvField(String.valueOf(app.getId())),
+                        escapeCsvField(rollNo),
+                        escapeCsvField(name),
+                        escapeCsvField(title),
+                        escapeCsvField(company),
+                        escapeCsvField(status),
+                        escapeCsvField(appliedAt)));
                 writer.newLine();
             }
         }
@@ -438,13 +538,13 @@ public class RecruitmentService {
     }
 
     /**
-     * Reads an exported CSV report, performs basic format validation, parses valid rows
-     * into an ArrayList of Application objects, and writes updated/audited records to another file.
+     * Reads an exported CSV report, performs format and header validation, parses valid rows
+     * into an ArrayList<Application>, optionally updates an imported record, and writes audited records to another file.
      * 
      * Demonstrates:
-     * - File I/O: BufferedReader and BufferedWriter with try-with-resources.
-     * - String parsing and basic validation.
-     * - Collections: Populating an ArrayList<Application>.
+     * - File I/O: BufferedReader and BufferedWriter with try-with-resources (Lectures 49–54).
+     * - String parsing and RFC-4180 quote/comma handling.
+     * - Collections: Populating and searching an ArrayList<Application>.
      * - Writing modified records to a second file.
      * 
      * @param actor The logged-in placement officer
@@ -456,6 +556,15 @@ public class RecruitmentService {
      * @throws IllegalArgumentException on CSV validation failures
      */
     public List<Application> processAndArchiveCsvReport(User actor, String sourceCsvPath, String targetCsvPath)
+            throws IOException {
+        return processAndArchiveCsvReport(actor, sourceCsvPath, targetCsvPath, -1, null);
+    }
+
+    /**
+     * Overloaded version of processAndArchiveCsvReport allowing searching and updating an imported record.
+     */
+    public List<Application> processAndArchiveCsvReport(User actor, String sourceCsvPath, String targetCsvPath,
+                                                       int updateAppId, ApplicationStatus updateStatus)
             throws IOException {
         if (actor == null || actor.getRole() != Role.PLACEMENT_OFFICER) {
             throw new SecurityException("Access denied: Only placement officers can process CSV reports.");
@@ -484,19 +593,19 @@ public class RecruitmentService {
                     continue; // Skip blank lines
                 }
 
-                String[] tokens = trimmed.split(",", -1);
-                if (tokens.length < 6) {
+                List<String> tokens = parseCsvLine(trimmed);
+                if (tokens.size() < 6) {
                     System.err.println("[WARN] Skipping malformed line " + lineNumber + ": " + line);
                     continue;
                 }
 
                 try {
-                    int appId = Integer.parseInt(tokens[0].trim());
-                    String rollNo = tokens[1].trim();
-                    String studentName = tokens[2].trim();
-                    String jobTitle = tokens[3].trim();
-                    String companyName = tokens[4].trim();
-                    ApplicationStatus status = ApplicationStatus.fromString(tokens[5].trim());
+                    int appId = Integer.parseInt(tokens.get(0));
+                    String rollNo = tokens.get(1);
+                    String studentName = tokens.get(2);
+                    String jobTitle = tokens.get(3);
+                    String companyName = tokens.get(4);
+                    ApplicationStatus status = ApplicationStatus.fromString(tokens.get(5));
 
                     Application app = new Application();
                     app.setId(appId);
@@ -513,7 +622,12 @@ public class RecruitmentService {
             }
         }
 
-        // 2. Write updated records with audit status to another file using try-with-resources
+        // 2. Perform searching and updating if requested
+        if (updateAppId > 0 && updateStatus != null) {
+            updateImportedRecordStatus(parsedList, updateAppId, updateStatus);
+        }
+
+        // 3. Write updated records with audit status to another file using try-with-resources
         File outputFile = new File(targetCsvPath);
         File parentDir = outputFile.getParentFile();
         if (parentDir != null && !parentDir.exists()) {
@@ -525,14 +639,14 @@ public class RecruitmentService {
             writer.newLine();
 
             for (Application app : parsedList) {
-                writer.write(String.format("%d,%s,%s,%s,%s,%s,%s",
-                        app.getId(),
-                        app.getStudentRollNumber(),
-                        app.getStudentName(),
-                        app.getJobTitle(),
-                        app.getCompanyName(),
-                        app.getStatus().name(),
-                        "AUDITED_VALID"));
+                writer.write(String.format("%s,%s,%s,%s,%s,%s,%s",
+                        escapeCsvField(String.valueOf(app.getId())),
+                        escapeCsvField(app.getStudentRollNumber()),
+                        escapeCsvField(app.getStudentName()),
+                        escapeCsvField(app.getJobTitle()),
+                        escapeCsvField(app.getCompanyName()),
+                        escapeCsvField(app.getStatus().name()),
+                        escapeCsvField("AUDITED_VALID")));
                 writer.newLine();
             }
         }

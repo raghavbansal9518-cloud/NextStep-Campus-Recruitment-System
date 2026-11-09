@@ -574,8 +574,26 @@ public class Main {
             targetPath = "reports/applications_audited.csv";
         }
 
+        System.out.print("Do you want to update an application status before archiving? (y/n): ");
+        String ans = scanner.nextLine().trim();
+        int updateId = -1;
+        ApplicationStatus newStatus = null;
+        if ("y".equalsIgnoreCase(ans) || "yes".equalsIgnoreCase(ans)) {
+            updateId = readInt(scanner, "Enter Application ID to update: ");
+            System.out.println("Select New Status:");
+            ApplicationStatus[] statuses = ApplicationStatus.values();
+            for (int i = 0; i < statuses.length; i++) {
+                System.out.println((i + 1) + ". " + statuses[i]);
+            }
+            int choice = readInt(scanner, "Choose status (1-" + statuses.length + "): ");
+            if (choice >= 1 && choice <= statuses.length) {
+                newStatus = statuses[choice - 1];
+            }
+        }
+
         try {
-            List<Application> processed = recruitmentService.processAndArchiveCsvReport(officer, sourcePath, targetPath);
+            List<Application> processed = recruitmentService.processAndArchiveCsvReport(
+                    officer, sourcePath, targetPath, updateId, newStatus);
             System.out.println("[SUCCESS] CSV processed and verified successfully!");
             System.out.println("Records Processed : " + processed.size());
             System.out.println("Audited Output    : " + targetPath);

@@ -6,10 +6,8 @@ package com.nextstep.util;
  * Minimal generic container encapsulating either a successful operation containing data
  * of type T or a failure containing an error message.
  * 
- * College Viva Concepts:
- * - Generics: Class-level type parameter <T> ensures type safety at compile time.
- * - Generic Methods: Static factory methods <T> Result<T> create instances for any type.
- * - Clean Error Handling: Avoids throwing unchecked exceptions across service boundaries.
+ * Course Handout (25CSE0202) Syllabus Mapping:
+ * - Generics: Lectures 47–48 (Class-level type parameter <T> and generic factory methods).
  * 
  * @param <T> The payload data type
  */
