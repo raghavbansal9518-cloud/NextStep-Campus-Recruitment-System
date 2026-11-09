@@ -16,3 +16,7 @@ out/
 # OS generated files
 Thumbs.db
 .DS_Store
+
+# Local database credentials (must never be committed)
+config/db.properties
+

@@ -1,0 +1,7 @@
+# NextStep - Local Database Configuration Template
+# Copy this file to config/db.properties and enter your local MySQL credentials.
+# Note: config/db.properties is excluded by .gitignore and will never be committed.
+
+db.url=jdbc:mysql://localhost:3306/nextstep_db?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC
+db.user=root
+db.password=YOUR_MYSQL_PASSWORD_HERE
