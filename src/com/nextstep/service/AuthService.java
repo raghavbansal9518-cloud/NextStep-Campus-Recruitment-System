@@ -1,0 +1,227 @@
+package com.nextstep.service;
+
+import com.nextstep.dao.StudentDAO;
+import com.nextstep.dao.UserDAO;
+import com.nextstep.database.DatabaseConnection;
+import com.nextstep.model.Role;
+import com.nextstep.model.Student;
+import com.nextstep.model.User;
+import com.nextstep.util.ValidationUtil;
+
+import javax.crypto.SecretKeyFactory;
+import javax.crypto.spec.PBEKeySpec;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
+import java.security.SecureRandom;
+import java.security.spec.InvalidKeySpecException;
+import java.sql.Connection;
+import java.sql.SQLException;
+import java.util.HexFormat;
+import java.util.List;
+
+/**
+ * AuthService
+ * 
+ * Central business service handling user registration, authentication,
+ * and secure password management.
+ * 
+ * College Viva Concepts:
+ * - PBKDF2 (Password-Based Key Derivation Function 2): Industry standard hashing.
+ * - Salt: Unique random bytes preventing rainbow table attacks.
+ * - Constant-time comparison: MessageDigest.isEqual prevents timing attacks.
+ * - Transaction Management: setAutoCommit(false), commit(), rollback() ensure atomic registration.
+ */
+public class AuthService {
+
+    private static final String ALGORITHM = "PBKDF2WithHmacSHA256";
+    private static final int ITERATIONS = 10000;
+    private static final int SALT_BYTES = 16;
+    private static final int HASH_BITS = 256;
+
+    private final UserDAO userDAO;
+    private final StudentDAO studentDAO;
+
+    public AuthService() {
+        this.userDAO = new UserDAO();
+        this.studentDAO = new StudentDAO();
+    }
+
+    public AuthService(UserDAO userDAO, StudentDAO studentDAO) {
+        this.userDAO = userDAO;
+        this.studentDAO = studentDAO;
+    }
+
+    /**
+     * Hashes a plaintext password using PBKDF2WithHmacSHA256 with a random salt.
+     * Encoded format: PBKDF2$10000$<saltHex>$<hashHex>
+     */
+    public static String hashPassword(String password) {
+        if (password == null || password.isEmpty()) {
+            throw new IllegalArgumentException("Password cannot be empty");
+        }
+
+        try {
+            SecureRandom random = new SecureRandom();
+            byte[] salt = new byte[SALT_BYTES];
+            random.nextBytes(salt);
+
+            PBEKeySpec spec = new PBEKeySpec(password.toCharArray(), salt, ITERATIONS, HASH_BITS);
+            SecretKeyFactory factory = SecretKeyFactory.getInstance(ALGORITHM);
+            byte[] hash = factory.generateSecret(spec).getEncoded();
+
+            HexFormat hex = HexFormat.of();
+            return "PBKDF2$" + ITERATIONS + "$" + hex.formatHex(salt) + "$" + hex.formatHex(hash);
+        } catch (NoSuchAlgorithmException | InvalidKeySpecException e) {
+            throw new RuntimeException("Error hashing password with PBKDF2", e);
+        }
+    }
+
+    /**
+     * Verifies a plaintext password against a stored PBKDF2 encoded hash.
+     */
+    public static boolean verifyPassword(String password, String storedHash) {
+        if (password == null || storedHash == null || !storedHash.startsWith("PBKDF2$")) {
+            return false;
+        }
+
+        try {
+            String[] parts = storedHash.split("\\$");
+            if (parts.length != 4) {
+                return false;
+            }
+
+            int iterations = Integer.parseInt(parts[1]);
+            HexFormat hex = HexFormat.of();
+            byte[] salt = hex.parseHex(parts[2]);
+            byte[] expectedHash = hex.parseHex(parts[3]);
+
+            PBEKeySpec spec = new PBEKeySpec(password.toCharArray(), salt, iterations, expectedHash.length * 8);
+            SecretKeyFactory factory = SecretKeyFactory.getInstance(ALGORITHM);
+            byte[] actualHash = factory.generateSecret(spec).getEncoded();
+
+            return MessageDigest.isEqual(expectedHash, actualHash);
+        } catch (Exception e) {
+            return false;
+        }
+    }
+
+    /**
+     * Registers a new student in the system as an atomic database transaction.
+     * Validates input, hashes password, inserts user, inserts student profile, and saves skills.
+     * 
+     * @return Registered Student object if successful
+     * @throws IllegalArgumentException for validation failures
+     * @throws SQLException for database errors
+     */
+    public Student registerStudent(String username, String password, String email,
+                                   String studentId, String fullName, String phone,
+                                   String branch, double cgpa, int activeBacklogs,
+                                   int graduationYear, List<String> skills) throws SQLException {
+
+        // 1. Input Validation
+        if (!ValidationUtil.isValidUsername(username)) {
+            throw new IllegalArgumentException("Username must be between 3 and 30 alphanumeric characters.");
+        }
+        if (!ValidationUtil.isValidPassword(password)) {
+            throw new IllegalArgumentException("Password must be at least 6 characters.");
+        }
+        if (!ValidationUtil.isValidEmail(email)) {
+            throw new IllegalArgumentException("Invalid email format.");
+        }
+        if (ValidationUtil.isNullOrBlank(studentId)) {
+            throw new IllegalArgumentException("Student ID / USN cannot be empty.");
+        }
+        if (ValidationUtil.isNullOrBlank(fullName)) {
+            throw new IllegalArgumentException("Full name cannot be empty.");
+        }
+        if (ValidationUtil.isNullOrBlank(phone)) {
+            throw new IllegalArgumentException("Phone number cannot be empty.");
+        }
+        if (ValidationUtil.isNullOrBlank(branch)) {
+            throw new IllegalArgumentException("Branch cannot be empty.");
+        }
+        if (!ValidationUtil.isValidCgpa(cgpa)) {
+            throw new IllegalArgumentException("CGPA must be between 0.00 and 10.00.");
+        }
+        if (!ValidationUtil.isValidBacklogs(activeBacklogs)) {
+            throw new IllegalArgumentException("Active backlogs cannot be negative.");
+        }
+        if (!ValidationUtil.isValidGraduationYear(graduationYear)) {
+            throw new IllegalArgumentException("Graduation year must be between 2020 and 2035.");
+        }
+
+        // 2. Uniqueness Checks
+        if (userDAO.existsByUsername(username)) {
+            throw new IllegalArgumentException("Username is already taken.");
+        }
+        if (studentDAO.existsByStudentId(studentId)) {
+            throw new IllegalArgumentException("Student ID / USN is already registered.");
+        }
+
+        // 3. Hash Password
+        String passwordHash = hashPassword(password);
+
+        // 4. Atomic Transaction: Insert User + Student + Skills
+        try (Connection conn = DatabaseConnection.getConnection()) {
+            conn.setAutoCommit(false); // Begin transaction
+
+            try {
+                // A. Insert User Account
+                User user = new User(username, passwordHash, Role.STUDENT, email);
+                boolean userCreated = userDAO.createUser(conn, user);
+                if (!userCreated || user.getId() == 0) {
+                    throw new SQLException("Failed to create user record.");
+                }
+
+                // B. Insert Student Profile
+                Student student = new Student(user.getId(), studentId, fullName, phone,
+                                              branch, cgpa, activeBacklogs, graduationYear);
+                boolean studentCreated = studentDAO.createStudent(conn, student);
+                if (!studentCreated || student.getId() == 0) {
+                    throw new SQLException("Failed to create student profile record.");
+                }
+
+                // C. Save Skills
+                if (skills != null && !skills.isEmpty()) {
+                    studentDAO.saveStudentSkills(conn, student.getId(), skills);
+                    for (String skill : skills) {
+                        student.addSkill(skill);
+                    }
+                }
+
+                conn.commit(); // Transaction successful!
+                return student;
+            } catch (Exception e) {
+                conn.rollback(); // Roll back on any failure
+                throw new SQLException("Registration transaction failed: " + e.getMessage(), e);
+            } finally {
+                conn.setAutoCommit(true);
+            }
+        }
+    }
+
+    /**
+     * Authenticates an existing user using username and password.
+     * 
+     * @param username username
+     * @param password plaintext password
+     * @return User object if authenticated, null otherwise
+     * @throws SQLException if a database error occurs
+     */
+    public User login(String username, String password) throws SQLException {
+        if (ValidationUtil.isNullOrBlank(username) || ValidationUtil.isNullOrBlank(password)) {
+            return null;
+        }
+
+        User user = userDAO.findByUsername(username.trim());
+        if (user == null) {
+            return null; // Return null generically to prevent username enumeration
+        }
+
+        if (verifyPassword(password, user.getPasswordHash())) {
+            return user;
+        }
+
+        return null; // Invalid password
+    }
+}

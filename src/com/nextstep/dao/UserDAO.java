@@ -22,27 +22,30 @@ import java.time.LocalDateTime;
  * - PreparedStatement: Pre-compiled SQL statements preventing SQL Injection attacks.
  * - try-with-resources: Ensures Connection, PreparedStatement, and ResultSet are
  *   automatically closed, preventing resource leaks.
+ * - Transaction Support: Overloaded methods accept Connection parameter for transactions.
  */
 public class UserDAO {
 
     /**
-     * Inserts a new user record into the database.
+     * Inserts a new user record into the database within an existing connection / transaction.
      * Generates and assigns the database-generated primary key ID to the user object.
      * 
+     * @param conn active JDBC Connection
      * @param user User entity to persist (contains pre-hashed password)
      * @return boolean true if inserted successfully, false otherwise
      * @throws SQLException if a database error occurs (other than duplicate entry)
      */
-    public boolean createUser(User user) throws SQLException {
+    public boolean createUser(Connection conn, User user) throws SQLException {
+        if (conn == null) {
+            throw new IllegalArgumentException("Connection cannot be null");
+        }
         if (user == null) {
             throw new IllegalArgumentException("User cannot be null");
         }
 
         String sql = "INSERT INTO users (username, password_hash, role, email) VALUES (?, ?, ?, ?)";
 
-        try (Connection conn = DatabaseConnection.getConnection();
-             PreparedStatement stmt = conn.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
-
+        try (PreparedStatement stmt = conn.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
             stmt.setString(1, user.getUsername().trim());
             stmt.setString(2, user.getPasswordHash());
             stmt.setString(3, user.getRole().name());
@@ -69,6 +72,15 @@ public class UserDAO {
             }
             System.err.println("[ERROR] Error creating user: " + e.getMessage());
             throw e;
+        }
+    }
+
+    /**
+     * Standalone insertion opening its own connection. Delegates to the transactional method.
+     */
+    public boolean createUser(User user) throws SQLException {
+        try (Connection conn = DatabaseConnection.getConnection()) {
+            return createUser(conn, user);
         }
     }
 
