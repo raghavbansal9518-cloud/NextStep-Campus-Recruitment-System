@@ -33,7 +33,9 @@ import java.util.Scanner;
  * - Student job browsing, automated eligibility verification, and application submission.
  * - Student personal application history tracking.
  * - Placement officer application oversight, status updates, and recruitment summaries.
- * - CSV report generation using Java File I/O.
+ * - CSV report generation, parsing into ArrayList, and audit file archiving.
+ * - Java Streams (filter, map, distinct, sorted, count, anyMatch) & Lambdas.
+ * - Collectors (groupingBy, partitioningBy, counting).
  * - Presentation visibility toggles for live academic demos.
  */
 public class Main {
@@ -276,7 +278,13 @@ public class Main {
     private void viewAvailableJobs() {
         System.out.println("\n--- AVAILABLE RECRUITMENT DRIVES ---");
         try {
-            List<Job> jobs = recruitmentService.getOpenJobs();
+            // Demonstrates lambda sorting (highest CTC first)
+            List<Job> jobs = recruitmentService.getJobsSortedByCtc();
+            long totalDrives = recruitmentService.countOpenJobs();
+            List<String> hiringCompanies = recruitmentService.getDistinctHiringCompanies();
+
+            System.out.println("Active Drives: " + totalDrives + " | Hiring Companies: " + String.join(", ", hiringCompanies));
+            System.out.println("--------------------------------------------------------------------------------------------------");
             if (jobs.isEmpty()) {
                 System.out.println("No open job positions available at this moment.");
                 return;
@@ -406,15 +414,19 @@ public class Main {
 
             int nextOption = 4;
             int summaryOption = -1;
-            int csvOption = -1;
+            int csvExportOption = -1;
+            int csvArchiveOption = -1;
 
             if (PresentationConfig.isOfficerRecruitmentSummaryVisible()) {
                 summaryOption = nextOption++;
                 System.out.println(summaryOption + ". View Recruitment Summary");
             }
             if (PresentationConfig.isOfficerCsvExportVisible()) {
-                csvOption = nextOption++;
-                System.out.println(csvOption + ". Export Applications Report to CSV");
+                csvExportOption = nextOption++;
+                System.out.println(csvExportOption + ". Export Applications Report to CSV");
+
+                csvArchiveOption = nextOption++;
+                System.out.println(csvArchiveOption + ". Process & Archive Applications CSV");
             }
 
             int logoutOption = nextOption;
@@ -431,8 +443,10 @@ public class Main {
                 updateApplicationStatusFlow(scanner, officer);
             } else if (choice == summaryOption && summaryOption != -1) {
                 viewRecruitmentSummaryFlow(officer);
-            } else if (choice == csvOption && csvOption != -1) {
+            } else if (choice == csvExportOption && csvExportOption != -1) {
                 exportApplicationsToCsvFlow(officer);
+            } else if (choice == csvArchiveOption && csvArchiveOption != -1) {
+                processAndArchiveCsvFlow(scanner, officer);
             } else if (choice == logoutOption) {
                 System.out.println("\nLogging out from Placement Officer Portal...");
                 inPortal = false;
@@ -508,15 +522,25 @@ public class Main {
     private void viewRecruitmentSummaryFlow(User officer) {
         System.out.println("\n--- RECRUITMENT SUMMARY & METRICS ---");
         try {
+            // Demonstrates groupingBy and counting
             Map<ApplicationStatus, Long> summary = recruitmentService.getRecruitmentSummary(officer);
+            // Demonstrates partitioningBy and counting
+            Map<Boolean, Long> placementPartition = recruitmentService.getPlacementPartitionCount(officer);
             List<Application> allApps = recruitmentService.getAllApplications(officer);
 
             System.out.println("Total Applications Received: " + allApps.size());
             System.out.println("----------------------------------------------");
+            System.out.println("Lifecycle Breakdown (groupingBy):");
             for (ApplicationStatus status : ApplicationStatus.values()) {
                 long count = summary.getOrDefault(status, 0L);
                 System.out.printf("  %-15s : %d%n", status.name(), count);
             }
+            System.out.println("----------------------------------------------");
+            System.out.println("Placement Partition (partitioningBy):");
+            long placed = placementPartition.getOrDefault(true, 0L);
+            long inProcess = placementPartition.getOrDefault(false, 0L);
+            System.out.printf("  Placed (SELECTED)      : %d%n", placed);
+            System.out.printf("  In-Progress / Other    : %d%n", inProcess);
             System.out.println("----------------------------------------------");
         } catch (SecurityException e) {
             System.out.println("[SECURITY ERROR] " + e.getMessage());
@@ -536,6 +560,29 @@ public class Main {
             System.out.println("[SECURITY ERROR] " + e.getMessage());
         } catch (Exception e) {
             System.out.println("[ERROR] Failed to export CSV report: " + e.getMessage());
+        }
+    }
+
+    private void processAndArchiveCsvFlow(Scanner scanner, User officer) {
+        System.out.println("\n--- PROCESS & ARCHIVE CSV REPORT ---");
+        String sourcePath = readString(scanner, "Enter Source CSV path (default: reports/applications_report.csv): ");
+        if (sourcePath == null || sourcePath.isEmpty()) {
+            sourcePath = "reports/applications_report.csv";
+        }
+        String targetPath = readString(scanner, "Enter Destination CSV path (default: reports/applications_audited.csv): ");
+        if (targetPath == null || targetPath.isEmpty()) {
+            targetPath = "reports/applications_audited.csv";
+        }
+
+        try {
+            List<Application> processed = recruitmentService.processAndArchiveCsvReport(officer, sourcePath, targetPath);
+            System.out.println("[SUCCESS] CSV processed and verified successfully!");
+            System.out.println("Records Processed : " + processed.size());
+            System.out.println("Audited Output    : " + targetPath);
+        } catch (SecurityException e) {
+            System.out.println("[SECURITY ERROR] " + e.getMessage());
+        } catch (Exception e) {
+            System.out.println("[ERROR] Failed to process CSV: " + e.getMessage());
         }
     }
 

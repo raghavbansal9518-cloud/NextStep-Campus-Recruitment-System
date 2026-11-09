@@ -9,8 +9,10 @@ import com.nextstep.model.Role;
 import com.nextstep.model.Student;
 import com.nextstep.model.User;
 
+import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.File;
+import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.sql.SQLException;
@@ -30,8 +32,10 @@ import java.util.stream.Collectors;
  * - Business Layer: Decouples eligibility logic from data access and UI.
  * - Encapsulation: EligibilityResult encapsulates the decision and diagnostic reasons.
  * - Defensive Programming: Validates job status and eligibility prior to database write.
- * - Java Streams & Lambdas: Filters jobs, groups applications by status for summaries.
- * - File I/O: Exports tabular recruitment reports to CSV using try-with-resources.
+ * - Lambda Expressions: Sorts collections using concise comparator lambdas.
+ * - Java Streams: Demonstrates filter, map, distinct, sorted, count, and anyMatch.
+ * - Collectors: Demonstrates groupingBy, partitioningBy, and counting.
+ * - File I/O: CSV export, parsing into ArrayList, validation, and updating records using try-with-resources.
  */
 public class RecruitmentService {
 
@@ -270,21 +274,9 @@ public class RecruitmentService {
         return applicationDAO.findAllApplications();
     }
 
-    /**
-     * Generates a recruitment summary mapping each ApplicationStatus to its count.
-     * Restricted to PLACEMENT_OFFICER role.
-     * Demonstrates Java Streams and Collectors (groupingBy, counting).
-     * 
-     * @param actor The logged-in placement officer
-     * @return Map of ApplicationStatus to count of applications
-     * @throws SecurityException if actor is not a PLACEMENT_OFFICER
-     * @throws SQLException on database errors
-     */
-    public Map<ApplicationStatus, Long> getRecruitmentSummary(User actor) throws SQLException {
-        List<Application> apps = getAllApplications(actor);
-        return apps.stream()
-                   .collect(Collectors.groupingBy(Application::getStatus, Collectors.counting()));
-    }
+    // =========================================================================
+    // SEMESTER 3 JAVA CONCEPTS: STREAMS, LAMBDAS & COLLECTORS
+    // =========================================================================
 
     /**
      * Filters and returns only currently OPEN jobs.
@@ -298,6 +290,101 @@ public class RecruitmentService {
                      .filter(j -> "OPEN".equalsIgnoreCase(j.getStatus()))
                      .collect(Collectors.toList());
     }
+
+    /**
+     * Returns open jobs sorted by CTC in descending order (highest package first).
+     * Demonstrates Lambda Expression in Collections.sort().
+     * 
+     * @return List of jobs sorted by compensation
+     * @throws SQLException on database errors
+     */
+    public List<Job> getJobsSortedByCtc() throws SQLException {
+        List<Job> jobs = new ArrayList<>(getOpenJobs());
+        // Lambda expression comparing package CTC (BigDecimal)
+        jobs.sort((j1, j2) -> {
+            if (j1.getCtcLpa() == null) return 1;
+            if (j2.getCtcLpa() == null) return -1;
+            return j2.getCtcLpa().compareTo(j1.getCtcLpa());
+        });
+        return jobs;
+    }
+
+    /**
+     * Retrieves unique hiring company names with open positions, sorted alphabetically.
+     * Demonstrates Stream pipeline: filter -> map -> distinct -> sorted -> collect.
+     * 
+     * @return Sorted list of distinct company names
+     * @throws SQLException on database errors
+     */
+    public List<String> getDistinctHiringCompanies() throws SQLException {
+        return jobDAO.findAllJobs().stream()
+                     .filter(j -> "OPEN".equalsIgnoreCase(j.getStatus()))
+                     .map(Job::getCompanyName)
+                     .distinct()
+                     .sorted()
+                     .collect(Collectors.toList());
+    }
+
+    /**
+     * Counts the total number of currently active recruitment drives.
+     * Demonstrates Stream terminal operation count().
+     */
+    public long countOpenJobs() throws SQLException {
+        return jobDAO.findAllJobs().stream()
+                     .filter(j -> "OPEN".equalsIgnoreCase(j.getStatus()))
+                     .count();
+    }
+
+    /**
+     * Checks if any active drive is available in a given city/location.
+     * Demonstrates Stream terminal operation anyMatch().
+     */
+    public boolean hasOpeningInLocation(String location) throws SQLException {
+        if (location == null || location.trim().isEmpty()) {
+            return false;
+        }
+        return jobDAO.findAllJobs().stream()
+                     .filter(j -> "OPEN".equalsIgnoreCase(j.getStatus()))
+                     .anyMatch(j -> j.getLocation() != null &&
+                                    j.getLocation().toLowerCase().contains(location.toLowerCase()));
+    }
+
+    /**
+     * Generates a recruitment summary mapping each ApplicationStatus to its count.
+     * Demonstrates Collectors.groupingBy() and Collectors.counting().
+     * 
+     * @param actor The logged-in placement officer
+     * @return Map of ApplicationStatus to count of applications
+     * @throws SecurityException if actor is not a PLACEMENT_OFFICER
+     * @throws SQLException on database errors
+     */
+    public Map<ApplicationStatus, Long> getRecruitmentSummary(User actor) throws SQLException {
+        List<Application> apps = getAllApplications(actor);
+        return apps.stream()
+                   .collect(Collectors.groupingBy(Application::getStatus, Collectors.counting()));
+    }
+
+    /**
+     * Partitions applications into Placed (SELECTED) vs Other (in-progress/pending).
+     * Demonstrates Collectors.partitioningBy() and Collectors.counting().
+     * 
+     * @param actor The logged-in placement officer
+     * @return Map where Boolean.TRUE = placed applications count, FALSE = remaining count
+     * @throws SecurityException if actor is not a PLACEMENT_OFFICER
+     * @throws SQLException on database errors
+     */
+    public Map<Boolean, Long> getPlacementPartitionCount(User actor) throws SQLException {
+        List<Application> apps = getAllApplications(actor);
+        return apps.stream()
+                   .collect(Collectors.partitioningBy(
+                           app -> app.getStatus() == ApplicationStatus.SELECTED,
+                           Collectors.counting()
+                   ));
+    }
+
+    // =========================================================================
+    // SEMESTER 3 JAVA CONCEPTS: FILE I/O & CSV PROCESSING
+    // =========================================================================
 
     /**
      * Exports all recruitment applications to a CSV report file.
@@ -348,5 +435,108 @@ public class RecruitmentService {
         }
 
         return outputFile;
+    }
+
+    /**
+     * Reads an exported CSV report, performs basic format validation, parses valid rows
+     * into an ArrayList of Application objects, and writes updated/audited records to another file.
+     * 
+     * Demonstrates:
+     * - File I/O: BufferedReader and BufferedWriter with try-with-resources.
+     * - String parsing and basic validation.
+     * - Collections: Populating an ArrayList<Application>.
+     * - Writing modified records to a second file.
+     * 
+     * @param actor The logged-in placement officer
+     * @param sourceCsvPath Path to source CSV file
+     * @param targetCsvPath Path to destination updated CSV file
+     * @return List<Application> Parsed and validated applications
+     * @throws SecurityException if actor is not a PLACEMENT_OFFICER
+     * @throws IOException on file I/O errors
+     * @throws IllegalArgumentException on CSV validation failures
+     */
+    public List<Application> processAndArchiveCsvReport(User actor, String sourceCsvPath, String targetCsvPath)
+            throws IOException {
+        if (actor == null || actor.getRole() != Role.PLACEMENT_OFFICER) {
+            throw new SecurityException("Access denied: Only placement officers can process CSV reports.");
+        }
+
+        File inputFile = new File(sourceCsvPath);
+        if (!inputFile.exists()) {
+            throw new IllegalArgumentException("Source CSV file does not exist: " + sourceCsvPath);
+        }
+
+        List<Application> parsedList = new ArrayList<>();
+
+        // 1. Read and validate CSV using try-with-resources
+        try (BufferedReader reader = new BufferedReader(new FileReader(inputFile))) {
+            String header = reader.readLine();
+            if (header == null || !header.contains("Application ID")) {
+                throw new IllegalArgumentException("Invalid CSV header. Expected 'Application ID' column.");
+            }
+
+            String line;
+            int lineNumber = 1;
+            while ((line = reader.readLine()) != null) {
+                lineNumber++;
+                String trimmed = line.trim();
+                if (trimmed.isEmpty()) {
+                    continue; // Skip blank lines
+                }
+
+                String[] tokens = trimmed.split(",", -1);
+                if (tokens.length < 6) {
+                    System.err.println("[WARN] Skipping malformed line " + lineNumber + ": " + line);
+                    continue;
+                }
+
+                try {
+                    int appId = Integer.parseInt(tokens[0].trim());
+                    String rollNo = tokens[1].trim();
+                    String studentName = tokens[2].trim();
+                    String jobTitle = tokens[3].trim();
+                    String companyName = tokens[4].trim();
+                    ApplicationStatus status = ApplicationStatus.fromString(tokens[5].trim());
+
+                    Application app = new Application();
+                    app.setId(appId);
+                    app.setStudentRollNumber(rollNo);
+                    app.setStudentName(studentName);
+                    app.setJobTitle(jobTitle);
+                    app.setCompanyName(companyName);
+                    app.setStatus(status);
+
+                    parsedList.add(app);
+                } catch (Exception e) {
+                    System.err.println("[WARN] Skipping invalid data row at line " + lineNumber + ": " + e.getMessage());
+                }
+            }
+        }
+
+        // 2. Write updated records with audit status to another file using try-with-resources
+        File outputFile = new File(targetCsvPath);
+        File parentDir = outputFile.getParentFile();
+        if (parentDir != null && !parentDir.exists()) {
+            parentDir.mkdirs();
+        }
+
+        try (BufferedWriter writer = new BufferedWriter(new FileWriter(outputFile))) {
+            writer.write("Application ID,Student Roll No,Student Name,Job Title,Company,Status,Verification Status");
+            writer.newLine();
+
+            for (Application app : parsedList) {
+                writer.write(String.format("%d,%s,%s,%s,%s,%s,%s",
+                        app.getId(),
+                        app.getStudentRollNumber(),
+                        app.getStudentName(),
+                        app.getJobTitle(),
+                        app.getCompanyName(),
+                        app.getStatus().name(),
+                        "AUDITED_VALID"));
+                writer.newLine();
+            }
+        }
+
+        return parsedList;
     }
 }
