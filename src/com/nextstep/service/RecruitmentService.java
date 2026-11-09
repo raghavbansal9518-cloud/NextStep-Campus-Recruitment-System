@@ -9,20 +9,29 @@ import com.nextstep.model.Role;
 import com.nextstep.model.Student;
 import com.nextstep.model.User;
 
+import java.io.BufferedWriter;
+import java.io.File;
+import java.io.FileWriter;
+import java.io.IOException;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
 
 /**
  * RecruitmentService
  * 
- * Handles recruitment operations, eligibility verification, and application lifecycle.
+ * Handles recruitment operations, eligibility verification, application lifecycle,
+ * and reporting.
  * 
  * College Viva Concepts:
  * - Business Layer: Decouples eligibility logic from data access and UI.
  * - Encapsulation: EligibilityResult encapsulates the decision and diagnostic reasons.
  * - Defensive Programming: Validates job status and eligibility prior to database write.
+ * - Java Streams & Lambdas: Filters jobs, groups applications by status for summaries.
+ * - File I/O: Exports tabular recruitment reports to CSV using try-with-resources.
  */
 public class RecruitmentService {
 
@@ -243,5 +252,101 @@ public class RecruitmentService {
             throw new IllegalArgumentException("Status cannot be null");
         }
         return applicationDAO.updateStatus(applicationId, newStatus);
+    }
+
+    /**
+     * Retrieves all applications submitted in the system.
+     * Restricted to PLACEMENT_OFFICER role.
+     * 
+     * @param actor The logged-in placement officer
+     * @return List of all applications with student, job, and company details
+     * @throws SecurityException if actor is not a PLACEMENT_OFFICER
+     * @throws SQLException on database errors
+     */
+    public List<Application> getAllApplications(User actor) throws SQLException {
+        if (actor == null || actor.getRole() != Role.PLACEMENT_OFFICER) {
+            throw new SecurityException("Access denied: Only placement officers can view all applications.");
+        }
+        return applicationDAO.findAllApplications();
+    }
+
+    /**
+     * Generates a recruitment summary mapping each ApplicationStatus to its count.
+     * Restricted to PLACEMENT_OFFICER role.
+     * Demonstrates Java Streams and Collectors (groupingBy, counting).
+     * 
+     * @param actor The logged-in placement officer
+     * @return Map of ApplicationStatus to count of applications
+     * @throws SecurityException if actor is not a PLACEMENT_OFFICER
+     * @throws SQLException on database errors
+     */
+    public Map<ApplicationStatus, Long> getRecruitmentSummary(User actor) throws SQLException {
+        List<Application> apps = getAllApplications(actor);
+        return apps.stream()
+                   .collect(Collectors.groupingBy(Application::getStatus, Collectors.counting()));
+    }
+
+    /**
+     * Filters and returns only currently OPEN jobs.
+     * Demonstrates Java Streams (filter, collect).
+     * 
+     * @return List of open Job entities
+     * @throws SQLException on database errors
+     */
+    public List<Job> getOpenJobs() throws SQLException {
+        return jobDAO.findAllJobs().stream()
+                     .filter(j -> "OPEN".equalsIgnoreCase(j.getStatus()))
+                     .collect(Collectors.toList());
+    }
+
+    /**
+     * Exports all recruitment applications to a CSV report file.
+     * Restricted to PLACEMENT_OFFICER role.
+     * Demonstrates Java File I/O (BufferedWriter, FileWriter, try-with-resources).
+     * 
+     * @param actor The logged-in placement officer
+     * @param destinationPath Path to destination CSV file (defaults to reports/applications_report.csv if null)
+     * @return File object pointing to the created CSV report
+     * @throws SecurityException if actor is not a PLACEMENT_OFFICER
+     * @throws IOException on file write errors
+     * @throws SQLException on database errors
+     */
+    public File exportApplicationsToCsv(User actor, String destinationPath) throws IOException, SQLException {
+        if (actor == null || actor.getRole() != Role.PLACEMENT_OFFICER) {
+            throw new SecurityException("Access denied: Only placement officers can export reports.");
+        }
+
+        List<Application> applications = getAllApplications(actor);
+
+        File outputFile = (destinationPath != null && !destinationPath.trim().isEmpty())
+                ? new File(destinationPath)
+                : new File("reports/applications_report.csv");
+
+        File parentDir = outputFile.getParentFile();
+        if (parentDir != null && !parentDir.exists()) {
+            parentDir.mkdirs();
+        }
+
+        try (BufferedWriter writer = new BufferedWriter(new FileWriter(outputFile))) {
+            // Write CSV Header
+            writer.write("Application ID,Student Roll No,Student Name,Job Title,Company,Status,Applied At");
+            writer.newLine();
+
+            // Write Data Rows
+            for (Application app : applications) {
+                String rollNo = (app.getStudentRollNumber() != null) ? app.getStudentRollNumber() : String.valueOf(app.getStudentId());
+                String name = (app.getStudentName() != null) ? app.getStudentName().replace(",", " ") : "N/A";
+                String title = (app.getJobTitle() != null) ? app.getJobTitle().replace(",", " ") : "N/A";
+                String company = (app.getCompanyName() != null) ? app.getCompanyName().replace(",", " ") : "N/A";
+                String status = (app.getStatus() != null) ? app.getStatus().name() : "N/A";
+                String appliedAt = (app.getAppliedAt() != null) ? app.getAppliedAt().toString() : "N/A";
+
+                writer.write(String.format("%d,%s,%s,%s,%s,%s,%s",
+                        app.getId(), rollNo, name, title, company, status, appliedAt));
+                writer.newLine();
+            }
+        }
+
+        return outputFile;
     }
 }

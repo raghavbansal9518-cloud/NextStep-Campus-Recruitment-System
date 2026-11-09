@@ -201,6 +201,47 @@ public class AuthService {
     }
 
     /**
+     * Registers a new placement officer account.
+     * For administrative setup; not accessible via public student registration menu.
+     * 
+     * @param username officer username
+     * @param password plaintext password (will be hashed with PBKDF2)
+     * @param email officer email
+     * @return User created placement officer user record
+     * @throws IllegalArgumentException on validation failures
+     * @throws SQLException on database errors
+     */
+    public User registerPlacementOfficer(String username, String password, String email) throws SQLException {
+        if (!ValidationUtil.isValidUsername(username)) {
+            throw new IllegalArgumentException("Username must be between 3 and 30 alphanumeric characters.");
+        }
+        if (!ValidationUtil.isValidPassword(password)) {
+            throw new IllegalArgumentException("Password must be at least 6 characters.");
+        }
+        if (!ValidationUtil.isValidEmail(email)) {
+            throw new IllegalArgumentException("Invalid email format.");
+        }
+        if (userDAO.existsByUsername(username)) {
+            throw new IllegalArgumentException("Username is already taken.");
+        }
+
+        String passwordHash = hashPassword(password);
+        User officer = new User(username.trim(), passwordHash, Role.PLACEMENT_OFFICER, email.trim());
+        boolean created = userDAO.createUser(officer);
+        if (!created || officer.getId() == 0) {
+            throw new SQLException("Failed to create placement officer account.");
+        }
+        return officer;
+    }
+
+    /**
+     * Checks if any placement officer is currently registered in the database.
+     */
+    public boolean hasAnyPlacementOfficer() throws SQLException {
+        return userDAO.existsByRole(Role.PLACEMENT_OFFICER);
+    }
+
+    /**
      * Authenticates an existing user using username and password.
      * 
      * @param username username

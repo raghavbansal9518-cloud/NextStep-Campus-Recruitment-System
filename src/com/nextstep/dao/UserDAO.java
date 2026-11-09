@@ -146,6 +146,32 @@ public class UserDAO {
     }
 
     /**
+     * Checks if at least one user with the specified role exists in the database.
+     * Useful for checking whether an administrative placement officer has been provisioned.
+     * 
+     * @param role Role to check
+     * @return boolean true if at least one user with this role exists
+     * @throws SQLException on database errors
+     */
+    public boolean existsByRole(Role role) throws SQLException {
+        if (role == null) {
+            return false;
+        }
+
+        String sql = "SELECT 1 FROM users WHERE role = ? LIMIT 1";
+
+        try (Connection conn = DatabaseConnection.getConnection();
+             PreparedStatement stmt = conn.prepareStatement(sql)) {
+
+            stmt.setString(1, role.name());
+
+            try (ResultSet rs = stmt.executeQuery()) {
+                return rs.next();
+            }
+        }
+    }
+
+    /**
      * Self-contained verification runner for testing UserDAO operations.
      */
     public static void main(String[] args) {
