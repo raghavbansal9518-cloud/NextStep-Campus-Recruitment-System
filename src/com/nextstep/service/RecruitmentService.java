@@ -5,7 +5,9 @@ import com.nextstep.dao.JobDAO;
 import com.nextstep.model.Application;
 import com.nextstep.model.ApplicationStatus;
 import com.nextstep.model.Job;
+import com.nextstep.model.Role;
 import com.nextstep.model.Student;
+import com.nextstep.model.User;
 
 import java.sql.SQLException;
 import java.util.ArrayList;
@@ -157,6 +159,12 @@ public class RecruitmentService {
             }
         }
 
+        // Flag as ineligible if student is missing required technical skills
+        if (!missingSkills.isEmpty()) {
+            isEligible = false;
+            reasons.add(String.format("Missing required skills: %s", missingSkills));
+        }
+
         return new EligibilityResult(isEligible, reasons, matchedSkills, missingSkills);
     }
 
@@ -216,9 +224,24 @@ public class RecruitmentService {
     }
 
     /**
-     * Updates an application status (used by placement officers/admins).
+     * Updates an application status (e.g. SHORTLISTED, SELECTED, REJECTED).
+     * Restricted to PLACEMENT_OFFICER role. Normal students are blocked from modifying statuses.
+     * 
+     * @param actor The logged-in user attempting the status change
+     * @param applicationId ID of the target application
+     * @param newStatus New recruitment lifecycle status
+     * @return boolean true if update succeeded, false if application was not found
+     * @throws SecurityException if actor is null or does not have PLACEMENT_OFFICER role
+     * @throws IllegalArgumentException if newStatus is null
+     * @throws SQLException on database errors
      */
-    public boolean updateApplicationStatus(int applicationId, ApplicationStatus newStatus) throws SQLException {
+    public boolean updateApplicationStatus(User actor, int applicationId, ApplicationStatus newStatus) throws SQLException {
+        if (actor == null || actor.getRole() != Role.PLACEMENT_OFFICER) {
+            throw new SecurityException("Access denied: Only placement officers can update application statuses.");
+        }
+        if (newStatus == null) {
+            throw new IllegalArgumentException("Status cannot be null");
+        }
         return applicationDAO.updateStatus(applicationId, newStatus);
     }
 }
