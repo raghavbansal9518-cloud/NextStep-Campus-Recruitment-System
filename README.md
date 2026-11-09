@@ -4,11 +4,13 @@ A console-based Java application designed to streamline campus recruitment and p
 
 ---
 
-## 📌 Project Overview
-- **Course:** Semester 3 — Programming in Java
+## 📌 Project Overview & System Requirements
+- **Course:** Semester 3 — Programming in Java (CA-3 Scope)
 - **Application Type:** Console-based Application (CLI)
-- **Database:** MySQL (using JDBC for persistent storage)
-- **Key Concepts:** Object-Oriented Programming (OOP), Collections Framework, Exception Handling, File I/O, JDBC, and Layered Architecture.
+- **Java Development Kit:** JDK 21 LTS recommended (Compatible with installed JDK 26)
+- **Database:** MySQL Server 8.0 (InnoDB engine, utf8mb4 charset)
+- **JDBC Driver:** MySQL Connector/J 8.4.0 (`lib/mysql-connector-j-8.4.0.jar`)
+- **Key Concepts:** Object-Oriented Programming (OOP), Encapsulation, POJO Data Models, Enums, JDBC (`DriverManager`, `PreparedStatement`, `ResultSet`), DAO Pattern, and Layered Architecture.
 
 ---
 
@@ -17,43 +19,82 @@ The application follows a clean separation of concerns:
 
 ```text
 NextStep-Campus-Recruitment-System/
+├── lib/
+│   └── mysql-connector-j-8.4.0.jar      # Official MySQL JDBC Driver
+├── config/
+│   ├── db.properties.example             # Git-tracked configuration template
+│   └── db.properties                     # Local credentials (ignored by Git)
+├── database/
+│   ├── schema.sql                        # DDL: 8 normalized relational tables
+│   └── sample_data.sql                   # DML: Realistic fictional recruitment data
 ├── src/
 │   └── com/
 │       └── nextstep/
-│           ├── model/        # Data models / POJOs (Entities)
-│           ├── repository/   # DAO layer (Direct SQL / JDBC operations)
-│           ├── service/      # Business logic and input validation
-│           ├── ui/           # Console menus, Prompts, and CLI views
-│           ├── database/     # Database connection management
-│           └── Main.java     # Application entry point
+│           ├── model/                    # Domain POJOs & Enums (Phase 1)
+│           │   ├── Role.java
+│           │   ├── ApplicationStatus.java
+│           │   ├── User.java
+│           │   ├── Student.java
+│           │   ├── Company.java
+│           │   ├── Job.java
+│           │   └── Application.java
+│           ├── database/                 # JDBC Connection Manager (Phase 2)
+│           │   └── DatabaseConnection.java
+│           ├── dao/                      # Data Access Objects (Phase 2)
+│           │   └── UserDAO.java
+│           └── Main.java                 # Application entry point
 ├── .gitignore
 └── README.md
 ```
 
-*(Note: Package folders will be created incrementally in their respective phases.)*
+---
+
+## ⚙️ Local Database Configuration Setup
+
+1. **Copy the configuration template:**
+   Create a local file named `config/db.properties` based on `config/db.properties.example`.
+   *(Note: `config/db.properties` is registered in `.gitignore` and is never committed).*
+
+   ```properties
+   db.url=jdbc:mysql://localhost:3306/nextstep_db?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC
+   db.user=root
+   db.password=YOUR_LOCAL_MYSQL_PASSWORD
+   ```
+
+2. **Initialize Database Tables and Sample Data:**
+   Run the scripts in order using MySQL CLI with the interactive password prompt:
+   ```bash
+   mysql -u root -p < database/schema.sql
+   mysql -u root -p < database/sample_data.sql
+   ```
 
 ---
 
 ## 🚀 How to Compile and Run
 
-### 1. Compile:
-From the root project directory:
-```bash
-javac -d bin src/com/nextstep/Main.java
+### 1. Compile All Sources (with Connector/J in Classpath):
+```powershell
+javac -cp ".;lib/*" -d bin (Get-ChildItem -Recurse -Filter *.java src | ForEach-Object { $_.FullName })
 ```
 
-### 2. Run:
-```bash
-java -cp bin com.nextstep.Main
+### 2. Run Database Connection Test:
+```powershell
+java -cp "bin;lib/*" com.nextstep.database.DatabaseConnection
+```
+
+### 3. Run User DAO Verification Test:
+```powershell
+java -cp "bin;lib/*" com.nextstep.dao.UserDAO
+```
+
+### 4. Run Main Application:
+```powershell
+java -cp "bin;lib/*" com.nextstep.Main
 ```
 
 ---
 
-## 📋 Development Roadmap
-- **Phase 0:** Project setup, Git initialization, and baseline verification *(Current)*
-- **Phase 1:** Core Domain Models (OOP principles, Encapsulation, POJOs)
-- **Phase 2:** Database Design & JDBC Connection Layer (MySQL persistence)
-- **Phase 3:** Data Access Object (DAO) & Repository Layer
-- **Phase 4:** Service Layer & Business Validation Rules
-- **Phase 5:** Interactive Console UI Menus
-- **Phase 6:** Testing, Edge-case Handling & Viva Preparation
+## 📋 Completed Features & Progress
+- **Phase 0:** Project setup, Git initialization, and baseline verification *(Merged into `main`)*
+- **Phase 1:** Core Domain Models (OOP principles, Enums, POJOs) & Database Schema (8 normalized tables) *(Merged into `main`)*
+- **Phase 2:** JDBC Connection (`DatabaseConnection.java`), MySQL Connector/J 8.4.0 setup, and Basic DAO (`UserDAO.java`) *(Current Branch: `feature/phase-2-jdbc-dao`)*
