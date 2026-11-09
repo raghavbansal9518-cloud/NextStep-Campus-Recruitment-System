@@ -19,4 +19,6 @@ Thumbs.db
 
 # Local database credentials (must never be committed)
 config/db.properties
+config/*.properties
+!config/db.properties.example
 
