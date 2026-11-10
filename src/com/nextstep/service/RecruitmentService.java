@@ -57,16 +57,60 @@ public class RecruitmentService {
         private final List<String> matchedSkills;
         private final List<String> missingSkills;
 
+        // Detailed criteria breakdowns for unified console checklist presentation
+        private final boolean cgpaEligible;
+        private final boolean backlogsEligible;
+        private final boolean branchEligible;
+        private final boolean graduationYearEligible;
+        private final boolean skillsEligible;
+
         public EligibilityResult(boolean eligible, List<String> reasons,
                                  List<String> matchedSkills, List<String> missingSkills) {
+            this(eligible, reasons, matchedSkills, missingSkills, eligible, eligible, eligible, eligible, eligible);
+        }
+
+        public EligibilityResult(boolean eligible, List<String> reasons,
+                                 List<String> matchedSkills, List<String> missingSkills,
+                                 boolean cgpaEligible, boolean backlogsEligible,
+                                 boolean branchEligible, boolean graduationYearEligible,
+                                 boolean skillsEligible) {
             this.eligible = eligible;
             this.reasons = reasons != null ? reasons : new ArrayList<>();
             this.matchedSkills = matchedSkills != null ? matchedSkills : new ArrayList<>();
             this.missingSkills = missingSkills != null ? missingSkills : new ArrayList<>();
+            this.cgpaEligible = cgpaEligible;
+            this.backlogsEligible = backlogsEligible;
+            this.branchEligible = branchEligible;
+            this.graduationYearEligible = graduationYearEligible;
+            this.skillsEligible = skillsEligible;
         }
 
         public boolean isEligible() {
             return eligible;
+        }
+
+        public boolean isAcademicEligible() {
+            return cgpaEligible && backlogsEligible && branchEligible && graduationYearEligible;
+        }
+
+        public boolean isCgpaEligible() {
+            return cgpaEligible;
+        }
+
+        public boolean isBacklogsEligible() {
+            return backlogsEligible;
+        }
+
+        public boolean isBranchEligible() {
+            return branchEligible;
+        }
+
+        public boolean isGraduationYearEligible() {
+            return graduationYearEligible;
+        }
+
+        public boolean isSkillsEligible() {
+            return skillsEligible;
         }
 
         public List<String> getReasons() {
@@ -92,12 +136,16 @@ public class RecruitmentService {
     }
 
     /**
-     * Evaluates a student's eligibility for a given job opening.
-     * Checks:
+     * Evaluates a student's eligibility for a given job opening across academic and skill criteria.
+     * Unified evaluation engine shared across Page 9 (Checklist), Page 10 (Confirmation),
+     * and recruitment application submission.
+     * 
+     * Criteria checked:
      * 1. Minimum CGPA
      * 2. Maximum Allowed Active Backlogs
      * 3. Academic Branch
-     * 4. Required Technical Skills match
+     * 4. Graduation Target Batch
+     * 5. Required Technical Skills match
      */
     public EligibilityResult checkEligibility(Student student, Job job) {
         if (student == null || job == null) {
@@ -105,18 +153,17 @@ public class RecruitmentService {
         }
 
         List<String> reasons = new ArrayList<>();
-        boolean isEligible = true;
 
         // 1. CGPA Criterion
-        if (student.getCgpa() < job.getMinCgpa()) {
-            isEligible = false;
+        boolean cgpaEligible = student.getCgpa() >= job.getMinCgpa();
+        if (!cgpaEligible) {
             reasons.add(String.format("CGPA (%.2f) is below minimum cutoff (%.2f)",
                     student.getCgpa(), job.getMinCgpa()));
         }
 
         // 2. Backlogs Criterion
-        if (student.getActiveBacklogs() > job.getMaxBacklogs()) {
-            isEligible = false;
+        boolean backlogsEligible = student.getActiveBacklogs() <= job.getMaxBacklogs();
+        if (!backlogsEligible) {
             reasons.add(String.format("Active backlogs (%d) exceed maximum allowed (%d)",
                     student.getActiveBacklogs(), job.getMaxBacklogs()));
         }
@@ -138,12 +185,18 @@ public class RecruitmentService {
         }
 
         if (!branchEligible) {
-            isEligible = false;
             reasons.add(String.format("Branch '%s' is not in eligible branches: %s",
                     student.getBranch(), eligibleBranches));
         }
 
-        // 4. Skills Match Comparison
+        // 4. Graduation Year Criterion (batch matching)
+        boolean graduationYearEligible = (job.getGraduationYear() <= 0) || (student.getGraduationYear() == job.getGraduationYear());
+        if (!graduationYearEligible) {
+            reasons.add(String.format("Graduation year (%d) does not match target batch (%d)",
+                    student.getGraduationYear(), job.getGraduationYear()));
+        }
+
+        // 5. Skills Match Comparison
         List<String> matchedSkills = new ArrayList<>();
         List<String> missingSkills = new ArrayList<>();
         List<String> studentSkills = student.getSkills();
@@ -168,13 +221,15 @@ public class RecruitmentService {
             }
         }
 
-        // Flag as ineligible if student is missing required technical skills
-        if (!missingSkills.isEmpty()) {
-            isEligible = false;
+        boolean skillsEligible = missingSkills.isEmpty();
+        if (!skillsEligible) {
             reasons.add(String.format("Missing required skills: %s", missingSkills));
         }
 
-        return new EligibilityResult(isEligible, reasons, matchedSkills, missingSkills);
+        boolean overallEligible = cgpaEligible && backlogsEligible && branchEligible && graduationYearEligible && skillsEligible;
+
+        return new EligibilityResult(overallEligible, reasons, matchedSkills, missingSkills,
+                cgpaEligible, backlogsEligible, branchEligible, graduationYearEligible, skillsEligible);
     }
 
     /**
