@@ -17,6 +17,7 @@ import java.security.spec.InvalidKeySpecException;
 import java.sql.Connection;
 import java.sql.SQLException;
 import java.util.HexFormat;
+import java.util.Collections;
 import java.util.List;
 
 /**
@@ -106,13 +107,28 @@ public class AuthService {
     }
 
     /**
-     * Registers a new student in the system as an atomic database transaction.
-     * Validates input, hashes password, inserts user, inserts student profile, and saves skills.
+     * Registers a student using Page 3 (Student Sign Up) form inputs,
+     * applying standard defaults (phone = "N/A", activeBacklogs = 0, skills = empty).
      * 
-     * @return Registered Student object if successful
-     * @throws IllegalArgumentException for validation failures
-     * @throws SQLException for database errors
+     * @param username student account username
+     * @param password student account plaintext password (hashed with PBKDF2)
+     * @param email student email address
+     * @param studentId University Roll No / USN
+     * @param fullName student full name
+     * @param branch degree branch
+     * @param cgpa cumulative GPA (0.00 - 10.00)
+     * @param graduationYear expected graduation year (2020 - 2035)
+     * @return Registered Student profile
+     * @throws IllegalArgumentException on validation failure
+     * @throws SQLException on database error
      */
+    public Student registerStudent(String username, String password, String email,
+                                   String studentId, String fullName,
+                                   String branch, double cgpa, int graduationYear) throws SQLException {
+        return registerStudent(username, password, email, studentId, fullName, "N/A",
+                               branch, cgpa, 0, graduationYear, Collections.emptyList());
+    }
+
     public Student registerStudent(String username, String password, String email,
                                    String studentId, String fullName, String phone,
                                    String branch, double cgpa, int activeBacklogs,
