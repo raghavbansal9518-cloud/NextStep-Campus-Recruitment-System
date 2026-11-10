@@ -4,7 +4,7 @@
 [![Database](https://img.shields.io/badge/MySQL-8.0-4479A1?logo=mysql&logoColor=white)](https://www.mysql.com/)
 [![JDBC Driver](https://img.shields.io/badge/MySQL%20Connector%2FJ-8.4.0-blue)](https://dev.mysql.com/downloads/connector/j/)
 [![Build Tool](https://img.shields.io/badge/Build-Native%20JDK%20%2F%20run.bat-success)](run.bat)
-[![Tests](https://img.shields.io/badge/Tests-212%20Passed%20(100%25)-brightgreen)](#11-testing-and-verification)
+[![Tests](https://img.shields.io/badge/Tests-212%20Passed%20(100%25)-brightgreen)](docs/TESTING.md)
 [![Course](https://img.shields.io/badge/Course-Programming%20in%20Java%20(25CSE0202)-blueviolet)](docs/VIVA_PREPARATION.md)
 
 > A console-based campus placement automation system built with pure Java SE, JDBC, and MySQL.  
@@ -12,27 +12,28 @@
 
 ---
 
-## 📘 Demo & Testing Manual
+## 📚 Documentation Quick Links
 
-> [!TIP]
-> **Preparing for an evaluation, live laboratory presentation, or project viva?**  
-> We have created a separate, comprehensive, step-by-step presentation manual:  
-> 👉 [**docs/DEMO_USER_MANUAL.md**](docs/DEMO_USER_MANUAL.md)  
-> It contains copy-ready demo data, live walkthrough scripts, common questions, and a pre-flight inspection checklist.
-
----
-
-## 1. Project Title & Introduction
-
-**NextStep** is an interactive, role-based terminal application designed to streamline campus recruitment drives for students, placement cells, and hiring partner companies. 
-
-In traditional university placement drives, candidate management often suffers from fragmented communication, manual eligibility verification across spreadsheets, paper resumes, and duplicate applications. **NextStep** addresses these challenges by centralizing academic records, automated eligibility rules, skill-matching algorithms, and administrative oversight into a unified console interface powered by a relational MySQL backend.
-
-The project strictly emphasizes Core Java principles, JDBC transaction management, Object-Oriented design patterns, modern Java Streams/Lambdas, and cryptographic security—built without heavy third-party web frameworks so that every line of code remains transparent, demonstrable, and defensible in viva examinations.
+| Document | Purpose |
+| :--- | :--- |
+| 📘 [**Demo & Operational User Manual**](docs/DEMO_USER_MANUAL.md) | Step-by-step presentation guide, copy-ready demo data, Pages 1–11 walkthroughs, and troubleshooting. |
+| 🧪 [**Testing & Verification Guide**](docs/TESTING.md) | Complete documentation of all 5 regression test suites, execution commands, and database isolation. |
+| 🎓 [**Viva Preparation Guide**](docs/VIVA_PREPARATION.md) | Syllabus mappings, architecture explanations, database schemas, and 50+ oral exam Q&A. |
+| 🤝 [**Contributing Guide**](CONTRIBUTING.md) | Guidelines for collaborators, Git branching workflow, and local database isolation rules. |
 
 ---
 
-## 2. Key Features
+## 1. Project Overview & Purpose
+
+**NextStep** is an interactive, role-based terminal application designed to streamline campus recruitment drives for students, placement cells, and hiring partner companies.
+
+In traditional university placement drives, candidate management frequently encounters manual eligibility checking across spreadsheets, paper resumes, communication bottlenecks, and duplicate applications. **NextStep** addresses these challenges by centralizing academic records, automated eligibility rules, skill-matching algorithms, and administrative oversight into a unified console interface powered by a relational MySQL backend.
+
+The project strictly emphasizes Core Java SE principles, JDBC transaction management, Object-Oriented design patterns, modern Java Streams/Lambdas, and cryptographic security—built without heavy third-party web frameworks so that every component remains transparent, demonstrable, and defensible in academic evaluations.
+
+---
+
+## 2. Key Implemented Features
 
 ### 🎓 Student Portal
 - **Self-Service Registration (Page 3):** Creates user credentials, personal profiles, and academic records atomically in MySQL, with passwords encrypted using PBKDF2 with HMAC-SHA256 and a 16-byte cryptographic salt.
@@ -63,16 +64,16 @@ The project strictly emphasizes Core Java principles, JDBC transaction managemen
 
 | Layer | Technology | Details |
 | :--- | :--- | :--- |
-| **Programming Language** | Java SE | Java 17 LTS / Java 21 LTS (Tested on JDK 17 through JDK 26) |
-| **Database Engine** | MySQL Server | Version 8.0+ (InnoDB Storage Engine, UTF-8 Charset) |
+| **Language** | Java SE | Java 17 LTS / Java 21 LTS (Compatible with JDK 17 through JDK 26) |
+| **Database** | MySQL Server | Version 8.0+ (InnoDB Storage Engine, UTF-8 Charset) |
 | **JDBC Driver** | MySQL Connector/J | Version 8.4.0 (`lib/mysql-connector-j-8.4.0.jar`) |
-| **Password Security** | PBKDF2 with HMAC-SHA256 | 16-byte random salt, 65,536 iterations, 256-bit key length |
+| **Security** | PBKDF2 with HMAC-SHA256 | 16-byte random salt, 65,536 iterations, 256-bit key length |
 | **Architecture** | Layered Console Architecture | Model – DAO – Service – Presentation |
 | **Build & Launch** | Native JDK CLI + Batch | Windows `run.bat` launcher; native `javac` and `java` commands |
 
 ---
 
-## 4. Project Folder Structure
+## 4. Project Structure
 
 ```text
 NextStep-Campus-Recruitment-System/
@@ -84,125 +85,93 @@ NextStep-Campus-Recruitment-System/
 │   └── sample_data.sql                   # DML: Idempotent seed data (companies, jobs, skills)
 ├── docs/
 │   ├── DEMO_USER_MANUAL.md               # Step-by-step presentation & demo operational manual
-│   └── VIVA_PREPARATION.md               # Comprehensive oral examination preparation guide
+│   ├── TESTING.md                        # Comprehensive test suites documentation
+│   └── VIVA_PREPARATION.md               # Oral examination preparation guide
 ├── lib/
 │   └── mysql-connector-j-8.4.0.jar      # Official MySQL JDBC Driver
-├── reports/                              # Output directory for generated CSV reports
+├── reports/                              # Output directory for generated CSV reports (Git-ignored)
 ├── src/
 │   └── com/
 │       └── nextstep/
-│           ├── model/                    # Domain POJOs and Enums
-│           │   ├── Role.java             # Roles: STUDENT, PLACEMENT_OFFICER
-│           │   ├── ApplicationStatus.java# APPLIED, SHORTLISTED, SELECTED, REJECTED
-│           │   ├── User.java             # Base user account entity
-│           │   ├── Student.java          # Student profile entity
-│           │   ├── Company.java          # Partner hiring entity
-│           │   ├── Job.java              # Recruitment drive entity
-│           │   └── Application.java      # Job application entity
-│           ├── database/
-│           │   └── DatabaseConnection.java# Centralized JDBC connection manager
-│           ├── dao/                      # Data Access Objects (SQL queries & mapping)
-│           │   ├── UserDAO.java
-│           │   ├── StudentDAO.java
-│           │   ├── CompanyDAO.java
-│           │   ├── JobDAO.java
-│           │   └── ApplicationDAO.java
-│           ├── service/                  # Business logic & operational workflows
-│           │   ├── AuthService.java      # Registration, PBKDF2 hashing, login
-│           │   └── RecruitmentService.java# Eligibility, lifecycle, streams, CSV I/O
-│           ├── util/                     # Utilities & configuration helpers
-│           │   ├── ConsoleTheme.java     # 24-bit TrueColour ANSI formatting & fallbacks
-│           │   ├── PresentationConfig.java# Presentation visibility toggles
-│           │   ├── Result.java           # Generic Result<T> container
-│           │   └── ValidationUtil.java   # Input validation & generic pagination
+│           ├── model/                    # Domain POJOs (Role, User, Student, Company, Job, Application)
+│           ├── database/                 # DatabaseConnection (centralized JDBC manager)
+│           ├── dao/                      # Data Access Objects (UserDAO, StudentDAO, CompanyDAO, JobDAO, ApplicationDAO)
+│           ├── service/                  # Business logic (AuthService, RecruitmentService)
+│           ├── util/                     # Utilities (ConsoleTheme, PresentationConfig, Result, ValidationUtil)
 │           └── Main.java                 # Interactive console application entry point
+├── tests/                                # Standalone regression & integration test suites
+│   ├── ConsoleInputEdgeCaseTestRunner.java
+│   ├── Phase3TestRunner.java
+│   ├── Phase4TestRunner.java
+│   ├── Phase5TestRunner.java
+│   ├── Phase6IntegrationTestRunner.java
+│   └── InspectDatabase.java
 ├── .gitignore                            # Excludes credentials, compiled bytecode, reports
+├── CONTRIBUTING.md                       # Guidelines for collaborators and contributors
 ├── run.bat                               # One-click Windows build and launch script
-└── README.md                             # Main project documentation
+└── README.md                             # Main project overview and technical documentation
 ```
 
 ---
 
 ## 5. System Requirements
 
-Before installing and running NextStep, ensure your computer satisfies these prerequisites:
-
-1. **Operating System:** Windows 10/11, Linux (Ubuntu/Debian/Fedora), or macOS.
-2. **Java Development Kit (JDK):** Version 17, 21 LTS, or newer.  
-   - Verify by running `java -version` and `javac -version` in your terminal.
-3. **MySQL Server:** Community Server 8.0 or newer.  
-   - Verify service is active: `net start MySQL80` (Windows) or `systemctl status mysql` (Linux).
-4. **Terminal:** Windows Terminal, PowerShell, Command Prompt, or Unix bash/zsh supporting ANSI escape codes (minimum recommended buffer: 80 columns × 25 lines).
+- **Operating System:** Windows 10/11, Linux (Ubuntu/Debian/Fedora), or macOS.
+- **Java Development Kit (JDK):** Version 17 LTS, 21 LTS, or newer.  
+  - Verify: `java -version` and `javac -version`
+- **MySQL Server:** Community Server 8.0 or newer.  
+  - Verify service: `net start MySQL80` (Windows) or `systemctl status mysql` (Linux).
+- **Terminal:** Windows Terminal, PowerShell, Command Prompt, or Unix bash/zsh with ANSI color support (minimum recommended: 80 columns × 25 lines).
 
 ---
 
-## 6. Installation & Setup
+## 6. Installation & Database Setup
 
-### Step 1: Clone the Repository
+### Step 1: Clone Repository
 ```bash
 git clone https://github.com/raghavbansal9518-cloud/NextStep-Campus-Recruitment-System.git
 cd NextStep-Campus-Recruitment-System
 ```
 
-### Step 2: Initialize MySQL Database & Seed Data
-Log in to your local MySQL server using the command-line client:
-```bash
-mysql -u root -p
-```
-Execute the database initialization scripts in order:
+### Step 2: Initialize Database Schema & Seed Data
+Execute the provided idempotent SQL scripts in order using MySQL CLI:
 ```bash
 mysql -u root -p < database/schema.sql
 mysql -u root -p < database/sample_data.sql
 ```
-> [!NOTE]
-> Both scripts are completely idempotent. Running them multiple times will safely update or maintain existing records without creating duplicates.
+*Both scripts are idempotent; re-running them will safely update or maintain existing seed records without creating duplicates.*
 
-Verify that the 8 normalized tables were created in `nextstep_db`:
-```sql
-USE nextstep_db;
-SHOW TABLES;
-```
-
-### Step 3: Configure Database Credentials
-Create your local database configuration file from the provided template:
-```powershell
-# Windows PowerShell:
-Copy-Item config/db.properties.example config/db.properties
-
-# Windows Command Prompt:
+### Step 3: Configure Local Database Credentials
+Copy the configuration template:
+```cmd
 copy config\db.properties.example config\db.properties
 ```
-
-Open `config/db.properties` in your text editor and specify your local MySQL root password:
+Open `config/db.properties` in a text editor and enter your local MySQL root password:
 ```properties
 db.url=jdbc:mysql://localhost:3306/nextstep_db?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC
 db.user=root
 db.password=YOUR_LOCAL_MYSQL_PASSWORD
 ```
+> [!IMPORTANT]
+> `config/db.properties` is registered in `.gitignore` and is never committed to GitHub. Each collaborator maintains their own private credentials.
 
 ---
 
 ## 7. Running the Application
 
 ### Option A: One-Click Windows Launcher (`run.bat`) — Recommended
-Double-click **`run.bat`** in File Explorer, or execute it from your terminal:
+Double-click **`run.bat`** in File Explorer or run it from your terminal:
 ```cmd
 run.bat
 ```
-The batch script automatically:
-1. Navigates to the project directory.
-2. Verifies that `javac`, `java`, and `lib/mysql-connector-j-8.4.0.jar` are available.
-3. Ensures `config/db.properties` exists.
-4. Compiles all source packages into `bin/`.
-5. Launches `com.nextstep.Main`.
-6. Keeps the terminal window open if an error occurs so you can read diagnostic messages.
+The script validates your JDK and JDBC driver, checks for `config/db.properties`, compiles all source files into `bin/`, and launches `com.nextstep.Main`.
 
 ### Option B: Manual Command-Line Compilation & Execution
 
 #### On Windows (PowerShell):
 ```powershell
 # 1. Compile source files into bin/
-javac -cp "lib/*;src" -d bin (Get-ChildItem -Path src -Recurse -Filter *.java | ForEach-Object { $_.FullName })
+javac -d bin -cp "lib/*;src" (Get-ChildItem -Path src -Recurse -Filter *.java | ForEach-Object { $_.FullName })
 
 # 2. Run the application
 java -cp "bin;lib/*" com.nextstep.Main
@@ -228,19 +197,11 @@ java -cp "bin:lib/*" com.nextstep.Main
 
 ---
 
-## 8. Database Configuration
+## 8. Placement Officer Activation Code Setup
 
-- Database connectivity is centralized in [`DatabaseConnection.java`](src/com/nextstep/database/DatabaseConnection.java) using standard JDBC `DriverManager`.
-- **Local Isolation:** NextStep is designed so each developer or evaluator maintains their own isolated MySQL instance. `config/db.properties` is explicitly registered in `.gitignore` and must **never** be committed to GitHub.
-- If `config/db.properties` is missing, `DatabaseConnection` falls back to default localhost settings with clear error handling if authentication fails.
+To protect administrative accounts, Placement Officer registration on Page 5 requires an authorized **Activation Code**.
 
----
-
-## 9. Placement Officer Activation Code
-
-To safeguard administrative registration, Placement Officer self-registration on Page 5 requires an authorized **Activation Code**.
-
-> [!IMPORTANT]
+> [!NOTE]
 > - The activation code is an **application-level safeguard**, not a database password.
 > - It is **never stored in the database** and **never hardcoded in Java source files**.
 > - Each collaborator configures their own local code on their computer.
@@ -248,22 +209,21 @@ To safeguard administrative registration, Placement Officer self-registration on
 ### Configuring on Windows (One-Time Setup):
 Run this command in Command Prompt:
 ```cmd
-setx NEXTSTEP_OFFICER_ACTIVATION_CODE "CAMPUS_OFFICER_2026"
+setx NEXTSTEP_OFFICER_ACTIVATION_CODE "YOUR_LOCAL_SECRET_CODE"
 ```
-> [!NOTE]
-> Close and reopen your terminal window after running `setx` for the new environment variable to take effect across future sessions and `run.bat` launches.
+*(Close and reopen your terminal window after running `setx` for the environment variable to take effect).*
 
 ### Per-Session JVM Property Alternative:
-If you prefer passing the code directly to the JVM without modifying environment variables:
+Pass the activation code directly to the JVM when launching:
 ```powershell
-java -Dnextstep.officer.activation.code=CAMPUS_OFFICER_2026 -cp "bin;lib/*" com.nextstep.Main
+java -Dnextstep.officer.activation.code=YOUR_LOCAL_SECRET_CODE -cp "bin;lib/*" com.nextstep.Main
 ```
 
 If neither is configured, officer registration is safely disabled with an administrator notice.
 
 ---
 
-## 10. Application Workflow (Pages 1–11)
+## 9. Application Workflow (Pages 1–11)
 
 NextStep organizes placement workflows across 11 structured console screens:
 
@@ -295,87 +255,38 @@ NextStep organizes placement workflows across 11 structured console screens:
                           └── Option 5: Update Application Status
 ```
 
-*(Note: Options marked `[Coming Soon]` on Dashboards—such as Profile Editing or Company Management—are reserved for CAT-4 milestones and display informative notices).*
+*(Note: Dashboard options marked `[Coming Soon]` are reserved for future CAT-4 milestones and display informative notices).*
 
 ---
 
-## 11. Testing & Verification
+## 10. Testing Overview
 
-NextStep includes 5 automated regression test suites covering the entire syllabus, input validation, transaction atomicity, and edge cases.
+NextStep includes 5 automated regression and integration test suites in `tests/`, covering authentication, database transactions, input validation, Streams/Lambdas, CSV I/O, and console UI:
 
-### Verified Test Results Summary
-
-| Suite Name | Scope & Capabilities Verified | Tests | Status |
+| Test Suite | Purpose | Tests | Status |
 | :--- | :--- | :---: | :---: |
-| **`ConsoleInputEdgeCaseTestRunner`** | Pages 1–11 layouts, TrueColour ANSI, `B`/`N`/`ESC`/`TAB` shortcuts, Page 8 company selection | **72** | **PASS** |
+| **`ConsoleInputEdgeCaseTestRunner`** | Pages 1–11 console UI, TrueColour ANSI, `B`/`N`/`ESC`/`TAB` shortcuts, Page 8 company selection | **72** | **PASS** |
 | **`Phase3TestRunner`** | Registration, PBKDF2 hashing, StudentDAO, CompanyDAO, JobDAO | **28** | **PASS** |
 | **`Phase4TestRunner`** | Job browsing, eligibility rules, application states, officer access control | **27** | **PASS** |
 | **`Phase5TestRunner`** | Full CA-3 syllabus, RFC-4180 CSV export/import, presentation visibility controls | **54** | **PASS** |
-| **`Phase6IntegrationTestRunner`** | Transaction rollback atomicity, simulated restart persistence, input sanitization | **31** | **PASS** |
-| **Grand Total** | **All 5 Test Suites Combined** | **212** | **212 / 212 Passed (100%)** |
+| **`Phase6IntegrationTestRunner`** | Transaction rollback atomicity, simulated restart persistence, data sanitization | **31** | **PASS** |
+| **Grand Total** | **Verified Across All 5 Suites** | **212** | **212 / 212 Passed (100%)** |
 
-### How to Run the Tests
-```powershell
-# Run the Comprehensive Console Verification Suite (Pages 1–11):
-java -Dnextstep.officer.activation.code=CAMPUS_OFFICER_2026 -cp "bin;lib/*;scratch" ConsoleInputEdgeCaseTestRunner
-
-# Run Regression Suites:
-java -cp "bin;lib/*;scratch" Phase3TestRunner
-java -cp "bin;lib/*;scratch" Phase4TestRunner
-java -cp "bin;lib/*;scratch" Phase5TestRunner
-java -cp "bin;lib/*;scratch" Phase6IntegrationTestRunner
-```
+To compile and run tests, see the comprehensive guide: 👉 [**docs/TESTING.md**](docs/TESTING.md).
 
 ---
 
-## 12. GitHub Collaboration for Teammates
+## 11. Current Project Status & Future Scope
 
-If you are working on this project with teammates or cloning it onto another machine:
-
-1. **Clone the Repo:** Clone the project locally. Source code and SQL scripts are synchronized via Git.
-2. **Local Isolation:** Git does **not** share your local MySQL server or local database records. Each collaborator must:
-   - Run their own local MySQL server.
-   - Execute `database/schema.sql` and `database/sample_data.sql`.
-   - Create their own `config/db.properties` with their private MySQL root password.
-   - Set their own `NEXTSTEP_OFFICER_ACTIVATION_CODE` if testing officer registration.
-3. **Branching Workflow:**
-   - Create a feature branch before making changes:  
-     `git checkout -b feature/your-feature-name`
-   - Commit using Conventional Commits (`feat: ...`, `fix: ...`, `docs: ...`).
-   - Push your branch and open a reviewed pull request into `main`.
-
----
-
-## 13. Troubleshooting
-
-| Symptom | Likely Cause | Solution |
-| :--- | :--- | :--- |
-| `'javac' is not recognized` | JDK not installed or missing from `PATH` | Install JDK 17+ and add its `bin` directory to your system `PATH`. |
-| `Communications link failure` | MySQL service is stopped | Start MySQL service via `net start MySQL80` or Services Manager. |
-| `Access denied for user 'root'` | Incorrect database password | Update `db.password` in `config/db.properties` with your MySQL password. |
-| `Unknown database 'nextstep_db'` | Database schema not imported | Run `mysql -u root -p < database/schema.sql`. |
-| `Missing Connector/J JDBC driver` | Missing driver JAR in `lib/` | Ensure `lib/mysql-connector-j-8.4.0.jar` exists in your repository. |
-| `Officer registration is disabled` | Activation code unconfigured | Run `setx NEXTSTEP_OFFICER_ACTIVATION_CODE "CAMPUS_OFFICER_2026"` and restart terminal. |
-| Password typing doesn't echo | Normal Java console masking | `System.console().readPassword()` hides characters for security. Type your password and press **Enter**. |
-
----
-
-## 14. Current Project Status & Roadmap
-
-- **Completed CA-3 Scope:** Pages 1 through 11 fully implemented with database persistence, PBKDF2 encryption, TrueColour ANSI theme, navigation shortcuts, eligibility checking, skill matching, and application tracking.
-- **Future Roadmap (CAT-4 Milestones):**
+- **Implemented CA-3 Scope:** Pages 1 through 11 fully implemented with MySQL persistence, PBKDF2 password security, TrueColour ANSI theme, navigation shortcuts, eligibility checking, skill matching, and application tracking.
+- **Future Scope (CAT-4 Milestones):**
   - Graphical User Interface (JavaFX / Swing).
   - Resume upload and PDF document parsing.
-  - Email notification dispatch via JavaMail API.
-  - Recruiter interview scheduling and rating dashboard.
+  - Automated email dispatch via JavaMail API.
+  - Recruiter interview scheduling and candidate rating dashboard.
 
 ---
 
-## 15. Documentation Reference
+## 12. Academic Notice & License
 
-- **📘 Demonstration & Testing Manual:** [docs/DEMO_USER_MANUAL.md](docs/DEMO_USER_MANUAL.md) — Complete walkthrough scripts, copy-ready sample records, and evaluator presentation guide.
-- **🎓 Viva & Oral Exam Guide:** [docs/VIVA_PREPARATION.md](docs/VIVA_PREPARATION.md) — Syllabus mappings, architecture explanations, and 50+ oral exam Q&A.
-
----
-
-*NextStep is an academic project developed for educational purposes under the Department of Computer Science & Engineering.*
+This project was developed for educational coursework and laboratory evaluation under the **Programming in Java (25CSE0202)** course. It is intended for academic study, review, and demonstration.

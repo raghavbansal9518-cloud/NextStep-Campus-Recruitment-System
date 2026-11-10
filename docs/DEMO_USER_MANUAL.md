@@ -72,8 +72,7 @@ NextStep supports four verified launch methods on Windows. Choose the method mos
 
 ### Method 1: Double-Click `run.bat` in File Explorer (Easiest)
 
-- **Where:** Open File Explorer and navigate to the project directory:  
-  `C:\Semister-3\Programming in Java\JavaProjects\NextStep-Campus-Recruitment-System`
+- **Where:** Open File Explorer and navigate to the NextStep project root directory (where you cloned the repository).
 - **Action:** Double-click the file named **`run.bat`**.
 - **What happens:**
   1. A Command Prompt window opens automatically.
