@@ -1,10 +1,12 @@
 package com.nextstep;
 
 import com.nextstep.dao.ApplicationDAO;
+import com.nextstep.dao.CompanyDAO;
 import com.nextstep.dao.JobDAO;
 import com.nextstep.dao.StudentDAO;
 import com.nextstep.model.Application;
 import com.nextstep.model.ApplicationStatus;
+import com.nextstep.model.Company;
 import com.nextstep.model.Job;
 import com.nextstep.model.Role;
 import com.nextstep.model.Student;
@@ -16,6 +18,7 @@ import com.nextstep.util.PresentationConfig;
 import com.nextstep.util.ValidationUtil;
 
 import java.io.File;
+import java.math.BigDecimal;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -46,6 +49,7 @@ public class Main {
     private final JobDAO jobDAO;
     private final StudentDAO studentDAO;
     private final ApplicationDAO applicationDAO;
+    private final CompanyDAO companyDAO;
 
     public Main() {
         this.authService = new AuthService();
@@ -53,6 +57,7 @@ public class Main {
         this.jobDAO = new JobDAO();
         this.studentDAO = new StudentDAO();
         this.applicationDAO = new ApplicationDAO();
+        this.companyDAO = new CompanyDAO();
     }
 
     public static void main(String[] args) {
@@ -944,8 +949,8 @@ public class Main {
                 case "1" -> System.out.println("\nThis feature is not implemented yet.");
                 case "2" -> System.out.println("\nThis feature is not implemented yet.");
                 case "3" -> viewAvailableJobs();
-                case "4" -> checkStudentJobEligibility(scanner, student);
-                case "5" -> System.out.println("\nThis feature is not implemented yet.");
+                case "4" -> showEligibilityAndSkillAnalysis(scanner, student);
+                case "5" -> showSkillAnalysisFlow(scanner, student);
                 case "6" -> applyForJobFlow(scanner, student);
                 case "7" -> viewStudentApplications(student);
                 case "0" -> {
@@ -1130,7 +1135,7 @@ public class Main {
             switch (choice) {
                 case "1" -> System.out.println("\nThis feature is not implemented yet.");
                 case "2" -> System.out.println("\nThis feature is not implemented yet.");
-                case "3" -> System.out.println("\nThis feature is not implemented yet.");
+                case "3" -> showCreateJobDrive(scanner, officer);
                 case "4" -> viewAllApplicationsFlow(officer);
                 case "5" -> updateApplicationStatusFlow(scanner, officer);
                 case "0" -> {
@@ -1287,6 +1292,497 @@ public class Main {
             System.out.println("[SECURITY ERROR] " + e.getMessage());
         } catch (Exception e) {
             System.out.println("[ERROR] Failed to process CSV: " + e.getMessage());
+        }
+    }
+
+    // =========================================================================
+    // CREATE JOB DRIVE (PAGE 8)
+    // =========================================================================
+
+    /**
+     * Renders header for Page 8 — Create Job Drive matching exact design specifications.
+     */
+    public void renderCreateJobDriveHeader() {
+        System.out.println("================================================================");
+        System.out.println("              NEXTSTEP | PLACEMENT OFFICER PORTAL");
+        System.out.println("                       CREATE JOB DRIVE");
+        System.out.println("================================================================");
+        System.out.println();
+    }
+
+    /**
+     * Renders footer and action options for Page 8 — Create Job Drive.
+     */
+    public void renderCreateJobDriveFooter() {
+        System.out.println("----------------------------------------------------------------");
+        System.out.println("                  1. PUBLISH JOB");
+        System.out.println("                  0. CANCEL");
+        System.out.println("================================================================");
+    }
+
+    /**
+     * Displays Page 8 — Create Job Drive form and manages interactive drive publishing.
+     * 
+     * @param scanner active Scanner
+     * @param officer authenticated Placement Officer User account
+     * @return boolean true if job drive was published, false if cancelled/returned
+     */
+    public boolean showCreateJobDrive(Scanner scanner, User officer) {
+        while (true) {
+            clearConsole();
+            renderCreateJobDriveHeader();
+
+            int nextJobId = 1;
+            try {
+                nextJobId = jobDAO.getNextJobId();
+            } catch (SQLException e) {
+                System.out.println("[WARN] Could not compute next Job ID: " + e.getMessage());
+            }
+
+            System.out.println("Job ID:                 " + nextJobId);
+            String companyIdStr = readField(scanner, "Company ID:             ");
+            String jobRole = readField(scanner, "Job Role:               ");
+            String minCgpaStr = readField(scanner, "Minimum CGPA:           ");
+            String branchesStr = readField(scanner, "Eligible Branches:      ");
+            String gradYearStr = readField(scanner, "Graduation Year:        ");
+            String skillsStr = readField(scanner, "Required Skills:        ");
+            String deadlineStr = readField(scanner, "Application Deadline:   ");
+            System.out.println();
+
+            renderCreateJobDriveFooter();
+
+            while (true) {
+                System.out.print("Enter your choice: ");
+                if (!scanner.hasNextLine()) {
+                    return false;
+                }
+                String choice = scanner.nextLine().trim();
+                if (System.console() == null) {
+                    System.out.println(choice);
+                }
+                System.out.println("================================================================");
+
+                if ("1".equals(choice)) {
+                    boolean created = processJobDriveCreation(companyIdStr, jobRole, minCgpaStr, branchesStr, gradYearStr, skillsStr, deadlineStr);
+                    if (created) {
+                        return true;
+                    } else {
+                        System.out.print("\nPress Enter to try again, or enter 0 to return to Officer Dashboard: ");
+                        if (!scanner.hasNextLine()) {
+                            return false;
+                        }
+                        String retry = scanner.nextLine().trim();
+                        if (System.console() == null) {
+                            System.out.println(retry);
+                        }
+                        if ("0".equals(retry)) {
+                            return false;
+                        }
+                        break; // re-run outer loop to show form again
+                    }
+                } else if ("0".equals(choice)) {
+                    System.out.println("\nJob drive creation cancelled. Returning to Placement Officer Dashboard...");
+                    return false;
+                } else {
+                    System.out.println("[WARN] Invalid choice. Please enter 1 to Publish Job or 0 to Cancel.");
+                    System.out.println("----------------------------------------------------------------");
+                }
+            }
+        }
+    }
+
+    public boolean showCreateJobDrive(Scanner scanner) {
+        return showCreateJobDrive(scanner, null);
+    }
+
+    /**
+     * Validates all form inputs and executes job drive creation within a database transaction.
+     */
+    public boolean processJobDriveCreation(String companyIdStr, String jobRole, String minCgpaStr,
+                                           String branchesStr, String gradYearStr, String skillsStr,
+                                           String deadlineStr) {
+        // 1. Validate Company ID
+        if (ValidationUtil.isNullOrBlank(companyIdStr)) {
+            System.out.println("\n[ERROR] Company ID cannot be empty.");
+            return false;
+        }
+        int companyId;
+        try {
+            companyId = Integer.parseInt(companyIdStr.trim());
+        } catch (NumberFormatException e) {
+            System.out.println("\n[ERROR] Invalid Company ID: must be a valid numeric ID.");
+            return false;
+        }
+
+        Company company;
+        try {
+            company = companyDAO.findById(companyId);
+            if (company == null) {
+                System.out.println("\n[ERROR] Company with ID " + companyId + " does not exist in the database.");
+                return false;
+            }
+        } catch (SQLException e) {
+            System.out.println("\n[ERROR] Database error verifying company: " + e.getMessage());
+            return false;
+        }
+
+        // 2. Validate Job Role
+        if (ValidationUtil.isNullOrBlank(jobRole)) {
+            System.out.println("\n[ERROR] Job Role cannot be empty.");
+            return false;
+        }
+
+        // 3. Validate Minimum CGPA
+        if (ValidationUtil.isNullOrBlank(minCgpaStr)) {
+            System.out.println("\n[ERROR] Minimum CGPA cannot be empty.");
+            return false;
+        }
+        double minCgpa;
+        try {
+            minCgpa = Double.parseDouble(minCgpaStr.trim());
+        } catch (NumberFormatException e) {
+            System.out.println("\n[ERROR] Invalid Minimum CGPA: must be a numeric value between 0.00 and 10.00.");
+            return false;
+        }
+        if (minCgpa < 0.0 || minCgpa > 10.0) {
+            System.out.println("\n[ERROR] Minimum CGPA must be between 0.00 and 10.00.");
+            return false;
+        }
+
+        // 4. Validate Eligible Branches
+        if (ValidationUtil.isNullOrBlank(branchesStr)) {
+            System.out.println("\n[ERROR] Eligible Branches cannot be empty.");
+            return false;
+        }
+        List<String> branches = Arrays.stream(branchesStr.split(","))
+                .map(String::trim)
+                .filter(s -> !s.isEmpty())
+                .toList();
+        if (branches.isEmpty()) {
+            System.out.println("\n[ERROR] At least one eligible branch must be specified.");
+            return false;
+        }
+
+        // 5. Validate Graduation Year
+        if (ValidationUtil.isNullOrBlank(gradYearStr)) {
+            System.out.println("\n[ERROR] Graduation Year cannot be empty.");
+            return false;
+        }
+        int gradYear;
+        try {
+            gradYear = Integer.parseInt(gradYearStr.trim());
+        } catch (NumberFormatException e) {
+            System.out.println("\n[ERROR] Invalid Graduation Year: must be a valid 4-digit year.");
+            return false;
+        }
+        if (!ValidationUtil.isValidGraduationYear(gradYear)) {
+            System.out.println("\n[ERROR] Graduation year must be between 2020 and 2035.");
+            return false;
+        }
+
+        // 6. Validate Required Skills
+        if (ValidationUtil.isNullOrBlank(skillsStr)) {
+            System.out.println("\n[ERROR] Required Skills cannot be empty.");
+            return false;
+        }
+        List<String> skills = Arrays.stream(skillsStr.split(","))
+                .map(String::trim)
+                .filter(s -> !s.isEmpty())
+                .toList();
+        if (skills.isEmpty()) {
+            System.out.println("\n[ERROR] At least one required skill must be specified.");
+            return false;
+        }
+
+        // 7. Validate Application Deadline
+        if (ValidationUtil.isNullOrBlank(deadlineStr)) {
+            System.out.println("\n[ERROR] Application Deadline cannot be empty.");
+            return false;
+        }
+
+        // 8. Construct Job and persist via JobDAO
+        try {
+            Job job = new Job();
+            job.setCompanyId(companyId);
+            job.setTitle(jobRole.trim());
+            job.setDescription("Role: " + jobRole.trim() + " | Deadline: " + deadlineStr.trim());
+            job.setCtcLpa(BigDecimal.ZERO);
+            job.setLocation("Campus");
+            job.setMinCgpa(minCgpa);
+            job.setMaxBacklogs(0);
+            job.setGraduationYear(gradYear);
+            job.setStatus("OPEN");
+
+            Job createdJob = jobDAO.createJob(job, branches, skills);
+            System.out.println("\n[SUCCESS] Job drive created and published successfully!");
+            System.out.println("Job ID:     " + createdJob.getId());
+            System.out.println("Role:       " + createdJob.getTitle());
+            System.out.println("Company:    " + company.getName());
+            System.out.println("Target:     Batch of " + createdJob.getGraduationYear());
+            return true;
+        } catch (SQLException e) {
+            System.out.println("\n[ERROR] Database error publishing job drive: " + e.getMessage());
+            return false;
+        }
+    }
+
+    // =========================================================================
+    // ELIGIBILITY RESULT & SKILL MATCH RESULT (PAGE 9)
+    // =========================================================================
+
+    /**
+     * Renders header for Page 9 Part A — Eligibility Result matching exact design specifications.
+     */
+    public void renderEligibilityResultHeader() {
+        System.out.println("================================================================");
+        System.out.println("                    NEXTSTEP | STUDENT PORTAL");
+        System.out.println("                       ELIGIBILITY RESULT");
+        System.out.println("================================================================");
+        System.out.println();
+    }
+
+    /**
+     * Renders header for Page 9 Part B — Skill Match Result matching exact design specifications.
+     */
+    public void renderSkillMatchResultHeader() {
+        System.out.println("================================================================");
+        System.out.println("                    NEXTSTEP | STUDENT PORTAL");
+        System.out.println("                       SKILL MATCH RESULT");
+        System.out.println("================================================================");
+        System.out.println();
+    }
+
+    /**
+     * Displays Page 9 Part A — Eligibility Result and navigates to Part B.
+     */
+    public void showEligibilityAndSkillAnalysis(Scanner scanner, Student student) {
+        System.out.print("Enter Job ID: ");
+        if (!scanner.hasNextLine()) {
+            return;
+        }
+        String input = scanner.nextLine().trim();
+        if (System.console() == null) {
+            System.out.println(input);
+        }
+        if (input.isEmpty()) {
+            System.out.println("[ERROR] Job ID cannot be empty.");
+            return;
+        }
+
+        int jobId;
+        try {
+            jobId = Integer.parseInt(input);
+        } catch (NumberFormatException e) {
+            System.out.println("[ERROR] Invalid Job ID. Must be numeric.");
+            return;
+        }
+
+        Job job;
+        try {
+            job = jobDAO.findById(jobId);
+            if (job == null) {
+                System.out.println("[ERROR] Job with ID " + jobId + " not found.");
+                return;
+            }
+        } catch (SQLException e) {
+            System.out.println("[ERROR] Database error fetching job: " + e.getMessage());
+            return;
+        }
+
+        try {
+            if (student.getSkills() == null || student.getSkills().isEmpty()) {
+                student.setSkills(studentDAO.getStudentSkills(student.getId()));
+            }
+        } catch (SQLException e) {
+            System.out.println("[WARN] Could not load student skills: " + e.getMessage());
+        }
+
+        while (true) {
+            clearConsole();
+            renderEligibilityResultHeader();
+
+            System.out.println("Student Name:           " + (student.getFullName() != null ? student.getFullName() : "N/A"));
+            System.out.println("Job ID:                 " + job.getId());
+            System.out.println();
+            System.out.println("Criteria Checklist:");
+            System.out.println("----------------------------------------------------------------");
+            System.out.printf("%-24s%-19s%-16s%s%n", "Criteria", "Requirement", "Student Status", "Result");
+            System.out.println("----------------------------------------------------------------");
+
+            // 1. CGPA
+            boolean cgpaPass = student.getCgpa() >= job.getMinCgpa();
+            String cgpaReq = ">= " + job.getMinCgpa();
+            String cgpaStatus = String.valueOf(student.getCgpa());
+            System.out.printf("%-24s%-19s%-16s%s%n", "CGPA", cgpaReq, cgpaStatus, cgpaPass ? "PASS" : "FAIL");
+
+            // 2. Branch
+            List<String> branches = job.getEligibleBranches();
+            boolean branchPass = false;
+            String branchReq = (branches != null && !branches.isEmpty()) ? String.join(", ", branches) : "All";
+            if (branches == null || branches.isEmpty()) {
+                branchPass = true;
+            } else {
+                for (String b : branches) {
+                    if (b.equalsIgnoreCase(student.getBranch()) ||
+                        b.toLowerCase().contains(student.getBranch().toLowerCase()) ||
+                        student.getBranch().toLowerCase().contains(b.toLowerCase())) {
+                        branchPass = true;
+                        break;
+                    }
+                }
+            }
+            System.out.printf("%-24s%-19s%-16s%s%n", "Branch", branchReq, student.getBranch(), branchPass ? "PASS" : "FAIL");
+
+            // 3. Graduation Year
+            boolean gradPass = (job.getGraduationYear() <= 0) || (student.getGraduationYear() == job.getGraduationYear());
+            System.out.printf("%-24s%-19s%-16s%s%n", "Graduation Year", String.valueOf(job.getGraduationYear()), String.valueOf(student.getGraduationYear()), gradPass ? "PASS" : "FAIL");
+
+            System.out.println("----------------------------------------------------------------");
+            System.out.println();
+            boolean overallEligible = cgpaPass && branchPass && gradPass;
+            System.out.println("OVERALL RESULT: " + (overallEligible ? "ELIGIBLE" : "NOT ELIGIBLE"));
+            System.out.println();
+            System.out.println("----------------------------------------------------------------");
+            System.out.println("                  1. CHECK SKILL MATCH");
+            System.out.println("                  0. BACK");
+            System.out.println("================================================================");
+
+            System.out.print("Enter your choice: ");
+            if (!scanner.hasNextLine()) {
+                return;
+            }
+            String choice = scanner.nextLine().trim();
+            if (System.console() == null) {
+                System.out.println(choice);
+            }
+            System.out.println("================================================================");
+
+            if ("1".equals(choice)) {
+                showSkillMatchResult(student, job, scanner);
+            } else if ("0".equals(choice)) {
+                return;
+            } else {
+                System.out.println("[WARN] Invalid option. Please enter 1 to Check Skill Match or 0 to Back.");
+                System.out.println("----------------------------------------------------------------");
+            }
+        }
+    }
+
+    /**
+     * Displays Page 9 Part B — Skill Match Result for a student and job opening.
+     */
+    public void showSkillMatchResult(Student student, Job job, Scanner scanner) {
+        clearConsole();
+        renderSkillMatchResultHeader();
+
+        System.out.println("Student Name:           " + (student.getFullName() != null ? student.getFullName() : "N/A"));
+        System.out.println("Job ID:                 " + job.getId());
+        System.out.println();
+        System.out.println("Skill Analysis:");
+        System.out.println("----------------------------------------------------------------");
+        System.out.printf("%-24s%-19s%s%n", "Required Skill", "Student Skill", "Result");
+        System.out.println("----------------------------------------------------------------");
+
+        List<String> requiredSkills = job.getRequiredSkills() != null ? job.getRequiredSkills() : new ArrayList<>();
+        List<String> studentSkills = student.getSkills() != null ? student.getSkills() : new ArrayList<>();
+
+        int matchedCount = 0;
+        List<String> missingSkills = new ArrayList<>();
+
+        if (requiredSkills.isEmpty()) {
+            System.out.printf("%-24s%-19s%s%n", "None", "-", "MATCH");
+        } else {
+            for (String req : requiredSkills) {
+                String reqTrim = req.trim();
+                String foundSkill = null;
+                for (String s : studentSkills) {
+                    if (s.trim().equalsIgnoreCase(reqTrim)) {
+                        foundSkill = s.trim();
+                        break;
+                    }
+                }
+                if (foundSkill != null) {
+                    matchedCount++;
+                    System.out.printf("%-24s%-19s%s%n", reqTrim, foundSkill, "MATCH");
+                } else {
+                    missingSkills.add(reqTrim);
+                    System.out.printf("%-24s%-19s%s%n", reqTrim, "-", "MISSING");
+                }
+            }
+        }
+        System.out.println("----------------------------------------------------------------");
+        System.out.println();
+        int totalSkills = requiredSkills.size();
+        int matchPct = totalSkills > 0 ? (int) Math.round(((double) matchedCount / totalSkills) * 100.0) : 100;
+        System.out.println("Matched Skills:         " + matchedCount + " / " + totalSkills);
+        System.out.println("Skill Match:            " + matchPct + "%");
+        System.out.println("Missing Skills:         " + (missingSkills.isEmpty() ? "None" : String.join(", ", missingSkills)));
+        System.out.println();
+        System.out.println("----------------------------------------------------------------");
+        System.out.println("                  0. BACK");
+        System.out.println("================================================================");
+
+        while (true) {
+            System.out.print("Enter your choice: ");
+            if (!scanner.hasNextLine()) {
+                return;
+            }
+            String choice = scanner.nextLine().trim();
+            if (System.console() == null) {
+                System.out.println(choice);
+            }
+            System.out.println("================================================================");
+
+            if ("0".equals(choice)) {
+                return;
+            } else {
+                System.out.println("[WARN] Invalid option. Please enter 0 to Back.");
+                System.out.println("----------------------------------------------------------------");
+            }
+        }
+    }
+
+    public void showSkillMatchResult(Student student, Job job) {
+        showSkillMatchResult(student, job, new Scanner(System.in));
+    }
+
+    /**
+     * Direct flow for Option 5 on Student Dashboard (Analyse Skill Match).
+     */
+    private void showSkillAnalysisFlow(Scanner scanner, Student student) {
+        System.out.print("Enter Job ID: ");
+        if (!scanner.hasNextLine()) {
+            return;
+        }
+        String input = scanner.nextLine().trim();
+        if (System.console() == null) {
+            System.out.println(input);
+        }
+        if (input.isEmpty()) {
+            System.out.println("[ERROR] Job ID cannot be empty.");
+            return;
+        }
+
+        int jobId;
+        try {
+            jobId = Integer.parseInt(input);
+        } catch (NumberFormatException e) {
+            System.out.println("[ERROR] Invalid Job ID. Must be numeric.");
+            return;
+        }
+
+        try {
+            Job job = jobDAO.findById(jobId);
+            if (job == null) {
+                System.out.println("[ERROR] Job with ID " + jobId + " not found.");
+                return;
+            }
+            if (student.getSkills() == null || student.getSkills().isEmpty()) {
+                student.setSkills(studentDAO.getStudentSkills(student.getId()));
+            }
+            showSkillMatchResult(student, job, scanner);
+        } catch (SQLException e) {
+            System.out.println("[ERROR] Database error fetching job: " + e.getMessage());
         }
     }
 
