@@ -129,8 +129,8 @@ public class Main {
                 System.out.println("\nThank you for using NextStep. Goodbye!");
                 return false;
             } else {
-                System.out.println("[WARN] Invalid choice. Please enter 1 to Continue or 0 to Exit.");
-                System.out.println("----------------------------------------------------------------");
+                System.out.println(ConsoleTheme.warn("[WARN] Invalid choice. Please enter 1 to Continue or 0 to Exit."));
+                System.out.println(ConsoleTheme.divider("----------------------------------------------------------------"));
             }
         }
     }
@@ -206,8 +206,8 @@ public class Main {
             } else if ("0".equals(input)) {
                 return 0;
             } else {
-                System.out.println("[WARN] Invalid choice. Please enter 0, 1, or 2.");
-                System.out.println("----------------------------------------------------------------");
+                System.out.println(ConsoleTheme.warn("[WARN] Invalid choice. Please enter 0, 1, or 2."));
+                System.out.println(ConsoleTheme.divider("----------------------------------------------------------------"));
             }
         }
     }
@@ -712,8 +712,8 @@ public class Main {
                 } else if ("0".equals(choice)) {
                     return false; // return to Student Menu
                 } else {
-                    System.out.println("[WARN] Invalid choice. Please enter 1 to Sign In or 0 to Back.");
-                    System.out.println("----------------------------------------------------------------");
+                    System.out.println(ConsoleTheme.warn("[WARN] Invalid choice. Please enter 1 to Sign In or 0 to Back."));
+                    System.out.println(ConsoleTheme.divider("----------------------------------------------------------------"));
                 }
             }
         }
@@ -1089,7 +1089,7 @@ public class Main {
         boolean inPortal = true;
         while (inPortal) {
             renderStudentDashboardHeader(student);
-            System.out.print("Enter your choice: ");
+            System.out.print(ConsoleTheme.prompt("Enter your choice: "));
             if (!scanner.hasNextLine()) {
                 break;
             }
@@ -1097,7 +1097,7 @@ public class Main {
             if (System.console() == null) {
                 System.out.println(choice);
             }
-            System.out.println("================================================================");
+            System.out.println(ConsoleTheme.border("================================================================"));
 
             switch (choice) {
                 case "1" -> System.out.println("\nThis feature is not implemented yet.");
@@ -1276,7 +1276,7 @@ public class Main {
         boolean inPortal = true;
         while (inPortal) {
             renderOfficerDashboardHeader(officer);
-            System.out.print("Enter your choice: ");
+            System.out.print(ConsoleTheme.prompt("Enter your choice: "));
             if (!scanner.hasNextLine()) {
                 break;
             }
@@ -1284,7 +1284,7 @@ public class Main {
             if (System.console() == null) {
                 System.out.println(choice);
             }
-            System.out.println("================================================================");
+            System.out.println(ConsoleTheme.border("================================================================"));
 
             switch (choice) {
                 case "1" -> System.out.println("\nThis feature is not implemented yet.");
@@ -1836,8 +1836,8 @@ public class Main {
             } else if ("0".equals(choice)) {
                 return;
             } else {
-                System.out.println("[WARN] Invalid option. Please enter 1 to Check Skill Match or 0 to Back.");
-                System.out.println("----------------------------------------------------------------");
+                System.out.println(ConsoleTheme.warn("[WARN] Invalid option. Please enter 1 to Check Skill Match or 0 to Back."));
+                System.out.println(ConsoleTheme.divider("----------------------------------------------------------------"));
             }
         }
     }
@@ -1910,8 +1910,8 @@ public class Main {
             if ("0".equals(choice)) {
                 return;
             } else {
-                System.out.println("[WARN] Invalid option. Please enter 0 to Back.");
-                System.out.println("----------------------------------------------------------------");
+                System.out.println(ConsoleTheme.warn("[WARN] Invalid option. Please enter 0 to Back."));
+                System.out.println(ConsoleTheme.divider("----------------------------------------------------------------"));
             }
         }
     }
@@ -2160,7 +2160,7 @@ public class Main {
             }
 
             System.out.println("Application ID   Student ID    Student Name     Status");
-            System.out.println("---------------------------------------------------------");
+            System.out.println(ConsoleTheme.divider("---------------------------------------------------------"));
 
             if (apps.isEmpty()) {
                 System.out.println("No student applications have been submitted yet.");
@@ -2212,41 +2212,41 @@ public class Main {
     // =========================================================================
 
     private static String readString(Scanner scanner, String prompt) {
-        System.out.print(prompt);
+        System.out.print(ConsoleTheme.prompt(prompt));
         return scanner.nextLine().trim();
     }
 
     private static String readNonEmptyString(Scanner scanner, String prompt) {
         while (true) {
-            System.out.print(prompt);
+            System.out.print(ConsoleTheme.prompt(prompt));
             String input = scanner.nextLine().trim();
             if (!input.isEmpty()) {
                 return input;
             }
-            System.out.println("[WARN] Input cannot be blank. Please try again.");
+            System.out.println(ConsoleTheme.warn("[WARN] Input cannot be blank. Please try again."));
         }
     }
 
     private static int readInt(Scanner scanner, String prompt) {
         while (true) {
-            System.out.print(prompt);
+            System.out.print(ConsoleTheme.prompt(prompt));
             String line = scanner.nextLine().trim();
             try {
                 return Integer.parseInt(line);
             } catch (NumberFormatException e) {
-                System.out.println("[WARN] Please enter a valid whole number.");
+                System.out.println(ConsoleTheme.warn("[WARN] Please enter a valid whole number."));
             }
         }
     }
 
     private static double readDouble(Scanner scanner, String prompt) {
         while (true) {
-            System.out.print(prompt);
+            System.out.print(ConsoleTheme.prompt(prompt));
             String line = scanner.nextLine().trim();
             try {
                 return Double.parseDouble(line);
             } catch (NumberFormatException e) {
-                System.out.println("[WARN] Please enter a valid decimal number.");
+                System.out.println(ConsoleTheme.warn("[WARN] Please enter a valid decimal number."));
             }
         }
     }
