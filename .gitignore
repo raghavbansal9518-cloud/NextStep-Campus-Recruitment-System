@@ -5,6 +5,10 @@
 bin/
 out/
 
+# Runtime and generated output directories
+reports/
+scratch/
+
 # IDE configurations
 .idea/
 *.iml
@@ -21,4 +25,3 @@ Thumbs.db
 config/db.properties
 config/*.properties
 !config/db.properties.example
-
