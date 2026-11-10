@@ -249,13 +249,23 @@ public class Main {
             if (PresentationConfig.isStudentRegistrationVisible()) {
                 switch (choice) {
                     case 1 -> handleStudentRegistration(scanner);
-                    case 2 -> showStudentSignIn(scanner);
+                    case 2 -> {
+                        boolean signedIn = showStudentSignIn(scanner);
+                        if (signedIn) {
+                            inStudentMenu = false; // Sign out returns to Account Portal (Page 2)
+                        }
+                    }
                     case 0 -> inStudentMenu = false;
                     default -> System.out.println("[WARN] Invalid option. Please try again.");
                 }
             } else {
                 switch (choice) {
-                    case 1 -> showStudentSignIn(scanner);
+                    case 1 -> {
+                        boolean signedIn = showStudentSignIn(scanner);
+                        if (signedIn) {
+                            inStudentMenu = false; // Sign out returns to Account Portal (Page 2)
+                        }
+                    }
                     case 0 -> inStudentMenu = false;
                     default -> System.out.println("[WARN] Invalid option. Please try again.");
                 }
@@ -285,7 +295,12 @@ public class Main {
 
             switch (choice) {
                 case 1 -> showOfficerSignUp(scanner);
-                case 2 -> handleLogin(scanner, Role.PLACEMENT_OFFICER);
+                case 2 -> {
+                    boolean loggedIn = handleLogin(scanner, Role.PLACEMENT_OFFICER);
+                    if (loggedIn) {
+                        inOfficerMenu = false; // Sign out returns to Account Portal (Page 2)
+                    }
+                }
                 case 0 -> inOfficerMenu = false;
                 default -> System.out.println("[WARN] Invalid option. Please try again.");
             }
@@ -795,14 +810,13 @@ public class Main {
         return showStudentSignUp(scanner);
     }
 
-    public void handleLogin(Scanner scanner) {
-        handleLogin(scanner, null);
+    public boolean handleLogin(Scanner scanner) {
+        return handleLogin(scanner, null);
     }
 
-    public void handleLogin(Scanner scanner, Role expectedRole) {
+    public boolean handleLogin(Scanner scanner, Role expectedRole) {
         if (expectedRole == Role.STUDENT) {
-            showStudentSignIn(scanner);
-            return;
+            return showStudentSignIn(scanner);
         }
         String roleHeader = expectedRole == null ? "USER LOGIN" : "PLACEMENT OFFICER LOGIN";
         System.out.println("\n--- " + roleHeader + " ---");
@@ -813,31 +827,35 @@ public class Main {
             User user = authService.login(username, password);
             if (user == null) {
                 System.out.println("\n[ERROR] Invalid credentials. Please check your username and password.");
-                return;
+                return false;
             }
 
             if (expectedRole != null && user.getRole() != expectedRole) {
                 String roleName = expectedRole == Role.STUDENT ? "Student" : "Placement Officer";
                 System.out.println("\n[ERROR] Access denied. This account does not have " + roleName + " privileges.");
-                return;
+                return false;
             }
 
             if (user.getRole() == Role.STUDENT) {
                 Student student = studentDAO.findByUserId(user.getId());
                 if (student == null) {
                     System.out.println("\n[ERROR] Student profile not found for this account.");
-                    return;
+                    return false;
                 }
                 System.out.println("\n[SUCCESS] Login successful! Welcome, " + student.getFullName() + ".");
                 studentPortal(scanner, student, user);
+                return true;
             } else if (user.getRole() == Role.PLACEMENT_OFFICER) {
                 System.out.println("\n[SUCCESS] Login successful! Welcome, Placement Officer " + user.getUsername() + ".");
                 placementOfficerPortal(scanner, user);
+                return true;
             } else {
                 System.out.println("\n[ERROR] Unrecognized user role: " + user.getRole());
+                return false;
             }
         } catch (SQLException e) {
             System.out.println("\n[ERROR] Database error during login: " + e.getMessage());
+            return false;
         }
     }
 
@@ -873,57 +891,68 @@ public class Main {
     }
 
     // =========================================================================
-    // STUDENT PORTAL
+    // STUDENT DASHBOARD (PAGE 6)
     // =========================================================================
 
-    private void studentPortal(Scanner scanner, Student student, User user) {
+    /**
+     * Renders header and options for Page 6 — Student Dashboard matching exact design specifications.
+     */
+    public void renderStudentDashboardHeader(Student student) {
+        System.out.println("================================================================");
+        System.out.println("                    NEXTSTEP | STUDENT PORTAL");
+        System.out.println("                       STUDENT DASHBOARD");
+        System.out.println("================================================================");
+        System.out.println();
+        System.out.println("Welcome, " + (student != null && student.getFullName() != null ? student.getFullName() : "Student"));
+        System.out.println("Student ID: " + (student != null && student.getStudentId() != null ? student.getStudentId() : "N/A"));
+        System.out.println("----------------------------------------------------------------");
+        System.out.println();
+        System.out.println("  1. View My Profile");
+        System.out.println("  2. Update My Profile");
+        System.out.println("  3. Available Job Drives");
+        System.out.println("  4. Check Job Eligibility");
+        System.out.println("  5. Analyse Skill Match");
+        System.out.println("  6. Apply for a Job");
+        System.out.println("  7. View My Applications");
+        System.out.println("  0. Sign Out");
+        System.out.println();
+        System.out.println("----------------------------------------------------------------");
+    }
+
+    /**
+     * Displays Page 6 — Student Dashboard and dispatches user actions.
+     * 
+     * @param scanner active Scanner
+     * @param student authenticated Student profile
+     * @param user authenticated User account
+     */
+    public void studentPortal(Scanner scanner, Student student, User user) {
         boolean inPortal = true;
         while (inPortal) {
-            System.out.println("\n================ STUDENT PORTAL ================");
-            System.out.println("Logged in as: " + student.getFullName() + " (" + student.getStudentId() + ")");
-            System.out.println("Branch: " + student.getBranch() + " | CGPA: " + student.getCgpa() + " | Backlogs: " + student.getActiveBacklogs());
-            System.out.println("------------------------------------------------");
-            System.out.println("1. View Available Jobs");
-            System.out.println("2. View Job Details");
-            if (PresentationConfig.isStudentCheckEligibilityVisible()) {
-                System.out.println("3. Check Eligibility for a Job");
-                System.out.println("4. Apply for a Job");
-                System.out.println("5. View My Applications");
-                System.out.println("6. Logout");
-            } else {
-                System.out.println("3. Apply for a Job");
-                System.out.println("4. View My Applications");
-                System.out.println("5. Logout");
+            renderStudentDashboardHeader(student);
+            System.out.print("Enter your choice: ");
+            if (!scanner.hasNextLine()) {
+                break;
             }
-            System.out.println("================================================");
+            String choice = scanner.nextLine().trim();
+            if (System.console() == null) {
+                System.out.println(choice);
+            }
+            System.out.println("================================================================");
 
-            int choice = readInt(scanner, "Enter your choice: ");
-
-            if (PresentationConfig.isStudentCheckEligibilityVisible()) {
-                switch (choice) {
-                    case 1 -> viewAvailableJobs();
-                    case 2 -> viewJobDetails(scanner);
-                    case 3 -> checkStudentJobEligibility(scanner, student);
-                    case 4 -> applyForJobFlow(scanner, student);
-                    case 5 -> viewStudentApplications(student);
-                    case 6 -> {
-                        System.out.println("\nLogging out from Student Portal...");
-                        inPortal = false;
-                    }
-                    default -> System.out.println("[WARN] Invalid option. Please try again.");
+            switch (choice) {
+                case "1" -> System.out.println("\nThis feature is not implemented yet.");
+                case "2" -> System.out.println("\nThis feature is not implemented yet.");
+                case "3" -> viewAvailableJobs();
+                case "4" -> checkStudentJobEligibility(scanner, student);
+                case "5" -> System.out.println("\nThis feature is not implemented yet.");
+                case "6" -> applyForJobFlow(scanner, student);
+                case "7" -> viewStudentApplications(student);
+                case "0" -> {
+                    System.out.println("\nSigning out from Student Portal...");
+                    inPortal = false;
                 }
-            } else {
-                switch (choice) {
-                    case 1 -> viewAvailableJobs();
-                    case 2 -> viewJobDetails(scanner);
-                    case 3 -> applyForJobFlow(scanner, student);
-                    case 4 -> viewStudentApplications(student);
-                    case 5 -> {
-                        System.out.println("\nLogging out from Student Portal...");
-                        inPortal = false;
-                    }
-                    default -> System.out.println("[WARN] Invalid option. Please try again.");
-                }
+                default -> System.out.println("[WARN] Invalid option. Please try again.");
             }
         }
     }
@@ -1052,59 +1081,63 @@ public class Main {
     }
 
     // =========================================================================
-    // PLACEMENT OFFICER PORTAL
+    // PLACEMENT OFFICER DASHBOARD (PAGE 7)
     // =========================================================================
 
-    private void placementOfficerPortal(Scanner scanner, User officer) {
+    /**
+     * Renders header and options for Page 7 — Placement Officer Dashboard matching exact design specifications.
+     */
+    public void renderOfficerDashboardHeader(User officer) {
+        System.out.println("================================================================");
+        System.out.println("              NEXTSTEP | PLACEMENT OFFICER PORTAL");
+        System.out.println("                    OFFICER DASHBOARD");
+        System.out.println("================================================================");
+        System.out.println();
+        System.out.println("Welcome, Placement Officer");
+        System.out.println("Officer ID: Not available");
+        System.out.println("----------------------------------------------------------------");
+        System.out.println();
+        System.out.println("  1. Manage Student Records");
+        System.out.println("  2. Manage Companies");
+        System.out.println("  3. Manage Job Drives");
+        System.out.println("  4. View Applications");
+        System.out.println("  5. Update Application Status");
+        System.out.println("  0. Sign Out");
+        System.out.println();
+        System.out.println("----------------------------------------------------------------");
+    }
+
+    /**
+     * Displays Page 7 — Placement Officer Dashboard and dispatches user actions.
+     * 
+     * @param scanner active Scanner
+     * @param officer authenticated Placement Officer User account
+     */
+    public void placementOfficerPortal(Scanner scanner, User officer) {
         boolean inPortal = true;
         while (inPortal) {
-            System.out.println("\n=========== PLACEMENT OFFICER PORTAL ===========");
-            System.out.println("Logged in Officer: " + officer.getUsername() + " (" + officer.getEmail() + ")");
-            System.out.println("------------------------------------------------");
-            System.out.println("1. View Available Jobs");
-            System.out.println("2. View All Student Applications");
-            System.out.println("3. Update Application Status");
-
-            int nextOption = 4;
-            int summaryOption = -1;
-            int csvExportOption = -1;
-            int csvArchiveOption = -1;
-
-            if (PresentationConfig.isOfficerRecruitmentSummaryVisible()) {
-                summaryOption = nextOption++;
-                System.out.println(summaryOption + ". View Recruitment Summary");
+            renderOfficerDashboardHeader(officer);
+            System.out.print("Enter your choice: ");
+            if (!scanner.hasNextLine()) {
+                break;
             }
-            if (PresentationConfig.isOfficerCsvExportVisible()) {
-                csvExportOption = nextOption++;
-                System.out.println(csvExportOption + ". Export Applications Report to CSV");
-
-                csvArchiveOption = nextOption++;
-                System.out.println(csvArchiveOption + ". Process & Archive Applications CSV");
+            String choice = scanner.nextLine().trim();
+            if (System.console() == null) {
+                System.out.println(choice);
             }
+            System.out.println("================================================================");
 
-            int logoutOption = nextOption;
-            System.out.println(logoutOption + ". Logout");
-            System.out.println("================================================");
-
-            int choice = readInt(scanner, "Enter your choice: ");
-
-            if (choice == 1) {
-                viewAvailableJobs();
-            } else if (choice == 2) {
-                viewAllApplicationsFlow(officer);
-            } else if (choice == 3) {
-                updateApplicationStatusFlow(scanner, officer);
-            } else if (choice == summaryOption && summaryOption != -1) {
-                viewRecruitmentSummaryFlow(officer);
-            } else if (choice == csvExportOption && csvExportOption != -1) {
-                exportApplicationsToCsvFlow(officer);
-            } else if (choice == csvArchiveOption && csvArchiveOption != -1) {
-                processAndArchiveCsvFlow(scanner, officer);
-            } else if (choice == logoutOption) {
-                System.out.println("\nLogging out from Placement Officer Portal...");
-                inPortal = false;
-            } else {
-                System.out.println("[WARN] Invalid option. Please try again.");
+            switch (choice) {
+                case "1" -> System.out.println("\nThis feature is not implemented yet.");
+                case "2" -> System.out.println("\nThis feature is not implemented yet.");
+                case "3" -> System.out.println("\nThis feature is not implemented yet.");
+                case "4" -> viewAllApplicationsFlow(officer);
+                case "5" -> updateApplicationStatusFlow(scanner, officer);
+                case "0" -> {
+                    System.out.println("\nSigning out from Placement Officer Portal...");
+                    inPortal = false;
+                }
+                default -> System.out.println("[WARN] Invalid option. Please try again.");
             }
         }
     }
