@@ -223,10 +223,27 @@ public class AuthService {
     public static final String ACTIVATION_CODE_ENV = "NEXTSTEP_OFFICER_ACTIVATION_CODE";
 
     /**
+     * Checks whether an authorized officer activation code is configured in the environment.
+     * Checks system property 'nextstep.officer.activation.code', then environment variable
+     * 'NEXTSTEP_OFFICER_ACTIVATION_CODE'. Never uses a hardcoded fallback.
+     * 
+     * @return boolean true if an activation code is configured, false otherwise
+     */
+    public boolean isOfficerActivationConfigured() {
+        String authorizedCode = System.getProperty(ACTIVATION_CODE_PROP);
+        if (authorizedCode == null || authorizedCode.trim().isEmpty()) {
+            authorizedCode = System.getenv(ACTIVATION_CODE_ENV);
+        }
+        return authorizedCode != null && !authorizedCode.trim().isEmpty();
+    }
+
+    /**
      * Verifies whether the provided activation code authorizes placement officer registration.
      * Restricted to configured administrative activation code (via system property or environment variable).
-     * Falls back to institutional default 'CAMPUS_OFFICER_2026' to allow authorized academic testing
-     * while rejecting unauthorized public registration with arbitrary codes.
+     * Never permits registration using a built-in default fallback.
+     * 
+     * @param activationCode code entered by user
+     * @return boolean true if matching the configured code, false if incorrect or unconfigured
      */
     public boolean verifyOfficerActivationCode(String activationCode) {
         if (ValidationUtil.isNullOrBlank(activationCode)) {
@@ -238,7 +255,7 @@ public class AuthService {
             authorizedCode = System.getenv(ACTIVATION_CODE_ENV);
         }
         if (authorizedCode == null || authorizedCode.trim().isEmpty()) {
-            authorizedCode = "CAMPUS_OFFICER_2026";
+            return false; // Not configured; never permit registration with built-in default
         }
 
         return authorizedCode.trim().equals(activationCode.trim());
@@ -247,9 +264,13 @@ public class AuthService {
     /**
      * Overloaded method for Page 5 (Officer Sign Up) validating the activation code,
      * ensuring username uniqueness, and persisting the Placement Officer user account.
+     * Fails with IllegalStateException if no activation code is configured in the system environment.
      */
     public User registerPlacementOfficer(String officerId, String fullName, String email,
                                          String username, String password, String activationCode) throws SQLException {
+        if (!isOfficerActivationConfigured()) {
+            throw new IllegalStateException("Officer registration is disabled: No activation code has been configured by the system administrator.");
+        }
         if (!verifyOfficerActivationCode(activationCode)) {
             throw new IllegalArgumentException("Invalid activation code. Placement officer registration unauthorized.");
         }

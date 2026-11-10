@@ -751,6 +751,12 @@ public class Main {
         }
 
         // 3. Activation Code verification
+        if (!authService.isOfficerActivationConfigured()) {
+            System.out.println("\n[ERROR] Configuration error: Officer registration is disabled.");
+            System.out.println("System administrator has not configured an activation code.");
+            System.out.println("Please set '-Dnextstep.officer.activation.code=<CODE>' or environment variable 'NEXTSTEP_OFFICER_ACTIVATION_CODE'.");
+            return false;
+        }
         if (!authService.verifyOfficerActivationCode(activationCode)) {
             System.out.println("\n[ERROR] Invalid activation code. Placement officer registration unauthorized.");
             return false;
@@ -769,6 +775,9 @@ public class Main {
             System.out.println("You can now sign in using option 2 (Officer Sign In).");
             System.out.println("================================================================");
             return true;
+        } catch (IllegalStateException e) {
+            System.out.println("\n[ERROR] Configuration error: " + e.getMessage());
+            return false;
         } catch (IllegalArgumentException e) {
             System.out.println("\n[ERROR] Registration validation failed: " + e.getMessage());
             return false;
