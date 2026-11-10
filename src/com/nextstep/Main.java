@@ -23,6 +23,7 @@ import java.math.BigDecimal;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Scanner;
@@ -331,7 +332,7 @@ public class Main {
         while (true) {
             clearConsole();
             renderStudentSignUpHeader();
-            System.out.println(ConsoleTheme.dim("[Form Shortcuts: 'B' = Previous Field | 'N' = Next Field]"));
+            System.out.println(ConsoleTheme.dim("[Form Shortcuts: 'B' = Previous Field | 'N' = Next Field] (Esc / Tab / Enter supported)"));
             System.out.println();
 
             String[] prompts = {
@@ -452,10 +453,9 @@ public class Main {
             String currentVal = (values[i] != null) ? values[i] : "";
 
             if (!currentVal.isEmpty() && !masked) {
-                System.out.print(ConsoleTheme.prompt(prompt.trim() + " [" + currentVal + "]: "));
-            } else {
-                System.out.print(ConsoleTheme.prompt(prompt));
+                System.out.println(ConsoleTheme.dim("  [Current: " + currentVal + " — Enter to keep, or type new value]"));
             }
+            System.out.print(ConsoleTheme.prompt(prompt));
 
             String input;
             if (masked) {
@@ -479,8 +479,8 @@ public class Main {
                 }
             }
 
-            // Shortcut 'B' / 'b': Return to previous field
-            if (input.equalsIgnoreCase("B")) {
+            // Shortcut 'B' / 'b' / Esc / \u001B / \033: Return to previous field
+            if (input.equalsIgnoreCase("B") || input.equalsIgnoreCase("ESC") || input.equals("\u001B") || input.equals("\033")) {
                 if (i > 0) {
                     i--;
                     System.out.println(ConsoleTheme.dim("[Returned to previous field]"));
@@ -490,8 +490,8 @@ public class Main {
                 continue;
             }
 
-            // Shortcut 'N' / 'n': Move forward to next field
-            if (input.equalsIgnoreCase("N")) {
+            // Shortcut 'N' / 'n' / Tab / \t: Move forward to next field
+            if (input.equalsIgnoreCase("N") || input.equalsIgnoreCase("TAB") || input.equals("\t")) {
                 if (!currentVal.isEmpty()) {
                     i++;
                 } else {
@@ -791,7 +791,7 @@ public class Main {
         while (true) {
             clearConsole();
             renderOfficerSignUpHeader();
-            System.out.println(ConsoleTheme.dim("[Form Shortcuts: 'B' = Previous Field | 'N' = Next Field]"));
+            System.out.println(ConsoleTheme.dim("[Form Shortcuts: 'B' = Previous Field | 'N' = Next Field] (Esc / Tab / Enter supported)"));
             System.out.println();
 
             String[] prompts = {
@@ -979,8 +979,8 @@ public class Main {
         }
         String roleHeader = expectedRole == null ? "USER LOGIN" : "PLACEMENT OFFICER LOGIN";
         System.out.println("\n--- " + roleHeader + " ---");
-        String username = readNonEmptyString(scanner, "Username: ");
-        String password = readNonEmptyString(scanner, "Password: ");
+        String username = readField(scanner, "Username:               ");
+        String password = readPasswordField(scanner, "Password:               ");
 
         try {
             User user = authService.login(username, password);
@@ -1486,7 +1486,7 @@ public class Main {
         while (true) {
             clearConsole();
             renderCreateJobDriveHeader();
-            System.out.println(ConsoleTheme.dim("[Form Shortcuts: 'B' = Previous Field | 'N' = Next Field]"));
+            System.out.println(ConsoleTheme.dim("[Form Shortcuts: 'B' = Previous Field | 'N' = Next Field] (Esc / Tab / Enter supported)"));
             System.out.println();
 
             int nextJobId = 1;
@@ -1494,6 +1494,25 @@ public class Main {
                 nextJobId = jobDAO.getNextJobId();
             } catch (SQLException e) {
                 System.out.println(ConsoleTheme.warn("[WARN] Could not compute next Job ID: " + e.getMessage()));
+            }
+
+            // Retrieve and display available partner companies from MySQL
+            List<Company> companies;
+            try {
+                companies = companyDAO.findAllCompanies();
+            } catch (SQLException e) {
+                System.out.println(ConsoleTheme.error("[ERROR] Failed to load hiring companies: " + e.getMessage()));
+                companies = Collections.emptyList();
+            }
+
+            if (companies.isEmpty()) {
+                System.out.println(ConsoleTheme.warn("[NOTICE] No partner companies registered in database."));
+            } else {
+                System.out.println(ConsoleTheme.text("Available Partner Companies:"));
+                for (Company c : companies) {
+                    System.out.printf("  [ID %d] %s%n", c.getId(), c.getName());
+                }
+                System.out.println();
             }
 
             System.out.println("Job ID:                 " + nextJobId);
