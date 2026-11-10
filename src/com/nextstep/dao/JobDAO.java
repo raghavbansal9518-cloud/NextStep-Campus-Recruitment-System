@@ -45,6 +45,111 @@ public class JobDAO {
     }
 
     /**
+     * Determines the next expected job ID for display prior to insertion.
+     */
+    public int getNextJobId() throws SQLException {
+        String sql = "SELECT COALESCE(MAX(id), 0) + 1 FROM jobs";
+        try (Connection conn = DatabaseConnection.getConnection();
+             Statement stmt = conn.createStatement();
+             ResultSet rs = stmt.executeQuery(sql)) {
+            if (rs.next()) {
+                return rs.getInt(1);
+            }
+        }
+        return 1;
+    }
+
+    /**
+     * Persists a new job opening along with its normalized eligible branches and required skills
+     * in a single atomic database transaction.
+     * 
+     * @param job Job entity containing companyId, title, description, minCgpa, graduationYear, etc.
+     * @param eligibleBranches list of branch names
+     * @param requiredSkills list of required skill names
+     * @return Job the persisted job with database-assigned primary key
+     * @throws SQLException on database error
+     */
+    public Job createJob(Job job, List<String> eligibleBranches, List<String> requiredSkills) throws SQLException {
+        if (job == null) {
+            throw new IllegalArgumentException("Job cannot be null.");
+        }
+
+        String sql = "INSERT INTO jobs (company_id, title, description, ctc_lpa, location, min_cgpa, max_backlogs, graduation_year, status) " +
+                     "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)";
+
+        try (Connection conn = DatabaseConnection.getConnection()) {
+            conn.setAutoCommit(false);
+            try {
+                int generatedId;
+                try (PreparedStatement stmt = conn.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
+                    stmt.setInt(1, job.getCompanyId());
+                    stmt.setString(2, job.getTitle());
+                    stmt.setString(3, job.getDescription() != null ? job.getDescription() : "Campus Drive for " + job.getTitle());
+                    stmt.setBigDecimal(4, job.getCtcLpa() != null ? job.getCtcLpa() : BigDecimal.ZERO);
+                    stmt.setString(5, job.getLocation() != null ? job.getLocation() : "Campus");
+                    stmt.setDouble(6, job.getMinCgpa());
+                    stmt.setInt(7, job.getMaxBacklogs());
+                    stmt.setInt(8, job.getGraduationYear());
+                    stmt.setString(9, job.getStatus() != null ? job.getStatus() : "OPEN");
+
+                    stmt.executeUpdate();
+
+                    try (ResultSet rs = stmt.getGeneratedKeys()) {
+                        if (rs.next()) {
+                            generatedId = rs.getInt(1);
+                        } else {
+                            throw new SQLException("Creating job drive failed, no ID obtained.");
+                        }
+                    }
+                }
+
+                // Insert eligible branches
+                if (eligibleBranches != null && !eligibleBranches.isEmpty()) {
+                    String branchSql = "INSERT INTO job_eligible_branches (job_id, branch_name) VALUES (?, ?)";
+                    try (PreparedStatement bStmt = conn.prepareStatement(branchSql)) {
+                        for (String branch : eligibleBranches) {
+                            String trimmed = branch.trim();
+                            if (!trimmed.isEmpty()) {
+                                bStmt.setInt(1, generatedId);
+                                bStmt.setString(2, trimmed);
+                                bStmt.addBatch();
+                            }
+                        }
+                        bStmt.executeBatch();
+                    }
+                }
+
+                // Insert required skills
+                if (requiredSkills != null && !requiredSkills.isEmpty()) {
+                    String skillSql = "INSERT INTO job_required_skills (job_id, skill_name) VALUES (?, ?)";
+                    try (PreparedStatement sStmt = conn.prepareStatement(skillSql)) {
+                        for (String skill : requiredSkills) {
+                            String trimmed = skill.trim();
+                            if (!trimmed.isEmpty()) {
+                                sStmt.setInt(1, generatedId);
+                                sStmt.setString(2, trimmed);
+                                sStmt.addBatch();
+                            }
+                        }
+                        sStmt.executeBatch();
+                    }
+                }
+
+                conn.commit();
+                job.setId(generatedId);
+                job.setEligibleBranches(eligibleBranches);
+                job.setRequiredSkills(requiredSkills);
+                return job;
+            } catch (SQLException e) {
+                conn.rollback();
+                throw e;
+            } finally {
+                conn.setAutoCommit(true);
+            }
+        }
+    }
+
+    /**
      * Finds a job opening by its primary key ID.
      */
     public Job findById(int id) throws SQLException {
