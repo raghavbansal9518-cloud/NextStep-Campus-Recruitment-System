@@ -70,47 +70,22 @@ public class Main {
      * Top-level application loop.
      */
     public void run(Scanner scanner) {
-        // Welcome Page (Page 1)
-        if (!showWelcomePage(scanner)) {
-            return; // Option 0: Exit application cleanly
-        }
-
-        // Check if an initial placement officer exists; prompt setup if none found
-        checkFirstRunOfficerSetup(scanner);
-
-        boolean running = true;
-        while (running) {
-            System.out.println("\n----------------- MAIN MENU ------------------");
-            if (PresentationConfig.isStudentRegistrationVisible()) {
-                System.out.println("1. Student Registration");
-                System.out.println("2. Login");
-                System.out.println("3. Exit");
-            } else {
-                System.out.println("1. Login");
-                System.out.println("2. Exit");
+        boolean inApp = true;
+        while (inApp) {
+            // Welcome Page (Page 1)
+            if (!showWelcomePage(scanner)) {
+                inApp = false;
+                break; // Option 0: Exit application cleanly
             }
-            System.out.println("----------------------------------------------");
 
-            int choice = readInt(scanner, "Enter your choice: ");
-
-            if (PresentationConfig.isStudentRegistrationVisible()) {
-                switch (choice) {
-                    case 1 -> handleStudentRegistration(scanner);
-                    case 2 -> handleLogin(scanner);
-                    case 3 -> {
-                        System.out.println("\nThank you for using NextStep. Goodbye!");
-                        running = false;
-                    }
-                    default -> System.out.println("[WARN] Invalid option. Please try again.");
-                }
-            } else {
-                switch (choice) {
-                    case 1 -> handleLogin(scanner);
-                    case 2 -> {
-                        System.out.println("\nThank you for using NextStep. Goodbye!");
-                        running = false;
-                    }
-                    default -> System.out.println("[WARN] Invalid option. Please try again.");
+            // Account Portal (Page 2)
+            boolean inAccountPortal = true;
+            while (inAccountPortal) {
+                int roleChoice = showAccountPortal(scanner);
+                switch (roleChoice) {
+                    case 1 -> handleStudentWorkflow(scanner);
+                    case 2 -> handlePlacementOfficerWorkflow(scanner);
+                    case 0 -> inAccountPortal = false; // Option 0: Back to Welcome Page (Page 1)
                 }
             }
         }
@@ -192,6 +167,112 @@ public class Main {
         }
     }
 
+    // =========================================================================
+    // ACCOUNT PORTAL (PAGE 2) & ROLE NAVIGATION
+    // =========================================================================
+
+    /**
+     * Displays Page 2 — Account Portal and prompts the user to select their role.
+     * 
+     * @param scanner active Scanner
+     * @return int chosen option (1 for Student, 2 for Placement Officer, 0 for Back)
+     */
+    public int showAccountPortal(Scanner scanner) {
+        clearConsole();
+        renderAccountPortalScreen();
+
+        while (true) {
+            System.out.print("Enter your choice: ");
+            if (!scanner.hasNextLine()) {
+                return 0;
+            }
+            String input = scanner.nextLine().trim();
+            if (System.console() == null) {
+                System.out.println(input);
+            }
+            System.out.println("================================================================");
+
+            if ("1".equals(input)) {
+                return 1;
+            } else if ("2".equals(input)) {
+                return 2;
+            } else if ("0".equals(input)) {
+                return 0;
+            } else {
+                System.out.println("[WARN] Invalid choice. Please enter 0, 1, or 2.");
+                System.out.println("----------------------------------------------------------------");
+            }
+        }
+    }
+
+    /**
+     * Renders the Account Portal (Page 2) console layout matching exact design specifications.
+     */
+    public void renderAccountPortalScreen() {
+        System.out.println("================================================================");
+        System.out.println("                         NEXTSTEP");
+        System.out.println("                     ACCOUNT PORTAL");
+        System.out.println("================================================================");
+        System.out.println();
+        System.out.println("                     SELECT YOUR ROLE");
+        System.out.println();
+        System.out.println("                  1. Student");
+        System.out.println("                  2. Placement Officer");
+        System.out.println("                  0. Back");
+        System.out.println();
+        System.out.println("----------------------------------------------------------------");
+    }
+
+    /**
+     * Handles the Student registration and authentication workflow.
+     * Reuses existing student registration and student login functionality.
+     * 
+     * @param scanner active Scanner
+     */
+    private void handleStudentWorkflow(Scanner scanner) {
+        boolean inStudentMenu = true;
+        while (inStudentMenu) {
+            System.out.println("\n---------------- STUDENT MENU ----------------");
+            if (PresentationConfig.isStudentRegistrationVisible()) {
+                System.out.println("1. Student Registration");
+                System.out.println("2. Student Login");
+                System.out.println("0. Back");
+            } else {
+                System.out.println("1. Student Login");
+                System.out.println("0. Back");
+            }
+            System.out.println("----------------------------------------------");
+
+            int choice = readInt(scanner, "Enter your choice: ");
+
+            if (PresentationConfig.isStudentRegistrationVisible()) {
+                switch (choice) {
+                    case 1 -> handleStudentRegistration(scanner);
+                    case 2 -> handleLogin(scanner, Role.STUDENT);
+                    case 0 -> inStudentMenu = false;
+                    default -> System.out.println("[WARN] Invalid option. Please try again.");
+                }
+            } else {
+                switch (choice) {
+                    case 1 -> handleLogin(scanner, Role.STUDENT);
+                    case 0 -> inStudentMenu = false;
+                    default -> System.out.println("[WARN] Invalid option. Please try again.");
+                }
+            }
+        }
+    }
+
+    /**
+     * Handles the Placement Officer authentication workflow.
+     * Reuses existing authentication, first-run provisioning, and role verification.
+     * 
+     * @param scanner active Scanner
+     */
+    private void handlePlacementOfficerWorkflow(Scanner scanner) {
+        checkFirstRunOfficerSetup(scanner);
+        handleLogin(scanner, Role.PLACEMENT_OFFICER);
+    }
+
     // AUTHENTICATION & REGISTRATION FLOWS
     // =========================================================================
 
@@ -233,8 +314,14 @@ public class Main {
         }
     }
 
-    private void handleLogin(Scanner scanner) {
-        System.out.println("\n--- USER LOGIN ---");
+    public void handleLogin(Scanner scanner) {
+        handleLogin(scanner, null);
+    }
+
+    public void handleLogin(Scanner scanner, Role expectedRole) {
+        String roleHeader = expectedRole == null ? "USER LOGIN" :
+                (expectedRole == Role.STUDENT ? "STUDENT LOGIN" : "PLACEMENT OFFICER LOGIN");
+        System.out.println("\n--- " + roleHeader + " ---");
         String username = readNonEmptyString(scanner, "Username: ");
         String password = readNonEmptyString(scanner, "Password: ");
 
@@ -242,6 +329,12 @@ public class Main {
             User user = authService.login(username, password);
             if (user == null) {
                 System.out.println("\n[ERROR] Invalid credentials. Please check your username and password.");
+                return;
+            }
+
+            if (expectedRole != null && user.getRole() != expectedRole) {
+                String roleName = expectedRole == Role.STUDENT ? "Student" : "Placement Officer";
+                System.out.println("\n[ERROR] Access denied. This account does not have " + roleName + " privileges.");
                 return;
             }
 
