@@ -951,7 +951,7 @@ public class Main {
                 case "3" -> viewAvailableJobs();
                 case "4" -> showEligibilityAndSkillAnalysis(scanner, student);
                 case "5" -> showSkillAnalysisFlow(scanner, student);
-                case "6" -> applyForJobFlow(scanner, student);
+                case "6" -> showApplicationConfirmation(scanner, student);
                 case "7" -> viewStudentApplications(student);
                 case "0" -> {
                     System.out.println("\nSigning out from Student Portal...");
@@ -1136,7 +1136,7 @@ public class Main {
                 case "1" -> System.out.println("\nThis feature is not implemented yet.");
                 case "2" -> System.out.println("\nThis feature is not implemented yet.");
                 case "3" -> showCreateJobDrive(scanner, officer);
-                case "4" -> viewAllApplicationsFlow(officer);
+                case "4" -> showApplicationRecords(scanner, officer);
                 case "5" -> updateApplicationStatusFlow(scanner, officer);
                 case "0" -> {
                     System.out.println("\nSigning out from Placement Officer Portal...");
@@ -1784,6 +1784,269 @@ public class Main {
         } catch (SQLException e) {
             System.out.println("[ERROR] Database error fetching job: " + e.getMessage());
         }
+    }
+
+    // =========================================================================
+    // APPLICATION CONFIRMATION (PAGE 10)
+    // =========================================================================
+
+    /**
+     * Renders header for Page 10 — Application Confirmation matching exact design specifications.
+     */
+    public void renderApplicationConfirmationHeader() {
+        System.out.println("================================================================");
+        System.out.println("                   NEXTSTEP | APPLICATION PORTAL");
+        System.out.println("                    APPLICATION CONFIRMATION");
+        System.out.println("================================================================");
+        System.out.println();
+    }
+
+    /**
+     * Displays Page 10 — Application Confirmation and processes interactive application submission.
+     * 
+     * @param scanner active Scanner
+     * @param student authenticated Student profile
+     */
+    public void showApplicationConfirmation(Scanner scanner, Student student) {
+        if (student == null) {
+            System.out.println("[ERROR] Student session not found.");
+            return;
+        }
+
+        System.out.print("Enter Job ID you want to apply for: ");
+        if (!scanner.hasNextLine()) {
+            return;
+        }
+        String input = scanner.nextLine().trim();
+        if (System.console() == null) {
+            System.out.println(input);
+        }
+        if (input.isEmpty()) {
+            System.out.println("[ERROR] Job ID cannot be empty.");
+            return;
+        }
+
+        int jobId;
+        try {
+            jobId = Integer.parseInt(input);
+        } catch (NumberFormatException e) {
+            System.out.println("[ERROR] Invalid Job ID. Must be numeric.");
+            return;
+        }
+
+        Job job;
+        try {
+            job = jobDAO.findById(jobId);
+            if (job == null) {
+                System.out.println("[ERROR] Job with ID " + jobId + " not found.");
+                return;
+            }
+        } catch (SQLException e) {
+            System.out.println("[ERROR] Database error fetching job: " + e.getMessage());
+            return;
+        }
+
+        // Ensure student skills are loaded
+        if (student.getSkills() == null || student.getSkills().isEmpty()) {
+            try {
+                student.setSkills(studentDAO.getStudentSkills(student.getId()));
+            } catch (SQLException ignored) {
+            }
+        }
+
+        // Calculate Eligibility dynamically using Page 9 criteria
+        boolean cgpaPass = student.getCgpa() >= job.getMinCgpa();
+        List<String> branches = job.getEligibleBranches();
+        boolean branchPass = false;
+        if (branches == null || branches.isEmpty()) {
+            branchPass = true;
+        } else {
+            for (String b : branches) {
+                if (b.equalsIgnoreCase(student.getBranch()) ||
+                    b.toLowerCase().contains(student.getBranch().toLowerCase()) ||
+                    student.getBranch().toLowerCase().contains(b.toLowerCase())) {
+                    branchPass = true;
+                    break;
+                }
+            }
+        }
+        boolean gradPass = (job.getGraduationYear() <= 0) || (student.getGraduationYear() == job.getGraduationYear());
+        boolean backlogPass = student.getActiveBacklogs() <= job.getMaxBacklogs();
+        boolean isEligible = cgpaPass && branchPass && gradPass && backlogPass;
+        String eligibilityStr = isEligible ? "ELIGIBLE" : "NOT ELIGIBLE";
+
+        // Calculate Skill Match dynamically using Page 9 logic
+        List<String> reqSkills = job.getRequiredSkills() != null ? job.getRequiredSkills() : new ArrayList<>();
+        List<String> stdSkills = student.getSkills() != null ? student.getSkills() : new ArrayList<>();
+        int matchedCount = 0;
+        for (String req : reqSkills) {
+            for (String s : stdSkills) {
+                if (s.trim().equalsIgnoreCase(req.trim())) {
+                    matchedCount++;
+                    break;
+                }
+            }
+        }
+        int totalSkills = reqSkills.size();
+        int matchPct = totalSkills > 0 ? (int) Math.round(((double) matchedCount / totalSkills) * 100.0) : 100;
+        String skillMatchStr = matchPct + "%";
+
+        while (true) {
+            clearConsole();
+            renderApplicationConfirmationHeader();
+
+            System.out.println("Student ID:          " + (student.getStudentId() != null ? student.getStudentId() : "N/A"));
+            System.out.println("Job ID:              " + job.getId());
+            System.out.println("Job Role:            " + job.getTitle());
+            System.out.println("Eligibility:         " + eligibilityStr);
+            System.out.println("Skill Match:         " + skillMatchStr);
+            System.out.println();
+            System.out.println("----------------------------------------------------------------");
+            System.out.println("Are you sure you want to apply?");
+            System.out.println();
+            System.out.println("                 1. CONFIRM APPLICATION");
+            System.out.println("                 0. CANCEL");
+            System.out.println();
+            System.out.println("----------------------------------------------------------------");
+
+            System.out.print("Enter your choice: ");
+            if (!scanner.hasNextLine()) {
+                return;
+            }
+            String choice = scanner.nextLine().trim();
+            if (System.console() == null) {
+                System.out.println(choice);
+            }
+            System.out.println("================================================================");
+
+            if ("1".equals(choice)) {
+                try {
+                    Application app = recruitmentService.applyForJob(student, job.getId());
+                    renderApplicationConfirmationHeader();
+                    System.out.println("SUCCESS: Application " + app.getId() + " submitted!");
+                    System.out.println("Status: " + app.getStatus());
+                    System.out.println();
+                    System.out.println("================================================================");
+                    return;
+                } catch (IllegalStateException e) {
+                    System.out.println("\n[BLOCKED] Application rejected: " + e.getMessage());
+                    return;
+                } catch (IllegalArgumentException e) {
+                    System.out.println("\n[ERROR] Invalid application request: " + e.getMessage());
+                    return;
+                } catch (SQLException e) {
+                    System.out.println("\n[ERROR] Database error processing application: " + e.getMessage());
+                    return;
+                }
+            } else if ("0".equals(choice)) {
+                System.out.println("\nApplication cancelled. Returning to Student Dashboard...");
+                return;
+            } else {
+                System.out.println("[WARN] Invalid option. Please enter 1 to Confirm Application or 0 to Cancel.");
+                System.out.println("----------------------------------------------------------------");
+            }
+        }
+    }
+
+    public void showApplicationConfirmation(Scanner scanner) {
+        showApplicationConfirmation(scanner, null);
+    }
+
+    // =========================================================================
+    // APPLICATION RECORDS (PAGE 11)
+    // =========================================================================
+
+    /**
+     * Renders header for Page 11 — Application Records matching exact design specifications.
+     */
+    public void renderApplicationRecordsHeader() {
+        System.out.println("================================================================");
+        System.out.println("                NEXTSTEP | APPLICATION MANAGEMENT");
+        System.out.println("                     APPLICATION RECORDS");
+        System.out.println("================================================================");
+        System.out.println();
+    }
+
+    /**
+     * Renders footer and action options for Page 11 — Application Records.
+     */
+    public void renderApplicationRecordsFooter() {
+        System.out.println("---------------------------------------------------------");
+        System.out.println("                 1. VIEW DETAILS");
+        System.out.println("                 0. BACK");
+        System.out.println("================================================================");
+    }
+
+    /**
+     * Displays Page 11 — Application Records for authenticated placement officers.
+     * 
+     * @param scanner active Scanner
+     * @param officer authenticated Placement Officer User account
+     */
+    public void showApplicationRecords(Scanner scanner, User officer) {
+        if (officer == null || officer.getRole() != Role.PLACEMENT_OFFICER) {
+            System.out.println("[SECURITY ERROR] Access denied: Only placement officers can view application records.");
+            return;
+        }
+
+        while (true) {
+            clearConsole();
+            renderApplicationRecordsHeader();
+
+            List<Application> apps;
+            try {
+                apps = recruitmentService.getAllApplications(officer);
+            } catch (SQLException e) {
+                System.out.println("[ERROR] Failed to load application records: " + e.getMessage());
+                return;
+            }
+
+            System.out.println("Application ID   Student ID    Student Name     Status");
+            System.out.println("---------------------------------------------------------");
+
+            if (apps.isEmpty()) {
+                System.out.println("No student applications have been submitted yet.");
+            } else {
+                for (Application a : apps) {
+                    String appIdStr = String.valueOf(a.getId());
+                    String rollNo = (a.getStudentRollNumber() != null) ? a.getStudentRollNumber() : String.valueOf(a.getStudentId());
+                    String name = (a.getStudentName() != null) ? a.getStudentName() : "N/A";
+                    if (name.length() > 16) {
+                        name = name.substring(0, 13) + "...";
+                    }
+                    String statusStr = (a.getStatus() != null) ? a.getStatus().name() : "N/A";
+                    System.out.printf("%-17s%-14s%-17s%s%n", appIdStr, rollNo, name, statusStr);
+                }
+            }
+            System.out.println();
+            renderApplicationRecordsFooter();
+
+            while (true) {
+                System.out.print("Enter your choice: ");
+                if (!scanner.hasNextLine()) {
+                    return;
+                }
+                String choice = scanner.nextLine().trim();
+                if (System.console() == null) {
+                    System.out.println(choice);
+                }
+                System.out.println("================================================================");
+
+                if ("1".equals(choice)) {
+                    System.out.println("\nApplication details view is not implemented yet.");
+                    break; // Re-render Page 11
+                } else if ("0".equals(choice)) {
+                    return; // Return to Placement Officer Dashboard
+                } else {
+                    System.out.println("[WARN] Invalid option. Please enter 1 to View Details or 0 to Back.");
+                    System.out.println("---------------------------------------------------------");
+                }
+            }
+        }
+    }
+
+    public void showApplicationRecords(Scanner scanner) {
+        showApplicationRecords(scanner, null);
     }
 
     // =========================================================================
