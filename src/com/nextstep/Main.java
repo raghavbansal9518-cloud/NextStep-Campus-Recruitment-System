@@ -265,13 +265,31 @@ public class Main {
 
     /**
      * Handles the Placement Officer authentication workflow.
+     * Displays a menu for Officer Sign Up, Officer Sign In, or Back to Account Portal.
      * Reuses existing authentication, first-run provisioning, and role verification.
      * 
      * @param scanner active Scanner
      */
     private void handlePlacementOfficerWorkflow(Scanner scanner) {
         checkFirstRunOfficerSetup(scanner);
-        handleLogin(scanner, Role.PLACEMENT_OFFICER);
+
+        boolean inOfficerMenu = true;
+        while (inOfficerMenu) {
+            System.out.println("\n----------- PLACEMENT OFFICER MENU -----------");
+            System.out.println("1. Officer Sign Up");
+            System.out.println("2. Officer Sign In");
+            System.out.println("0. Back");
+            System.out.println("----------------------------------------------");
+
+            int choice = readInt(scanner, "Enter your choice: ");
+
+            switch (choice) {
+                case 1 -> showOfficerSignUp(scanner);
+                case 2 -> handleLogin(scanner, Role.PLACEMENT_OFFICER);
+                case 0 -> inOfficerMenu = false;
+                default -> System.out.println("[WARN] Invalid option. Please try again.");
+            }
+        }
     }
 
     // AUTHENTICATION & REGISTRATION FLOWS
@@ -606,6 +624,162 @@ public class Main {
             System.out.println("\n[ERROR] Database error during sign in: " + e.getMessage());
             return false;
         }
+    }
+
+    // =========================================================================
+    // PLACEMENT OFFICER SIGN UP (PAGE 5)
+    // =========================================================================
+
+    /**
+     * Displays Page 5 — Placement Officer Sign Up form and manages interactive registration.
+     * 
+     * @param scanner active Scanner
+     * @return boolean true if account was created, false if cancelled/returned
+     */
+    public boolean showOfficerSignUp(Scanner scanner) {
+        while (true) {
+            clearConsole();
+            renderOfficerSignUpHeader();
+
+            String officerId = readField(scanner, "Officer ID:             ");
+            String fullName = readField(scanner, "Full Name:              ");
+            String email = readField(scanner, "Official Email:         ");
+            System.out.println();
+            String username = readField(scanner, "Username:               ");
+            String password = readPasswordField(scanner, "Password:               ");
+            String confirmPassword = readPasswordField(scanner, "Confirm Password:       ");
+            String activationCode = readPasswordField(scanner, "Activation Code:        ");
+            System.out.println();
+
+            renderOfficerSignUpFooter();
+
+            while (true) {
+                System.out.print("Enter your choice: ");
+                if (!scanner.hasNextLine()) {
+                    return false;
+                }
+                String choice = scanner.nextLine().trim();
+                if (System.console() == null) {
+                    System.out.println(choice);
+                }
+                System.out.println("================================================================");
+
+                if ("1".equals(choice)) {
+                    boolean created = processOfficerRegistration(
+                            officerId, fullName, email,
+                            username, password, confirmPassword, activationCode
+                    );
+                    if (created) {
+                        return true;
+                    } else {
+                        System.out.print("\nPress Enter to try again, or enter 0 to return to Placement Officer Menu: ");
+                        if (!scanner.hasNextLine()) {
+                            return false;
+                        }
+                        String retry = scanner.nextLine().trim();
+                        if (System.console() == null) {
+                            System.out.println(retry);
+                        }
+                        if ("0".equals(retry)) {
+                            return false;
+                        }
+                        break; // re-run outer loop to show form again
+                    }
+                } else if ("0".equals(choice)) {
+                    return false; // return to Placement Officer Menu
+                } else {
+                    System.out.println("[WARN] Invalid choice. Please enter 1 to Create Account or 0 to Back.");
+                    System.out.println("----------------------------------------------------------------");
+                }
+            }
+        }
+    }
+
+    /**
+     * Renders header for Page 5 — Placement Officer Sign Up matching exact design specifications.
+     */
+    public void renderOfficerSignUpHeader() {
+        System.out.println("================================================================");
+        System.out.println("              NEXTSTEP | PLACEMENT OFFICER PORTAL");
+        System.out.println("                     OFFICER SIGN UP");
+        System.out.println("================================================================");
+        System.out.println();
+    }
+
+    /**
+     * Renders footer and action options for Page 5 — Placement Officer Sign Up.
+     */
+    public void renderOfficerSignUpFooter() {
+        System.out.println("----------------------------------------------------------------");
+        System.out.println("                  1. CREATE ACCOUNT");
+        System.out.println("                  0. BACK");
+        System.out.println("================================================================");
+    }
+
+    /**
+     * Validates all form inputs and executes placement officer account registration.
+     */
+    private boolean processOfficerRegistration(String officerId, String fullName, String email,
+                                               String username, String password, String confirmPassword,
+                                               String activationCode) {
+        // 1. Password Confirmation Check
+        if (!password.equals(confirmPassword)) {
+            System.out.println("\n[ERROR] Password and Confirm Password do not match.");
+            return false;
+        }
+
+        // 2. Non-empty field validations
+        if (ValidationUtil.isNullOrBlank(officerId)) {
+            System.out.println("\n[ERROR] Officer ID cannot be empty.");
+            return false;
+        }
+        if (ValidationUtil.isNullOrBlank(fullName)) {
+            System.out.println("\n[ERROR] Full name cannot be empty.");
+            return false;
+        }
+        if (!ValidationUtil.isValidEmail(email)) {
+            System.out.println("\n[ERROR] Invalid official email format. (Must contain '@' and a domain).");
+            return false;
+        }
+        if (!ValidationUtil.isValidUsername(username)) {
+            System.out.println("\n[ERROR] Username must be between 3 and 30 alphanumeric characters.");
+            return false;
+        }
+        if (!ValidationUtil.isValidPassword(password)) {
+            System.out.println("\n[ERROR] Password must be at least 6 characters.");
+            return false;
+        }
+
+        // 3. Activation Code verification
+        if (!authService.verifyOfficerActivationCode(activationCode)) {
+            System.out.println("\n[ERROR] Invalid activation code. Placement officer registration unauthorized.");
+            return false;
+        }
+
+        // 4. Attempt registration via AuthService
+        try {
+            User officer = authService.registerPlacementOfficer(
+                    officerId, fullName, email,
+                    username, password, activationCode
+            );
+            System.out.println("\n================================================================");
+            System.out.println("[SUCCESS] Placement Officer account created successfully for '" + officer.getUsername() + "'!");
+            System.out.println("Official Name: " + fullName);
+            System.out.println("Official Email: " + email);
+            System.out.println("You can now sign in using option 2 (Officer Sign In).");
+            System.out.println("================================================================");
+            return true;
+        } catch (IllegalArgumentException e) {
+            System.out.println("\n[ERROR] Registration validation failed: " + e.getMessage());
+            return false;
+        } catch (SQLException e) {
+            System.out.println("\n[ERROR] Database error during registration: " + e.getMessage());
+            return false;
+        }
+    }
+
+    public boolean handleOfficerRegistration(Scanner scanner) {
+        return showOfficerSignUp(scanner);
     }
 
     public boolean handleStudentRegistration(Scanner scanner) {
