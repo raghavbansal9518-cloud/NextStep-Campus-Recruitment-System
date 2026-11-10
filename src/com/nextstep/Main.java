@@ -70,9 +70,10 @@ public class Main {
      * Top-level application loop.
      */
     public void run(Scanner scanner) {
-        System.out.println("==================================================");
-        System.out.println("     NextStep — Campus Recruitment System         ");
-        System.out.println("==================================================");
+        // Welcome Page (Page 1)
+        if (!showWelcomePage(scanner)) {
+            return; // Option 0: Exit application cleanly
+        }
 
         // Check if an initial placement officer exists; prompt setup if none found
         checkFirstRunOfficerSetup(scanner);
@@ -116,6 +117,81 @@ public class Main {
     }
 
     // =========================================================================
+    // WELCOME PAGE (PAGE 1) & SCREEN HELPERS
+    // =========================================================================
+
+    /**
+     * Displays the Welcome Page (Page 1) and handles the initial Continue / Exit choice.
+     * 
+     * @param scanner active Scanner
+     * @return boolean true to Continue, false to Exit cleanly
+     */
+    public boolean showWelcomePage(Scanner scanner) {
+        clearConsole();
+        renderWelcomeScreen();
+
+        while (true) {
+            System.out.print("Enter your choice: ");
+            if (!scanner.hasNextLine()) {
+                return false;
+            }
+            String input = scanner.nextLine().trim();
+            if (System.console() == null) {
+                System.out.println(input);
+            }
+            System.out.println("================================================================");
+
+            if ("1".equals(input)) {
+                return true;
+            } else if ("0".equals(input)) {
+                System.out.println("\nThank you for using NextStep. Goodbye!");
+                return false;
+            } else {
+                System.out.println("[WARN] Invalid choice. Please enter 1 to Continue or 0 to Exit.");
+                System.out.println("----------------------------------------------------------------");
+            }
+        }
+    }
+
+    /**
+     * Renders the Welcome Page console layout matching exact design specifications.
+     */
+    public void renderWelcomeScreen() {
+        System.out.println("================================================================");
+        System.out.println("                         NEXTSTEP");
+        System.out.println("                  CAMPUS RECRUITMENT SYSTEM");
+        System.out.println("================================================================");
+        System.out.println();
+        System.out.println("                     YOUR CAREER STARTS HERE");
+        System.out.println();
+        System.out.println("                  1. Continue");
+        System.out.println("                  0. Exit");
+        System.out.println();
+        System.out.println("----------------------------------------------------------------");
+    }
+
+    /**
+     * Clears the console screen if supported by the terminal environment.
+     * Provides safe fallback for non-interactive or unsupported terminals.
+     */
+    public static void clearConsole() {
+        try {
+            if (System.console() != null) {
+                if (System.getProperty("os.name", "").toLowerCase().contains("win")) {
+                    new ProcessBuilder("cmd", "/c", "cls").inheritIO().start().waitFor();
+                } else {
+                    System.out.print("\033[H\033[2J");
+                    System.out.flush();
+                }
+            } else {
+                System.out.print("\033[H\033[2J");
+                System.out.flush();
+            }
+        } catch (Exception ignored) {
+            // Safe fallback
+        }
+    }
+
     // AUTHENTICATION & REGISTRATION FLOWS
     // =========================================================================
 
