@@ -265,14 +265,23 @@ public class AuthService {
      * @return User object if authenticated, null otherwise
      * @throws SQLException if a database error occurs
      */
-    public User login(String username, String password) throws SQLException {
-        if (ValidationUtil.isNullOrBlank(username) || ValidationUtil.isNullOrBlank(password)) {
+    public User login(String identifier, String password) throws SQLException {
+        if (ValidationUtil.isNullOrBlank(identifier) || ValidationUtil.isNullOrBlank(password)) {
             return null;
         }
 
-        User user = userDAO.findByUsername(username.trim());
+        String trimmed = identifier.trim();
+        User user = userDAO.findByUsername(trimmed);
         if (user == null) {
-            return null; // Return null generically to prevent username enumeration
+            // Support student authentication using Student ID / University Roll No (USN)
+            Student student = studentDAO.findByStudentId(trimmed);
+            if (student != null) {
+                user = userDAO.findById(student.getUserId());
+            }
+        }
+
+        if (user == null) {
+            return null; // Return null generically to prevent identifier enumeration
         }
 
         if (verifyPassword(password, user.getPasswordHash())) {

@@ -249,13 +249,13 @@ public class Main {
             if (PresentationConfig.isStudentRegistrationVisible()) {
                 switch (choice) {
                     case 1 -> handleStudentRegistration(scanner);
-                    case 2 -> handleLogin(scanner, Role.STUDENT);
+                    case 2 -> showStudentSignIn(scanner);
                     case 0 -> inStudentMenu = false;
                     default -> System.out.println("[WARN] Invalid option. Please try again.");
                 }
             } else {
                 switch (choice) {
-                    case 1 -> handleLogin(scanner, Role.STUDENT);
+                    case 1 -> showStudentSignIn(scanner);
                     case 0 -> inStudentMenu = false;
                     default -> System.out.println("[WARN] Invalid option. Please try again.");
                 }
@@ -485,6 +485,129 @@ public class Main {
         }
     }
 
+    // =========================================================================
+    // STUDENT SIGN IN (PAGE 4)
+    // =========================================================================
+
+    /**
+     * Displays Page 4 — Student Sign In and executes student authentication.
+     * Supports both Username and Student ID (USN).
+     * 
+     * @param scanner active Scanner
+     * @return boolean true if authenticated and portal session completed, false if cancelled/returned
+     */
+    public boolean showStudentSignIn(Scanner scanner) {
+        String statusMessage = "Please enter your account credentials.";
+
+        while (true) {
+            clearConsole();
+            renderStudentSignInHeader();
+
+            String identifier = readField(scanner, "Student ID / Username:  ");
+            String password = readPasswordField(scanner, "Password:               ");
+            System.out.println();
+
+            renderStudentSignInActions();
+            System.out.println("Message: " + statusMessage);
+            System.out.println("================================================================");
+
+            while (true) {
+                System.out.print("Enter your choice: ");
+                if (!scanner.hasNextLine()) {
+                    return false;
+                }
+                String choice = scanner.nextLine().trim();
+                if (System.console() == null) {
+                    System.out.println(choice);
+                }
+                System.out.println("================================================================");
+
+                if ("1".equals(choice)) {
+                    boolean success = processStudentSignIn(scanner, identifier, password);
+                    if (success) {
+                        return true;
+                    } else {
+                        System.out.print("\nPress Enter to try again, or enter 0 to return to Student Menu: ");
+                        if (!scanner.hasNextLine()) {
+                            return false;
+                        }
+                        String retry = scanner.nextLine().trim();
+                        if (System.console() == null) {
+                            System.out.println(retry);
+                        }
+                        if ("0".equals(retry)) {
+                            return false;
+                        }
+                        statusMessage = "Please check your credentials and try again.";
+                        break; // re-display Page 4 form
+                    }
+                } else if ("0".equals(choice)) {
+                    return false; // return to Student Menu
+                } else {
+                    System.out.println("[WARN] Invalid choice. Please enter 1 to Sign In or 0 to Back.");
+                    System.out.println("----------------------------------------------------------------");
+                }
+            }
+        }
+    }
+
+    /**
+     * Renders header for Page 4 — Student Sign In matching exact design specifications.
+     */
+    public void renderStudentSignInHeader() {
+        System.out.println("================================================================");
+        System.out.println("                    NEXTSTEP | STUDENT PORTAL");
+        System.out.println("                        STUDENT SIGN IN");
+        System.out.println("================================================================");
+        System.out.println();
+    }
+
+    /**
+     * Renders actions and separator for Page 4 — Student Sign In.
+     */
+    public void renderStudentSignInActions() {
+        System.out.println("                  1. SIGN IN");
+        System.out.println("                  0. BACK");
+        System.out.println();
+        System.out.println("----------------------------------------------------------------");
+    }
+
+    /**
+     * Authenticates student via Username or Student ID and dispatches to Student Portal.
+     */
+    private boolean processStudentSignIn(Scanner scanner, String identifier, String password) {
+        if (ValidationUtil.isNullOrBlank(identifier) || ValidationUtil.isNullOrBlank(password)) {
+            System.out.println("\n[ERROR] Invalid credentials. Student ID / Username and Password cannot be blank.");
+            return false;
+        }
+
+        try {
+            User user = authService.login(identifier, password);
+            if (user == null) {
+                System.out.println("\n[ERROR] Invalid credentials. Please check your Student ID / Username and password.");
+                return false;
+            }
+
+            if (user.getRole() != Role.STUDENT) {
+                System.out.println("\n[ERROR] Access denied. Placement officer accounts cannot sign in here.");
+                return false;
+            }
+
+            Student student = studentDAO.findByUserId(user.getId());
+            if (student == null) {
+                System.out.println("\n[ERROR] Student profile not found for this account.");
+                return false;
+            }
+
+            System.out.println("\n[SUCCESS] Login successful! Welcome, " + student.getFullName() + ".");
+            studentPortal(scanner, student, user);
+            return true;
+        } catch (SQLException e) {
+            System.out.println("\n[ERROR] Database error during sign in: " + e.getMessage());
+            return false;
+        }
+    }
+
     public boolean handleStudentRegistration(Scanner scanner) {
         return showStudentSignUp(scanner);
     }
@@ -494,8 +617,11 @@ public class Main {
     }
 
     public void handleLogin(Scanner scanner, Role expectedRole) {
-        String roleHeader = expectedRole == null ? "USER LOGIN" :
-                (expectedRole == Role.STUDENT ? "STUDENT LOGIN" : "PLACEMENT OFFICER LOGIN");
+        if (expectedRole == Role.STUDENT) {
+            showStudentSignIn(scanner);
+            return;
+        }
+        String roleHeader = expectedRole == null ? "USER LOGIN" : "PLACEMENT OFFICER LOGIN";
         System.out.println("\n--- " + roleHeader + " ---");
         String username = readNonEmptyString(scanner, "Username: ");
         String password = readNonEmptyString(scanner, "Password: ");
