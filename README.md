@@ -160,7 +160,28 @@ NextStep-Campus-Recruitment-System/
 
 ## 8. How to Compile and Run the Project
 
-### On Windows (PowerShell):
+### Fast Launch via Windows Launcher (`run.bat`):
+
+For the easiest experience on Windows without typing manual classpath and compilation commands:
+
+1. **One-Time Configuration:**
+   - Ensure MySQL is running and `config/db.properties` contains your database password.
+   - Configure the placement officer activation code once in Windows (see Section 8.1 below).
+2. **Launch:**
+   - Double-click **`run.bat`** in the project root directory (or run `.\run.bat` from PowerShell/CMD).
+   - The script automatically:
+     - Verifies Java JDK and MySQL Connector/J driver.
+     - Confirms database configuration file exists.
+     - Compiles all Java source files into `bin/`.
+     - Launches `com.nextstep.Main` with the correct classpath.
+     - Keeps the terminal window open if an error occurs so you can read diagnostic details.
+3. **Safe Application Exit:**
+   - Enter `0` at any screen or menu (Option 0: Exit / Sign Out / Back).
+   - Alternatively, press `Ctrl+C` in the terminal to terminate safely.
+
+### Manual Command-Line Compilation & Execution:
+
+#### On Windows (PowerShell):
 
 1. **Compile all Java source files into `bin/`:**
    ```powershell
@@ -177,7 +198,7 @@ NextStep-Campus-Recruitment-System/
    java -cp "bin;lib/*" com.nextstep.Main
    ```
 
-### On Linux / macOS (Bash):
+#### On Linux / macOS (Bash):
 
 1. **Compile:**
    ```bash
@@ -188,6 +209,37 @@ NextStep-Campus-Recruitment-System/
    ```bash
    java -cp "bin:lib/*" com.nextstep.Main
    ```
+
+---
+
+## 8.1 Placement Officer Activation Code Setup
+
+To protect administrative accounts, NextStep requires an authorized activation code for Placement Officer self-registration (Page 5). This code is never hardcoded in source code and can be configured persistently or per-session:
+
+### 1. One-Time Persistent Windows Setup (Recommended)
+Set the user environment variable once so it remains permanently available across all future terminal sessions and `run.bat` launches:
+
+- **Via PowerShell / Command Prompt:**
+  ```cmd
+  setx NEXTSTEP_OFFICER_ACTIVATION_CODE "CAMPUS_OFFICER_2026"
+  ```
+  *(Restart any open terminal windows after running `setx` for the new environment variable to take effect).*
+
+- **Via Windows GUI:**
+  1. Press `Win + R`, type `sysdm.cpl`, and press **Enter**.
+  2. Select the **Advanced** tab and click **Environment Variables...**.
+  3. Under **User variables**, click **New...**.
+  4. Variable name: `NEXTSTEP_OFFICER_ACTIVATION_CODE`
+  5. Variable value: `CAMPUS_OFFICER_2026`
+  6. Click **OK** to save.
+
+### 2. Per-Session System Property
+Alternatively, supply the activation code directly to the JVM at launch:
+```powershell
+java -Dnextstep.officer.activation.code=CAMPUS_OFFICER_2026 -cp "bin;lib/*" com.nextstep.Main
+```
+
+If no activation code is configured, officer registration is safely disabled with a clear administrator configuration notice.
 
 ---
 
