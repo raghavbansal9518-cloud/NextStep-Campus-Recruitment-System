@@ -3,28 +3,46 @@ package com.nextstep.util;
 /**
  * ConsoleTheme
  * 
- * Centralized styling and ANSI colour theme for the NextStep console interface:
- * - Blue/Cyan: Main borders, horizontal dividers, and portal banners.
- * - Yellow: User input prompts and field labels during data entry.
- * - Green: Successful actions, confirmation messages, PASS results, and MATCH indicators.
- * - Red: Errors, blocked operations, FAIL results, and MISSING indicators.
- * - Dim / Gray: [Coming Soon] badges and secondary informational text.
+ * Centralized styling and 24-bit TrueColour ANSI theme for the NextStep console interface,
+ * matched exactly against the reference Vantique specification:
+ * - Borders and dividers: #6FC9FF (RGB 111, 201, 255) — Cyan / Sky Blue
+ * - Prompts and input labels: #E3B341 (RGB 227, 179, 65) — Yellow / Gold
+ * - Headings, menu options, and content text: #CAD5E5 (RGB 202, 213, 229) — Light Slate
+ * - Terminal background: #131B28 (RGB 19, 27, 40) — Midnight Navy
+ * - Success, confirmations, PASS, and MATCH: #56D364 (RGB 86, 211, 100) — Green
+ * - Errors, blocked actions, FAIL, and MISSING: #F85149 (RGB 248, 81, 73) — Red
+ * - Subdued notices and [Coming Soon] badges: #8B949E (RGB 139, 148, 158) — Subdued Slate
  * 
  * Auto-detects terminal support: falls back cleanly to plain text when
- * running in non-interactive / automated testing environments, or when
+ * running in non-interactive / automated testing environments (pipes), or when
  * explicitly disabled via -Dnextstep.ansi=false or NO_COLOR env var.
  */
 public final class ConsoleTheme {
 
     private static boolean ansiEnabled = detectAnsiSupport();
 
-    public static final String RESET  = "\u001B[0m";
-    public static final String BLUE   = "\u001B[36m"; // Cyan/Blue for borders and separators
-    public static final String YELLOW = "\u001B[33m"; // Yellow for user prompts
-    public static final String GREEN  = "\u001B[32m"; // Green for success/PASS
-    public static final String RED    = "\u001B[31m"; // Red for errors/FAIL
-    public static final String DIM    = "\u001B[90m"; // Dim/gray for Coming Soon
-    public static final String WHITE  = "\u001B[37m";
+    public static final String RESET = "\u001B[0m";
+
+    // 24-bit TrueColour Foreground Codes (38;2;R;G;B)
+    public static final String CYAN_RGB   = "\u001B[38;2;111;201;255m"; // #6FC9FF Sky Blue / Cyan
+    public static final String YELLOW_RGB = "\u001B[38;2;227;179;65m";  // #E3B341 Yellow / Gold
+    public static final String SLATE_RGB  = "\u001B[38;2;202;213;229m"; // #CAD5E5 Light Slate
+    public static final String GREEN_RGB  = "\u001B[38;2;86;211;100m";  // #56D364 Green (Success/PASS/MATCH)
+    public static final String RED_RGB    = "\u001B[38;2;248;81;73m";   // #F85149 Red (Error/FAIL/MISSING)
+    public static final String DIM_RGB    = "\u001B[38;2;139;148;158m"; // #8B949E Subdued Gray
+
+    // 24-bit TrueColour Background Code (48;2;R;G;B)
+    public static final String BG_NAVY    = "\u001B[48;2;19;27;40m";    // #131B28 Midnight Navy
+
+    // Color aliases for backward compatibility and semantic clarity
+    public static final String BLUE   = CYAN_RGB;
+    public static final String CYAN   = CYAN_RGB;
+    public static final String YELLOW = YELLOW_RGB;
+    public static final String GREEN  = GREEN_RGB;
+    public static final String RED    = RED_RGB;
+    public static final String DIM    = DIM_RGB;
+    public static final String WHITE  = SLATE_RGB;
+    public static final String SLATE  = SLATE_RGB;
 
     private ConsoleTheme() {
         // Utility class
@@ -61,27 +79,35 @@ public final class ConsoleTheme {
     }
 
     public static String cyan(String text) {
-        return ansiEnabled ? BLUE + text + RESET : text;
+        return ansiEnabled ? CYAN_RGB + text + RESET : text;
     }
 
     public static String yellow(String text) {
-        return ansiEnabled ? YELLOW + text + RESET : text;
+        return ansiEnabled ? YELLOW_RGB + text + RESET : text;
     }
 
-    public static String green(String text) {
-        return ansiEnabled ? GREEN + text + RESET : text;
+    public static String text(String text) {
+        return ansiEnabled ? SLATE_RGB + text + RESET : text;
     }
 
-    public static String red(String text) {
-        return ansiEnabled ? RED + text + RESET : text;
-    }
-
-    public static String dim(String text) {
-        return ansiEnabled ? DIM + text + RESET : text;
+    public static String slate(String text) {
+        return text(text);
     }
 
     public static String white(String text) {
-        return ansiEnabled ? WHITE + text + RESET : text;
+        return text(text);
+    }
+
+    public static String green(String text) {
+        return ansiEnabled ? GREEN_RGB + text + RESET : text;
+    }
+
+    public static String red(String text) {
+        return ansiEnabled ? RED_RGB + text + RESET : text;
+    }
+
+    public static String dim(String text) {
+        return ansiEnabled ? DIM_RGB + text + RESET : text;
     }
 
     public static String border(String border) {
@@ -118,5 +144,14 @@ public final class ConsoleTheme {
 
     public static String comingSoon() {
         return dim("[Coming Soon]");
+    }
+
+    /**
+     * Applies the midnight navy background color sequence if ANSI is supported.
+     * Note: This affects terminal output stream during runtime and does not alter
+     * the user's permanent terminal profile settings.
+     */
+    public static String applyBackground() {
+        return ansiEnabled ? BG_NAVY : "";
     }
 }

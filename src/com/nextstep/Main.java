@@ -144,10 +144,10 @@ public class Main {
         System.out.println(ConsoleTheme.header("                  CAMPUS RECRUITMENT SYSTEM"));
         System.out.println(ConsoleTheme.border("================================================================"));
         System.out.println();
-        System.out.println("                     YOUR CAREER STARTS HERE");
+        System.out.println(ConsoleTheme.text("                     YOUR CAREER STARTS HERE"));
         System.out.println();
-        System.out.println("                  1. Continue");
-        System.out.println("                  0. Exit");
+        System.out.println(ConsoleTheme.text("                  1. Continue"));
+        System.out.println(ConsoleTheme.text("                  0. Exit"));
         System.out.println();
         System.out.println(ConsoleTheme.divider("----------------------------------------------------------------"));
     }
@@ -165,7 +165,7 @@ public class Main {
                     System.out.print("\033[H\033[2J");
                     System.out.flush();
                 }
-            } else {
+            } else if (ConsoleTheme.isAnsiEnabled()) {
                 System.out.print("\033[H\033[2J");
                 System.out.flush();
             }
@@ -221,11 +221,11 @@ public class Main {
         System.out.println(ConsoleTheme.header("                     ACCOUNT PORTAL"));
         System.out.println(ConsoleTheme.border("================================================================"));
         System.out.println();
-        System.out.println("                     SELECT YOUR ROLE");
+        System.out.println(ConsoleTheme.text("                     SELECT YOUR ROLE"));
         System.out.println();
-        System.out.println("                  1. Student");
-        System.out.println("                  2. Placement Officer");
-        System.out.println("                  0. Back");
+        System.out.println(ConsoleTheme.text("                  1. Student"));
+        System.out.println(ConsoleTheme.text("                  2. Placement Officer"));
+        System.out.println(ConsoleTheme.text("                  0. Back"));
         System.out.println();
         System.out.println(ConsoleTheme.divider("----------------------------------------------------------------"));
     }
@@ -428,8 +428,8 @@ public class Main {
      */
     public void renderStudentSignUpFooter() {
         System.out.println(ConsoleTheme.divider("----------------------------------------------------------------"));
-        System.out.println("                  1. CREATE ACCOUNT");
-        System.out.println("                  0. BACK");
+        System.out.println(ConsoleTheme.text("                  1. CREATE ACCOUNT"));
+        System.out.println(ConsoleTheme.text("                  0. BACK"));
         System.out.println(ConsoleTheme.border("================================================================"));
     }
 
@@ -734,8 +734,8 @@ public class Main {
      * Renders actions and separator for Page 4 — Student Sign In.
      */
     public void renderStudentSignInActions() {
-        System.out.println("                  1. SIGN IN");
-        System.out.println("                  0. BACK");
+        System.out.println(ConsoleTheme.text("                  1. SIGN IN"));
+        System.out.println(ConsoleTheme.text("                  0. BACK"));
         System.out.println();
         System.out.println(ConsoleTheme.divider("----------------------------------------------------------------"));
     }
@@ -885,8 +885,8 @@ public class Main {
      */
     public void renderOfficerSignUpFooter() {
         System.out.println(ConsoleTheme.divider("----------------------------------------------------------------"));
-        System.out.println("                  1. CREATE ACCOUNT");
-        System.out.println("                  0. BACK");
+        System.out.println(ConsoleTheme.text("                  1. CREATE ACCOUNT"));
+        System.out.println(ConsoleTheme.text("                  0. BACK"));
         System.out.println(ConsoleTheme.border("================================================================"));
     }
 
@@ -1062,18 +1062,18 @@ public class Main {
         System.out.println(ConsoleTheme.header("                       STUDENT DASHBOARD"));
         System.out.println(ConsoleTheme.border("================================================================"));
         System.out.println();
-        System.out.println("Welcome, " + (student != null && student.getFullName() != null ? student.getFullName() : "Student"));
-        System.out.println("Student ID: " + (student != null && student.getStudentId() != null ? student.getStudentId() : "N/A"));
+        System.out.println(ConsoleTheme.text("Welcome, " + (student != null && student.getFullName() != null ? student.getFullName() : "Student")));
+        System.out.println(ConsoleTheme.text("Student ID: " + (student != null && student.getStudentId() != null ? student.getStudentId() : "N/A")));
         System.out.println(ConsoleTheme.divider("----------------------------------------------------------------"));
         System.out.println();
-        System.out.println("  1. View My Profile " + ConsoleTheme.comingSoon());
-        System.out.println("  2. Update My Profile " + ConsoleTheme.comingSoon());
-        System.out.println("  3. Available Job Drives");
-        System.out.println("  4. Check Job Eligibility");
-        System.out.println("  5. Analyse Skill Match");
-        System.out.println("  6. Apply for a Job");
-        System.out.println("  7. View My Applications");
-        System.out.println("  0. Sign Out");
+        System.out.println(ConsoleTheme.text("  1. View My Profile ") + ConsoleTheme.comingSoon());
+        System.out.println(ConsoleTheme.text("  2. Update My Profile ") + ConsoleTheme.comingSoon());
+        System.out.println(ConsoleTheme.text("  3. Available Job Drives"));
+        System.out.println(ConsoleTheme.text("  4. Check Job Eligibility"));
+        System.out.println(ConsoleTheme.text("  5. Analyse Skill Match"));
+        System.out.println(ConsoleTheme.text("  6. Apply for a Job"));
+        System.out.println(ConsoleTheme.text("  7. View My Applications"));
+        System.out.println(ConsoleTheme.text("  0. Sign Out"));
         System.out.println();
         System.out.println(ConsoleTheme.divider("----------------------------------------------------------------"));
     }
@@ -1252,16 +1252,16 @@ public class Main {
         System.out.println(ConsoleTheme.header("                    OFFICER DASHBOARD"));
         System.out.println(ConsoleTheme.border("================================================================"));
         System.out.println();
-        System.out.println("Welcome, Placement Officer");
-        System.out.println("Officer ID: Not available");
+        System.out.println(ConsoleTheme.text("Welcome, Placement Officer"));
+        System.out.println(ConsoleTheme.text("Officer ID: Not available"));
         System.out.println(ConsoleTheme.divider("----------------------------------------------------------------"));
         System.out.println();
-        System.out.println("  1. Manage Student Records " + ConsoleTheme.comingSoon());
-        System.out.println("  2. Manage Companies " + ConsoleTheme.comingSoon());
-        System.out.println("  3. Manage Job Drives");
-        System.out.println("  4. View Applications");
-        System.out.println("  5. Update Application Status");
-        System.out.println("  0. Sign Out");
+        System.out.println(ConsoleTheme.text("  1. Manage Student Records ") + ConsoleTheme.comingSoon());
+        System.out.println(ConsoleTheme.text("  2. Manage Companies ") + ConsoleTheme.comingSoon());
+        System.out.println(ConsoleTheme.text("  3. Manage Job Drives"));
+        System.out.println(ConsoleTheme.text("  4. View Applications"));
+        System.out.println(ConsoleTheme.text("  5. Update Application Status"));
+        System.out.println(ConsoleTheme.text("  0. Sign Out"));
         System.out.println();
         System.out.println(ConsoleTheme.divider("----------------------------------------------------------------"));
     }
@@ -1469,8 +1469,8 @@ public class Main {
      */
     public void renderCreateJobDriveFooter() {
         System.out.println(ConsoleTheme.divider("----------------------------------------------------------------"));
-        System.out.println("                  1. PUBLISH JOB");
-        System.out.println("                  0. CANCEL");
+        System.out.println(ConsoleTheme.text("                  1. PUBLISH JOB"));
+        System.out.println(ConsoleTheme.text("                  0. CANCEL"));
         System.out.println(ConsoleTheme.border("================================================================"));
     }
 
@@ -1817,8 +1817,8 @@ public class Main {
             System.out.println("OVERALL RESULT: " + statusWord);
             System.out.println();
             System.out.println(ConsoleTheme.divider("----------------------------------------------------------------"));
-            System.out.println("                  1. CHECK SKILL MATCH");
-            System.out.println("                  0. BACK");
+            System.out.println(ConsoleTheme.text("                  1. CHECK SKILL MATCH"));
+            System.out.println(ConsoleTheme.text("                  0. BACK"));
             System.out.println(ConsoleTheme.border("================================================================"));
 
             System.out.print(ConsoleTheme.prompt("Enter your choice: "));
@@ -1893,7 +1893,7 @@ public class Main {
         System.out.println("Missing Skills:         " + (missingSkills.isEmpty() ? "None" : ConsoleTheme.red(String.join(", ", missingSkills))));
         System.out.println();
         System.out.println(ConsoleTheme.divider("----------------------------------------------------------------"));
-        System.out.println("                  0. BACK");
+        System.out.println(ConsoleTheme.text("                  0. BACK"));
         System.out.println(ConsoleTheme.border("================================================================"));
 
         while (true) {
@@ -2060,10 +2060,10 @@ public class Main {
             System.out.println("Skill Match:         " + skillMatchStr);
             System.out.println();
             System.out.println(ConsoleTheme.divider("----------------------------------------------------------------"));
-            System.out.println("Are you sure you want to apply?");
+            System.out.println(ConsoleTheme.text("Are you sure you want to apply?"));
             System.out.println();
-            System.out.println("                 1. CONFIRM APPLICATION");
-            System.out.println("                 0. CANCEL");
+            System.out.println(ConsoleTheme.text("                 1. CONFIRM APPLICATION"));
+            System.out.println(ConsoleTheme.text("                 0. CANCEL"));
             System.out.println();
             System.out.println(ConsoleTheme.divider("----------------------------------------------------------------"));
 
@@ -2130,8 +2130,8 @@ public class Main {
      */
     public void renderApplicationRecordsFooter() {
         System.out.println(ConsoleTheme.divider("---------------------------------------------------------"));
-        System.out.println("                 1. VIEW DETAILS " + ConsoleTheme.comingSoon());
-        System.out.println("                 0. BACK");
+        System.out.println(ConsoleTheme.text("                 1. VIEW DETAILS ") + ConsoleTheme.comingSoon());
+        System.out.println(ConsoleTheme.text("                 0. BACK"));
         System.out.println(ConsoleTheme.border("================================================================"));
     }
 
