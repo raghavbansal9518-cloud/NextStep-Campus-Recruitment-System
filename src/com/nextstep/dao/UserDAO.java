@@ -121,6 +121,42 @@ public class UserDAO {
     }
 
     /**
+     * Finds a user by their unique primary key ID.
+     * 
+     * @param id user ID to look up
+     * @return User object if found, null otherwise
+     * @throws SQLException if a database error occurs
+     */
+    public User findById(int id) throws SQLException {
+        if (id <= 0) {
+            return null;
+        }
+
+        String sql = "SELECT id, username, password_hash, role, email, created_at FROM users WHERE id = ?";
+
+        try (Connection conn = DatabaseConnection.getConnection();
+             PreparedStatement stmt = conn.prepareStatement(sql)) {
+
+            stmt.setInt(1, id);
+
+            try (ResultSet rs = stmt.executeQuery()) {
+                if (rs.next()) {
+                    int userId = rs.getInt("id");
+                    String uname = rs.getString("username");
+                    String passHash = rs.getString("password_hash");
+                    Role role = Role.fromString(rs.getString("role"));
+                    String email = rs.getString("email");
+                    Timestamp ts = rs.getTimestamp("created_at");
+                    LocalDateTime createdAt = (ts != null) ? ts.toLocalDateTime() : null;
+
+                    return new User(userId, uname, passHash, role, email, createdAt);
+                }
+            }
+        }
+        return null;
+    }
+
+    /**
      * Checks whether a username already exists in the database.
      * 
      * @param username username to verify

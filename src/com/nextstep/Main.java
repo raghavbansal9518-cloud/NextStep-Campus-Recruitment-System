@@ -13,6 +13,7 @@ import com.nextstep.service.AuthService;
 import com.nextstep.service.RecruitmentService;
 import com.nextstep.service.RecruitmentService.EligibilityResult;
 import com.nextstep.util.PresentationConfig;
+import com.nextstep.util.ValidationUtil;
 
 import java.io.File;
 import java.sql.SQLException;
@@ -70,23 +71,176 @@ public class Main {
      * Top-level application loop.
      */
     public void run(Scanner scanner) {
-        System.out.println("==================================================");
-        System.out.println("     NextStep — Campus Recruitment System         ");
-        System.out.println("==================================================");
+        boolean inApp = true;
+        while (inApp) {
+            // Welcome Page (Page 1)
+            if (!showWelcomePage(scanner)) {
+                inApp = false;
+                break; // Option 0: Exit application cleanly
+            }
 
-        // Check if an initial placement officer exists; prompt setup if none found
-        checkFirstRunOfficerSetup(scanner);
+            // Account Portal (Page 2)
+            boolean inAccountPortal = true;
+            while (inAccountPortal) {
+                int roleChoice = showAccountPortal(scanner);
+                switch (roleChoice) {
+                    case 1 -> handleStudentWorkflow(scanner);
+                    case 2 -> handlePlacementOfficerWorkflow(scanner);
+                    case 0 -> inAccountPortal = false; // Option 0: Back to Welcome Page (Page 1)
+                }
+            }
+        }
+    }
 
-        boolean running = true;
-        while (running) {
-            System.out.println("\n----------------- MAIN MENU ------------------");
+    // =========================================================================
+    // WELCOME PAGE (PAGE 1) & SCREEN HELPERS
+    // =========================================================================
+
+    /**
+     * Displays the Welcome Page (Page 1) and handles the initial Continue / Exit choice.
+     * 
+     * @param scanner active Scanner
+     * @return boolean true to Continue, false to Exit cleanly
+     */
+    public boolean showWelcomePage(Scanner scanner) {
+        clearConsole();
+        renderWelcomeScreen();
+
+        while (true) {
+            System.out.print("Enter your choice: ");
+            if (!scanner.hasNextLine()) {
+                return false;
+            }
+            String input = scanner.nextLine().trim();
+            if (System.console() == null) {
+                System.out.println(input);
+            }
+            System.out.println("================================================================");
+
+            if ("1".equals(input)) {
+                return true;
+            } else if ("0".equals(input)) {
+                System.out.println("\nThank you for using NextStep. Goodbye!");
+                return false;
+            } else {
+                System.out.println("[WARN] Invalid choice. Please enter 1 to Continue or 0 to Exit.");
+                System.out.println("----------------------------------------------------------------");
+            }
+        }
+    }
+
+    /**
+     * Renders the Welcome Page console layout matching exact design specifications.
+     */
+    public void renderWelcomeScreen() {
+        System.out.println("================================================================");
+        System.out.println("                         NEXTSTEP");
+        System.out.println("                  CAMPUS RECRUITMENT SYSTEM");
+        System.out.println("================================================================");
+        System.out.println();
+        System.out.println("                     YOUR CAREER STARTS HERE");
+        System.out.println();
+        System.out.println("                  1. Continue");
+        System.out.println("                  0. Exit");
+        System.out.println();
+        System.out.println("----------------------------------------------------------------");
+    }
+
+    /**
+     * Clears the console screen if supported by the terminal environment.
+     * Provides safe fallback for non-interactive or unsupported terminals.
+     */
+    public static void clearConsole() {
+        try {
+            if (System.console() != null) {
+                if (System.getProperty("os.name", "").toLowerCase().contains("win")) {
+                    new ProcessBuilder("cmd", "/c", "cls").inheritIO().start().waitFor();
+                } else {
+                    System.out.print("\033[H\033[2J");
+                    System.out.flush();
+                }
+            } else {
+                System.out.print("\033[H\033[2J");
+                System.out.flush();
+            }
+        } catch (Exception ignored) {
+            // Safe fallback
+        }
+    }
+
+    // =========================================================================
+    // ACCOUNT PORTAL (PAGE 2) & ROLE NAVIGATION
+    // =========================================================================
+
+    /**
+     * Displays Page 2 — Account Portal and prompts the user to select their role.
+     * 
+     * @param scanner active Scanner
+     * @return int chosen option (1 for Student, 2 for Placement Officer, 0 for Back)
+     */
+    public int showAccountPortal(Scanner scanner) {
+        clearConsole();
+        renderAccountPortalScreen();
+
+        while (true) {
+            System.out.print("Enter your choice: ");
+            if (!scanner.hasNextLine()) {
+                return 0;
+            }
+            String input = scanner.nextLine().trim();
+            if (System.console() == null) {
+                System.out.println(input);
+            }
+            System.out.println("================================================================");
+
+            if ("1".equals(input)) {
+                return 1;
+            } else if ("2".equals(input)) {
+                return 2;
+            } else if ("0".equals(input)) {
+                return 0;
+            } else {
+                System.out.println("[WARN] Invalid choice. Please enter 0, 1, or 2.");
+                System.out.println("----------------------------------------------------------------");
+            }
+        }
+    }
+
+    /**
+     * Renders the Account Portal (Page 2) console layout matching exact design specifications.
+     */
+    public void renderAccountPortalScreen() {
+        System.out.println("================================================================");
+        System.out.println("                         NEXTSTEP");
+        System.out.println("                     ACCOUNT PORTAL");
+        System.out.println("================================================================");
+        System.out.println();
+        System.out.println("                     SELECT YOUR ROLE");
+        System.out.println();
+        System.out.println("                  1. Student");
+        System.out.println("                  2. Placement Officer");
+        System.out.println("                  0. Back");
+        System.out.println();
+        System.out.println("----------------------------------------------------------------");
+    }
+
+    /**
+     * Handles the Student registration and authentication workflow.
+     * Reuses existing student registration and student login functionality.
+     * 
+     * @param scanner active Scanner
+     */
+    private void handleStudentWorkflow(Scanner scanner) {
+        boolean inStudentMenu = true;
+        while (inStudentMenu) {
+            System.out.println("\n---------------- STUDENT MENU ----------------");
             if (PresentationConfig.isStudentRegistrationVisible()) {
                 System.out.println("1. Student Registration");
-                System.out.println("2. Login");
-                System.out.println("3. Exit");
+                System.out.println("2. Student Login");
+                System.out.println("0. Back");
             } else {
-                System.out.println("1. Login");
-                System.out.println("2. Exit");
+                System.out.println("1. Student Login");
+                System.out.println("0. Back");
             }
             System.out.println("----------------------------------------------");
 
@@ -95,70 +249,380 @@ public class Main {
             if (PresentationConfig.isStudentRegistrationVisible()) {
                 switch (choice) {
                     case 1 -> handleStudentRegistration(scanner);
-                    case 2 -> handleLogin(scanner);
-                    case 3 -> {
-                        System.out.println("\nThank you for using NextStep. Goodbye!");
-                        running = false;
-                    }
+                    case 2 -> showStudentSignIn(scanner);
+                    case 0 -> inStudentMenu = false;
                     default -> System.out.println("[WARN] Invalid option. Please try again.");
                 }
             } else {
                 switch (choice) {
-                    case 1 -> handleLogin(scanner);
-                    case 2 -> {
-                        System.out.println("\nThank you for using NextStep. Goodbye!");
-                        running = false;
-                    }
+                    case 1 -> showStudentSignIn(scanner);
+                    case 0 -> inStudentMenu = false;
                     default -> System.out.println("[WARN] Invalid option. Please try again.");
                 }
             }
         }
     }
 
-    // =========================================================================
+    /**
+     * Handles the Placement Officer authentication workflow.
+     * Reuses existing authentication, first-run provisioning, and role verification.
+     * 
+     * @param scanner active Scanner
+     */
+    private void handlePlacementOfficerWorkflow(Scanner scanner) {
+        checkFirstRunOfficerSetup(scanner);
+        handleLogin(scanner, Role.PLACEMENT_OFFICER);
+    }
+
     // AUTHENTICATION & REGISTRATION FLOWS
     // =========================================================================
 
-    private void handleStudentRegistration(Scanner scanner) {
-        System.out.println("\n--- STUDENT REGISTRATION ---");
-        try {
-            String username = readNonEmptyString(scanner, "Enter Username (alphanumeric, 3-30 chars): ");
-            String password = readNonEmptyString(scanner, "Enter Password (min 6 chars): ");
-            String email = readNonEmptyString(scanner, "Enter Email Address: ");
-            String studentId = readNonEmptyString(scanner, "Enter University Roll Number (USN): ");
-            String fullName = readNonEmptyString(scanner, "Enter Full Name: ");
-            String phone = readNonEmptyString(scanner, "Enter 10-digit Phone Number: ");
-            String branch = readNonEmptyString(scanner, "Enter Degree Branch (e.g. Computer Science): ");
-            double cgpa = readDouble(scanner, "Enter CGPA (0.00 - 10.00): ");
-            int backlogs = readInt(scanner, "Enter Active Backlogs (0 or more): ");
-            int gradYear = readInt(scanner, "Enter Graduation Year (e.g. 2026): ");
-            String skillsInput = readString(scanner, "Enter Skills (comma-separated, e.g. Java, SQL, OOP): ");
+    // =========================================================================
+    // STUDENT SIGN UP (PAGE 3)
+    // =========================================================================
 
-            List<String> skills = new ArrayList<>();
-            if (skillsInput != null && !skillsInput.trim().isEmpty()) {
-                for (String s : skillsInput.split(",")) {
-                    if (!s.trim().isEmpty()) {
-                        skills.add(s.trim());
+    /**
+     * Displays Page 3 — Student Sign Up form and manages interactive registration.
+     * 
+     * @param scanner active Scanner
+     * @return boolean true if account was created, false if cancelled/returned
+     */
+    public boolean showStudentSignUp(Scanner scanner) {
+        while (true) {
+            clearConsole();
+            renderStudentSignUpHeader();
+
+            String studentId = readField(scanner, "Student ID:             ");
+            String fullName = readField(scanner, "Full Name:              ");
+            String email = readField(scanner, "Email:                  ");
+            String branch = readField(scanner, "Branch:                 ");
+            String cgpaStr = readField(scanner, "CGPA:                   ");
+            String gradYearStr = readField(scanner, "Graduation Year:        ");
+            System.out.println();
+            String username = readField(scanner, "Username:               ");
+            String password = readPasswordField(scanner, "Password:               ");
+            String confirmPassword = readPasswordField(scanner, "Confirm Password:       ");
+            System.out.println();
+
+            renderStudentSignUpFooter();
+
+            while (true) {
+                System.out.print("Enter your choice: ");
+                if (!scanner.hasNextLine()) {
+                    return false;
+                }
+                String choice = scanner.nextLine().trim();
+                if (System.console() == null) {
+                    System.out.println(choice);
+                }
+                System.out.println("================================================================");
+
+                if ("1".equals(choice)) {
+                    boolean created = processStudentRegistration(
+                            studentId, fullName, email, branch, cgpaStr, gradYearStr,
+                            username, password, confirmPassword
+                    );
+                    if (created) {
+                        return true;
+                    } else {
+                        System.out.print("\nPress Enter to try again, or enter 0 to return to Student Menu: ");
+                        if (!scanner.hasNextLine()) {
+                            return false;
+                        }
+                        String retry = scanner.nextLine().trim();
+                        if (System.console() == null) {
+                            System.out.println(retry);
+                        }
+                        if ("0".equals(retry)) {
+                            return false;
+                        }
+                        break; // re-run outer loop to show form again
                     }
+                } else if ("0".equals(choice)) {
+                    return false; // return to Student Menu
+                } else {
+                    System.out.println("[WARN] Invalid choice. Please enter 1 to Create Account or 0 to Back.");
+                    System.out.println("----------------------------------------------------------------");
                 }
             }
-
-            Student registered = authService.registerStudent(
-                    username, password, email, studentId, fullName, phone,
-                    branch, cgpa, backlogs, gradYear, skills
-            );
-
-            System.out.println("\n[SUCCESS] Registration successful for " + registered.getFullName() + "!");
-            System.out.println("You can now log in using your username and password.");
-        } catch (IllegalArgumentException e) {
-            System.out.println("\n[ERROR] Registration validation failed: " + e.getMessage());
-        } catch (SQLException e) {
-            System.out.println("\n[ERROR] Database error during registration: " + e.getMessage());
         }
     }
 
-    private void handleLogin(Scanner scanner) {
-        System.out.println("\n--- USER LOGIN ---");
+    /**
+     * Renders header for Page 3 — Student Sign Up matching exact design specifications.
+     */
+    public void renderStudentSignUpHeader() {
+        System.out.println("================================================================");
+        System.out.println("                    NEXTSTEP | STUDENT PORTAL");
+        System.out.println("                       STUDENT SIGN UP");
+        System.out.println("================================================================");
+        System.out.println();
+    }
+
+    /**
+     * Renders footer and action options for Page 3 — Student Sign Up.
+     */
+    public void renderStudentSignUpFooter() {
+        System.out.println("----------------------------------------------------------------");
+        System.out.println("                  1. CREATE ACCOUNT");
+        System.out.println("                  0. BACK");
+        System.out.println("================================================================");
+    }
+
+    /**
+     * Reads a field with prompt, echoing input in non-interactive / automated environments.
+     */
+    private String readField(Scanner scanner, String prompt) {
+        System.out.print(prompt);
+        if (!scanner.hasNextLine()) {
+            return "";
+        }
+        String input = scanner.nextLine().trim();
+        if (System.console() == null) {
+            System.out.println(input);
+        }
+        return input;
+    }
+
+    /**
+     * Reads a password without displaying characters when console is present,
+     * suppressing plaintext echo in non-interactive test environments.
+     */
+    private String readPasswordField(Scanner scanner, String prompt) {
+        System.out.print(prompt);
+        if (System.console() != null) {
+            char[] pass = System.console().readPassword();
+            return (pass != null) ? new String(pass).trim() : "";
+        } else {
+            if (!scanner.hasNextLine()) {
+                return "";
+            }
+            String input = scanner.nextLine().trim();
+            System.out.println(); // newline only; never echo plaintext password
+            return input;
+        }
+    }
+
+    /**
+     * Validates all form inputs and executes student account registration.
+     */
+    private boolean processStudentRegistration(String studentId, String fullName, String email,
+                                               String branch, String cgpaStr, String gradYearStr,
+                                               String username, String password, String confirmPassword) {
+        // 1. Password Confirmation Check
+        if (!password.equals(confirmPassword)) {
+            System.out.println("\n[ERROR] Password and Confirm Password do not match.");
+            return false;
+        }
+
+        // 2. Non-empty field validations
+        if (ValidationUtil.isNullOrBlank(studentId)) {
+            System.out.println("\n[ERROR] Student ID / USN cannot be empty.");
+            return false;
+        }
+        if (ValidationUtil.isNullOrBlank(fullName)) {
+            System.out.println("\n[ERROR] Full name cannot be empty.");
+            return false;
+        }
+        if (!ValidationUtil.isValidEmail(email)) {
+            System.out.println("\n[ERROR] Invalid email format. (Must contain '@' and a domain).");
+            return false;
+        }
+        if (ValidationUtil.isNullOrBlank(branch)) {
+            System.out.println("\n[ERROR] Branch cannot be empty.");
+            return false;
+        }
+
+        // 3. Numeric range validations
+        double cgpa;
+        try {
+            cgpa = Double.parseDouble(cgpaStr);
+        } catch (Exception e) {
+            System.out.println("\n[ERROR] Invalid CGPA: must be a valid numeric value between 0.00 and 10.00.");
+            return false;
+        }
+        if (!ValidationUtil.isValidCgpa(cgpa)) {
+            System.out.println("\n[ERROR] CGPA must be between 0.00 and 10.00.");
+            return false;
+        }
+
+        int graduationYear;
+        try {
+            graduationYear = Integer.parseInt(gradYearStr);
+        } catch (Exception e) {
+            System.out.println("\n[ERROR] Invalid Graduation Year: must be a valid 4-digit year.");
+            return false;
+        }
+        if (!ValidationUtil.isValidGraduationYear(graduationYear)) {
+            System.out.println("\n[ERROR] Graduation year must be between 2020 and 2035.");
+            return false;
+        }
+
+        // 4. Credential format validations
+        if (!ValidationUtil.isValidUsername(username)) {
+            System.out.println("\n[ERROR] Username must be between 3 and 30 alphanumeric characters.");
+            return false;
+        }
+        if (!ValidationUtil.isValidPassword(password)) {
+            System.out.println("\n[ERROR] Password must be at least 6 characters.");
+            return false;
+        }
+
+        // 5. Transactional Persistence via AuthService
+        try {
+            Student registered = authService.registerStudent(
+                    username, password, email, studentId, fullName, branch, cgpa, graduationYear
+            );
+            System.out.println("\n[SUCCESS] Account created successfully for " + registered.getFullName() + "!");
+            System.out.println("You can now log in using your username and password.");
+            return true;
+        } catch (IllegalArgumentException e) {
+            System.out.println("\n[ERROR] Registration validation failed: " + e.getMessage());
+            return false;
+        } catch (SQLException e) {
+            System.out.println("\n[ERROR] Database error during registration: " + e.getMessage());
+            return false;
+        }
+    }
+
+    // =========================================================================
+    // STUDENT SIGN IN (PAGE 4)
+    // =========================================================================
+
+    /**
+     * Displays Page 4 — Student Sign In and executes student authentication.
+     * Supports both Username and Student ID (USN).
+     * 
+     * @param scanner active Scanner
+     * @return boolean true if authenticated and portal session completed, false if cancelled/returned
+     */
+    public boolean showStudentSignIn(Scanner scanner) {
+        String statusMessage = "Please enter your account credentials.";
+
+        while (true) {
+            clearConsole();
+            renderStudentSignInHeader();
+
+            String identifier = readField(scanner, "Student ID / Username:  ");
+            String password = readPasswordField(scanner, "Password:               ");
+            System.out.println();
+
+            renderStudentSignInActions();
+            System.out.println("Message: " + statusMessage);
+            System.out.println("================================================================");
+
+            while (true) {
+                System.out.print("Enter your choice: ");
+                if (!scanner.hasNextLine()) {
+                    return false;
+                }
+                String choice = scanner.nextLine().trim();
+                if (System.console() == null) {
+                    System.out.println(choice);
+                }
+                System.out.println("================================================================");
+
+                if ("1".equals(choice)) {
+                    boolean success = processStudentSignIn(scanner, identifier, password);
+                    if (success) {
+                        return true;
+                    } else {
+                        System.out.print("\nPress Enter to try again, or enter 0 to return to Student Menu: ");
+                        if (!scanner.hasNextLine()) {
+                            return false;
+                        }
+                        String retry = scanner.nextLine().trim();
+                        if (System.console() == null) {
+                            System.out.println(retry);
+                        }
+                        if ("0".equals(retry)) {
+                            return false;
+                        }
+                        statusMessage = "Please check your credentials and try again.";
+                        break; // re-display Page 4 form
+                    }
+                } else if ("0".equals(choice)) {
+                    return false; // return to Student Menu
+                } else {
+                    System.out.println("[WARN] Invalid choice. Please enter 1 to Sign In or 0 to Back.");
+                    System.out.println("----------------------------------------------------------------");
+                }
+            }
+        }
+    }
+
+    /**
+     * Renders header for Page 4 — Student Sign In matching exact design specifications.
+     */
+    public void renderStudentSignInHeader() {
+        System.out.println("================================================================");
+        System.out.println("                    NEXTSTEP | STUDENT PORTAL");
+        System.out.println("                        STUDENT SIGN IN");
+        System.out.println("================================================================");
+        System.out.println();
+    }
+
+    /**
+     * Renders actions and separator for Page 4 — Student Sign In.
+     */
+    public void renderStudentSignInActions() {
+        System.out.println("                  1. SIGN IN");
+        System.out.println("                  0. BACK");
+        System.out.println();
+        System.out.println("----------------------------------------------------------------");
+    }
+
+    /**
+     * Authenticates student via Username or Student ID and dispatches to Student Portal.
+     */
+    private boolean processStudentSignIn(Scanner scanner, String identifier, String password) {
+        if (ValidationUtil.isNullOrBlank(identifier) || ValidationUtil.isNullOrBlank(password)) {
+            System.out.println("\n[ERROR] Invalid credentials. Student ID / Username and Password cannot be blank.");
+            return false;
+        }
+
+        try {
+            User user = authService.login(identifier, password);
+            if (user == null) {
+                System.out.println("\n[ERROR] Invalid credentials. Please check your Student ID / Username and password.");
+                return false;
+            }
+
+            if (user.getRole() != Role.STUDENT) {
+                System.out.println("\n[ERROR] Access denied. Placement officer accounts cannot sign in here.");
+                return false;
+            }
+
+            Student student = studentDAO.findByUserId(user.getId());
+            if (student == null) {
+                System.out.println("\n[ERROR] Student profile not found for this account.");
+                return false;
+            }
+
+            System.out.println("\n[SUCCESS] Login successful! Welcome, " + student.getFullName() + ".");
+            studentPortal(scanner, student, user);
+            return true;
+        } catch (SQLException e) {
+            System.out.println("\n[ERROR] Database error during sign in: " + e.getMessage());
+            return false;
+        }
+    }
+
+    public boolean handleStudentRegistration(Scanner scanner) {
+        return showStudentSignUp(scanner);
+    }
+
+    public void handleLogin(Scanner scanner) {
+        handleLogin(scanner, null);
+    }
+
+    public void handleLogin(Scanner scanner, Role expectedRole) {
+        if (expectedRole == Role.STUDENT) {
+            showStudentSignIn(scanner);
+            return;
+        }
+        String roleHeader = expectedRole == null ? "USER LOGIN" : "PLACEMENT OFFICER LOGIN";
+        System.out.println("\n--- " + roleHeader + " ---");
         String username = readNonEmptyString(scanner, "Username: ");
         String password = readNonEmptyString(scanner, "Password: ");
 
@@ -166,6 +630,12 @@ public class Main {
             User user = authService.login(username, password);
             if (user == null) {
                 System.out.println("\n[ERROR] Invalid credentials. Please check your username and password.");
+                return;
+            }
+
+            if (expectedRole != null && user.getRole() != expectedRole) {
+                String roleName = expectedRole == Role.STUDENT ? "Student" : "Placement Officer";
+                System.out.println("\n[ERROR] Access denied. This account does not have " + roleName + " privileges.");
                 return;
             }
 
