@@ -217,6 +217,52 @@ public class AuthService {
     }
 
     /**
+     * System property and environment variable keys for authorized officer activation.
+     */
+    public static final String ACTIVATION_CODE_PROP = "nextstep.officer.activation.code";
+    public static final String ACTIVATION_CODE_ENV = "NEXTSTEP_OFFICER_ACTIVATION_CODE";
+
+    /**
+     * Verifies whether the provided activation code authorizes placement officer registration.
+     * Restricted to configured administrative activation code (via system property or environment variable).
+     * Falls back to institutional default 'CAMPUS_OFFICER_2026' to allow authorized academic testing
+     * while rejecting unauthorized public registration with arbitrary codes.
+     */
+    public boolean verifyOfficerActivationCode(String activationCode) {
+        if (ValidationUtil.isNullOrBlank(activationCode)) {
+            return false;
+        }
+
+        String authorizedCode = System.getProperty(ACTIVATION_CODE_PROP);
+        if (authorizedCode == null || authorizedCode.trim().isEmpty()) {
+            authorizedCode = System.getenv(ACTIVATION_CODE_ENV);
+        }
+        if (authorizedCode == null || authorizedCode.trim().isEmpty()) {
+            authorizedCode = "CAMPUS_OFFICER_2026";
+        }
+
+        return authorizedCode.trim().equals(activationCode.trim());
+    }
+
+    /**
+     * Overloaded method for Page 5 (Officer Sign Up) validating the activation code,
+     * ensuring username uniqueness, and persisting the Placement Officer user account.
+     */
+    public User registerPlacementOfficer(String officerId, String fullName, String email,
+                                         String username, String password, String activationCode) throws SQLException {
+        if (!verifyOfficerActivationCode(activationCode)) {
+            throw new IllegalArgumentException("Invalid activation code. Placement officer registration unauthorized.");
+        }
+        if (ValidationUtil.isNullOrBlank(officerId)) {
+            throw new IllegalArgumentException("Officer ID cannot be empty.");
+        }
+        if (ValidationUtil.isNullOrBlank(fullName)) {
+            throw new IllegalArgumentException("Full name cannot be empty.");
+        }
+        return registerPlacementOfficer(username, password, email);
+    }
+
+    /**
      * Registers a new placement officer account.
      * For administrative setup; not accessible via public student registration menu.
      * 
