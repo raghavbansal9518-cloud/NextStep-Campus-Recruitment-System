@@ -1075,13 +1075,10 @@ public class Main {
         System.out.println(ConsoleTheme.text("Student ID: " + (student != null && student.getStudentId() != null ? student.getStudentId() : "N/A")));
         System.out.println(ConsoleTheme.divider("----------------------------------------------------------------"));
         System.out.println();
-        System.out.println(ConsoleTheme.text("  1. View My Profile ") + ConsoleTheme.comingSoon());
-        System.out.println(ConsoleTheme.text("  2. Update My Profile ") + ConsoleTheme.comingSoon());
-        System.out.println(ConsoleTheme.text("  3. Available Job Drives"));
-        System.out.println(ConsoleTheme.text("  4. Check Job Eligibility"));
-        System.out.println(ConsoleTheme.text("  5. Analyse Skill Match"));
-        System.out.println(ConsoleTheme.text("  6. Apply for a Job"));
-        System.out.println(ConsoleTheme.text("  7. View My Applications"));
+        System.out.println(ConsoleTheme.text("  1. View Available Job Drives"));
+        System.out.println(ConsoleTheme.text("  2. Check Job Eligibility & Skill Match"));
+        System.out.println(ConsoleTheme.text("  3. Apply for an Eligible Job"));
+        System.out.println(ConsoleTheme.text("  4. View My Applications"));
         System.out.println(ConsoleTheme.text("  0. Sign Out"));
         System.out.println();
         System.out.println(ConsoleTheme.divider("----------------------------------------------------------------"));
@@ -1109,19 +1106,55 @@ public class Main {
             System.out.println(ConsoleTheme.border("================================================================"));
 
             switch (choice) {
-                case "1" -> System.out.println("\nThis feature is not implemented yet.");
-                case "2" -> System.out.println("\nThis feature is not implemented yet.");
-                case "3" -> viewAvailableJobs();
-                case "4" -> showEligibilityAndSkillAnalysis(scanner, student);
-                case "5" -> showSkillAnalysisFlow(scanner, student);
-                case "6" -> showApplicationConfirmation(scanner, student);
-                case "7" -> viewStudentApplications(student);
+                case "1" -> viewAvailableJobsFlow(scanner, student);
+                case "2" -> showEligibilityAndSkillAnalysis(scanner, student);
+                case "3" -> showApplicationConfirmation(scanner, student);
+                case "4" -> viewStudentApplications(student);
                 case "0" -> {
                     System.out.println("\nSigning out from Student Portal...");
                     inPortal = false;
                 }
                 default -> System.out.println("[WARN] Invalid option. Please try again.");
             }
+        }
+    }
+
+    /**
+     * Connected workflow for Option 1 on Student Dashboard:
+     * Displays available job drives and allows immediate selection to inspect eligibility and apply.
+     */
+    public void viewAvailableJobsFlow(Scanner scanner, Student student) {
+        viewAvailableJobs();
+        System.out.println();
+        System.out.print("Enter Job ID to select & check eligibility (or 0 to Back): ");
+        if (!scanner.hasNextLine()) {
+            return;
+        }
+        String input = scanner.nextLine().trim();
+        if (System.console() == null) {
+            System.out.println(input);
+        }
+        if ("0".equals(input) || input.isEmpty()) {
+            return;
+        }
+
+        int jobId;
+        try {
+            jobId = Integer.parseInt(input);
+        } catch (NumberFormatException e) {
+            System.out.println(ConsoleTheme.red("[ERROR] Invalid Job ID. Must be numeric."));
+            return;
+        }
+
+        try {
+            Job job = jobDAO.findById(jobId);
+            if (job == null) {
+                System.out.println(ConsoleTheme.red("[ERROR] Job with ID " + jobId + " not found."));
+                return;
+            }
+            showEligibilityAndSkillAnalysisForJob(scanner, student, job);
+        } catch (SQLException e) {
+            System.out.println(ConsoleTheme.red("[ERROR] Database error retrieving job: " + e.getMessage()));
         }
     }
 
@@ -1759,6 +1792,11 @@ public class Main {
      * Displays Page 9 Part A — Eligibility Result and navigates to Part B.
      */
     public void showEligibilityAndSkillAnalysis(Scanner scanner, Student student) {
+        if (student == null) {
+            System.out.println("[ERROR] Student profile is null.");
+            return;
+        }
+
         System.out.print("Enter Job ID: ");
         if (!scanner.hasNextLine()) {
             return;
@@ -1769,6 +1807,9 @@ public class Main {
         }
         if (input.isEmpty()) {
             System.out.println("[ERROR] Job ID cannot be empty.");
+            return;
+        }
+        if ("0".equals(input)) {
             return;
         }
 
@@ -1792,6 +1833,13 @@ public class Main {
             return;
         }
 
+        showEligibilityAndSkillAnalysisForJob(scanner, student, job);
+    }
+
+    /**
+     * Displays Page 9 Part A — Unified Eligibility Result and Criteria Checklist for a selected job.
+     */
+    public void showEligibilityAndSkillAnalysisForJob(Scanner scanner, Student student, Job job) {
         try {
             if (student.getSkills() == null || student.getSkills().isEmpty()) {
                 student.setSkills(studentDAO.getStudentSkills(student.getId()));
@@ -1812,7 +1860,7 @@ public class Main {
             System.out.printf("%-24s%-19s%-16s%s%n", "Criteria", "Requirement", "Student Status", "Result");
             System.out.println(ConsoleTheme.divider("----------------------------------------------------------------"));
 
-            // Calculate unified eligibility using RecruitmentService
+            // Calculate unified eligibility using RecruitmentService as the single source of truth
             EligibilityResult result = recruitmentService.checkEligibility(student, job);
 
             // 1. CGPA
@@ -1838,14 +1886,38 @@ public class Main {
             String gradResult = result.isGraduationYearEligible() ? ConsoleTheme.green("PASS") : ConsoleTheme.red("FAIL");
             System.out.printf("%-24s%-19s%-16s%s%n", "Graduation Year", gradReq, String.valueOf(student.getGraduationYear()), gradResult);
 
+            // 5. Technical Skills
+            int totalReq = job.getRequiredSkills() != null ? job.getRequiredSkills().size() : 0;
+            int matchedReq = result.getMatchedSkills().size();
+            String skillsReq = totalReq > 0 ? totalReq + " Required" : "None";
+            String skillsStatus;
+            if (student.getSkills() == null || student.getSkills().isEmpty()) {
+                skillsStatus = "None Added";
+            } else {
+                skillsStatus = matchedReq + " / " + totalReq;
+            }
+            String skillsResult = result.isSkillsEligible() ? ConsoleTheme.green("PASS") : ConsoleTheme.red("FAIL");
+            System.out.printf("%-24s%-19s%-16s%s%n", "Technical Skills", skillsReq, skillsStatus, skillsResult);
+
             System.out.println(ConsoleTheme.divider("----------------------------------------------------------------"));
             System.out.println();
-            boolean overallEligible = result.isAcademicEligible();
+            boolean overallEligible = result.isEligible();
             String statusWord = overallEligible ? ConsoleTheme.green("ELIGIBLE") : ConsoleTheme.red("NOT ELIGIBLE");
             System.out.println("OVERALL RESULT: " + statusWord);
+
+            if (!result.getMissingSkills().isEmpty()) {
+                System.out.println("Missing Skills:         " + ConsoleTheme.red(String.join(", ", result.getMissingSkills())));
+            }
+            if (student.getSkills() == null || student.getSkills().isEmpty()) {
+                System.out.println(ConsoleTheme.warn("[NOTE] You have no technical skills registered. Please register skills to qualify."));
+            }
+
             System.out.println();
             System.out.println(ConsoleTheme.divider("----------------------------------------------------------------"));
             System.out.println(ConsoleTheme.text("                  1. CHECK SKILL MATCH"));
+            if (overallEligible) {
+                System.out.println(ConsoleTheme.text("                  2. APPLY FOR THIS JOB"));
+            }
             System.out.println(ConsoleTheme.text("                  0. BACK"));
             System.out.println(ConsoleTheme.border("================================================================"));
 
@@ -1861,10 +1933,17 @@ public class Main {
 
             if ("1".equals(choice)) {
                 showSkillMatchResult(student, job, scanner);
+            } else if ("2".equals(choice) && overallEligible) {
+                showApplicationConfirmationForJob(scanner, student, job);
+                return;
             } else if ("0".equals(choice)) {
                 return;
             } else {
-                System.out.println(ConsoleTheme.warn("[WARN] Invalid option. Please enter 1 to Check Skill Match or 0 to Back."));
+                if (overallEligible) {
+                    System.out.println(ConsoleTheme.warn("[WARN] Invalid option. Please enter 1 to Check Skill Match, 2 to Apply, or 0 to Back."));
+                } else {
+                    System.out.println(ConsoleTheme.warn("[WARN] Invalid option. Please enter 1 to Check Skill Match or 0 to Back."));
+                }
                 System.out.println(ConsoleTheme.divider("----------------------------------------------------------------"));
             }
         }
@@ -1919,8 +1998,16 @@ public class Main {
         System.out.println("Matched Skills:         " + matchedCount + " / " + totalSkills);
         System.out.println("Skill Match:            " + ConsoleTheme.green(matchPct + "%"));
         System.out.println("Missing Skills:         " + (missingSkills.isEmpty() ? "None" : ConsoleTheme.red(String.join(", ", missingSkills))));
+        if (studentSkills.isEmpty() && totalSkills > 0) {
+            System.out.println(ConsoleTheme.warn("[NOTE] You have no technical skills registered on your student profile."));
+        }
         System.out.println();
         System.out.println(ConsoleTheme.divider("----------------------------------------------------------------"));
+
+        EligibilityResult result = recruitmentService.checkEligibility(student, job);
+        if (result.isEligible()) {
+            System.out.println(ConsoleTheme.text("                  1. APPLY FOR THIS JOB"));
+        }
         System.out.println(ConsoleTheme.text("                  0. BACK"));
         System.out.println(ConsoleTheme.border("================================================================"));
 
@@ -1936,6 +2023,9 @@ public class Main {
             System.out.println(ConsoleTheme.border("================================================================"));
 
             if ("0".equals(choice)) {
+                return;
+            } else if ("1".equals(choice) && result.isEligible()) {
+                showApplicationConfirmationForJob(scanner, student, job);
                 return;
             } else {
                 System.out.println(ConsoleTheme.warn("[WARN] Invalid option. Please enter 0 to Back."));
@@ -2027,6 +2117,9 @@ public class Main {
             System.out.println("[ERROR] Job ID cannot be empty.");
             return;
         }
+        if ("0".equals(input)) {
+            return;
+        }
 
         int jobId;
         try {
@@ -2048,6 +2141,17 @@ public class Main {
             return;
         }
 
+        showApplicationConfirmationForJob(scanner, student, job);
+    }
+
+    /**
+     * Connected workflow for Page 10 — Application Confirmation for a selected job opening.
+     */
+    public void showApplicationConfirmationForJob(Scanner scanner, Student student, Job job) {
+        if (student == null || job == null) {
+            return;
+        }
+
         // Ensure student skills are loaded
         if (student.getSkills() == null || student.getSkills().isEmpty()) {
             try {
@@ -2056,26 +2160,57 @@ public class Main {
             }
         }
 
-        // Calculate unified eligibility dynamically using RecruitmentService
+        // Calculate unified eligibility dynamically using RecruitmentService as the single source of truth
         EligibilityResult eligResult = recruitmentService.checkEligibility(student, job);
-        boolean isEligible = eligResult.isAcademicEligible();
+        boolean isEligible = eligResult.isEligible();
         String eligibilityStr = isEligible ? ConsoleTheme.green("ELIGIBLE") : ConsoleTheme.red("NOT ELIGIBLE");
 
-        // Calculate Skill Match dynamically using Page 9 logic
-        List<String> reqSkills = job.getRequiredSkills() != null ? job.getRequiredSkills() : new ArrayList<>();
-        List<String> stdSkills = student.getSkills() != null ? student.getSkills() : new ArrayList<>();
-        int matchedCount = 0;
-        for (String req : reqSkills) {
-            for (String s : stdSkills) {
-                if (s.trim().equalsIgnoreCase(req.trim())) {
-                    matchedCount++;
-                    break;
+        int totalSkills = job.getRequiredSkills() != null ? job.getRequiredSkills().size() : 0;
+        int matchedCount = eligResult.getMatchedSkills().size();
+        int matchPct = totalSkills > 0 ? (int) Math.round(((double) matchedCount / totalSkills) * 100.0) : 100;
+        String skillMatchStr = matchPct + "%";
+
+        // If not eligible, explain why and block application
+        if (!isEligible) {
+            clearConsole();
+            renderApplicationConfirmationHeader();
+
+            System.out.println("Student ID:          " + (student.getStudentId() != null ? student.getStudentId() : "N/A"));
+            System.out.println("Job ID:              " + job.getId());
+            System.out.println("Job Role:            " + job.getTitle());
+            System.out.println("Eligibility:         " + eligibilityStr);
+            System.out.println("Skill Match:         " + skillMatchStr);
+            System.out.println();
+            System.out.println(ConsoleTheme.divider("----------------------------------------------------------------"));
+            System.out.println(ConsoleTheme.red("[BLOCKED] Application rejected: You are not eligible to apply for this job."));
+            for (String reason : eligResult.getReasons()) {
+                System.out.println(ConsoleTheme.red("  - " + reason));
+            }
+            System.out.println();
+            System.out.println(ConsoleTheme.divider("----------------------------------------------------------------"));
+            System.out.println(ConsoleTheme.text("                 0. BACK"));
+            System.out.println(ConsoleTheme.border("================================================================"));
+
+            while (true) {
+                System.out.print(ConsoleTheme.prompt("Enter your choice: "));
+                if (!scanner.hasNextLine()) {
+                    return;
+                }
+                String choice = scanner.nextLine().trim();
+                if (System.console() == null) {
+                    System.out.println(choice);
+                }
+                System.out.println(ConsoleTheme.border("================================================================"));
+
+                if ("0".equals(choice)) {
+                    System.out.println("\nApplication cancelled. Returning to Student Dashboard...");
+                    return;
+                } else {
+                    System.out.println(ConsoleTheme.red("[BLOCKED] Application rejected: Ineligible student cannot apply."));
+                    return;
                 }
             }
         }
-        int totalSkills = reqSkills.size();
-        int matchPct = totalSkills > 0 ? (int) Math.round(((double) matchedCount / totalSkills) * 100.0) : 100;
-        String skillMatchStr = matchPct + "%";
 
         while (true) {
             clearConsole();
@@ -2111,6 +2246,8 @@ public class Main {
                     renderApplicationConfirmationHeader();
                     System.out.println(ConsoleTheme.success("SUCCESS: Application " + app.getId() + " submitted!"));
                     System.out.println("Status: " + app.getStatus());
+                    System.out.println("Company: " + (app.getCompanyName() != null ? app.getCompanyName() : job.getCompanyName()) +
+                            " | Role: " + (app.getJobTitle() != null ? app.getJobTitle() : job.getTitle()));
                     System.out.println();
                     System.out.println(ConsoleTheme.border("================================================================"));
                     return;

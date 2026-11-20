@@ -1124,24 +1124,24 @@ public class ConsoleInputEdgeCaseTestRunner {
                                    rendered.contains("STUDENT DASHBOARD");
                 boolean studentInfoOk = rendered.contains("Welcome, Raghav Bansal") &&
                                         rendered.contains("Student ID: 25CSE0204");
-                boolean optionsOk = rendered.contains("1. View My Profile") &&
-                                    rendered.contains("2. Update My Profile") &&
-                                    rendered.contains("3. Available Job Drives") &&
-                                    rendered.contains("4. Check Job Eligibility") &&
-                                    rendered.contains("5. Analyse Skill Match") &&
-                                    rendered.contains("6. Apply for a Job") &&
-                                    rendered.contains("7. View My Applications") &&
+                boolean optionsOk = rendered.contains("1. View Available Job Drives") &&
+                                    rendered.contains("2. Check Job Eligibility & Skill Match") &&
+                                    rendered.contains("3. Apply for an Eligible Job") &&
+                                    rendered.contains("4. View My Applications") &&
                                     rendered.contains("0. Sign Out");
+                boolean noComingSoon = !rendered.contains("Coming Soon") &&
+                                       !rendered.contains("View My Profile") &&
+                                       !rendered.contains("Update My Profile");
 
-                if (headerOk && studentInfoOk && optionsOk) {
-                    pass("SD.1: Page 6 header, student details, and 7 options match exact reference layout");
+                if (headerOk && studentInfoOk && optionsOk && noComingSoon) {
+                    pass("SD.1: Page 6 header, student details, and 4 logical options match clean specifications with no unfinished items");
                 } else {
                     fail("SD.1", "Page 6 layout mismatch");
                 }
             }
 
             {
-                // Test SD.2: Unimplemented options (1, 2, 5) display clear message and return to Page 6
+                // Test SD.2: Logical student options cleanly return to Student Dashboard on '0'
                 ByteArrayOutputStream out = new ByteArrayOutputStream();
                 String inputs = String.join("\n",
                         "1",               // Page 1 -> Page 2
@@ -1150,9 +1150,12 @@ public class ConsoleInputEdgeCaseTestRunner {
                         testStudentUser,   // Username
                         "pass123",         // Password
                         "1",               // 1. SIGN IN
-                        "1",               // Page 6 -> 1. View My Profile (Unimplemented)
-                        "2",               // Page 6 -> 2. Update My Profile (Unimplemented)
-                        "5",               // Page 6 -> 5. Analyse Skill Match (Unimplemented)
+                        "1",               // Page 6 -> 1. View Available Job Drives
+                        "0",               // Return to Page 6
+                        "2",               // Page 6 -> 2. Check Job Eligibility
+                        "0",               // Return to Page 6
+                        "3",               // Page 6 -> 3. Apply for a Job
+                        "0",               // Return to Page 6
                         "0",               // Page 6 -> 0. Sign Out (returns to Page 2)
                         "0",               // Page 2 -> Page 1
                         "0"                // Page 1 -> Exit
@@ -1165,15 +1168,16 @@ public class ConsoleInputEdgeCaseTestRunner {
                 System.setOut(originalOut);
 
                 String outStr = out.toString(StandardCharsets.UTF_8);
-                if (outStr.contains("This feature is not implemented yet.")) {
-                    pass("SD.2: Unimplemented options (1, 2, 5) show clear message and return to Student Dashboard");
+                if (outStr.contains("AVAILABLE RECRUITMENT DRIVES") &&
+                    outStr.contains("Signing out from Student Portal...")) {
+                    pass("SD.2: Logical student dashboard options (1 to 3) execute cleanly and return safely to Student Dashboard");
                 } else {
-                    fail("SD.2", "Unimplemented option message missing");
+                    fail("SD.2", "Student Dashboard options failed to return safely");
                 }
             }
 
             {
-                // Test SD.3: Implemented options (3: Available Job Drives) function properly
+                // Test SD.3: Option 1 (Available Job Drives) renders active drives from database
                 ByteArrayOutputStream out = new ByteArrayOutputStream();
                 String inputs = String.join("\n",
                         "1",               // Page 1 -> Page 2
@@ -1182,7 +1186,8 @@ public class ConsoleInputEdgeCaseTestRunner {
                         testStudentUser,   // Username
                         "pass123",         // Password
                         "1",               // 1. SIGN IN
-                        "3",               // Page 6 -> 3. Available Job Drives
+                        "1",               // Page 6 -> 1. Available Job Drives
+                        "0",               // Return to Page 6
                         "0",               // Page 6 -> 0. Sign Out (returns to Page 2)
                         "0",               // Page 2 -> Page 1
                         "0"                // Page 1 -> Exit
@@ -1198,7 +1203,7 @@ public class ConsoleInputEdgeCaseTestRunner {
                 if (outStr.contains("AVAILABLE RECRUITMENT DRIVES") &&
                     outStr.contains("Active Drives:") &&
                     outStr.contains("Nexis Cloud Technologies")) {
-                    pass("SD.3: Option 3 (Available Job Drives) correctly renders active drives from database");
+                    pass("SD.3: Option 1 (Available Job Drives) correctly renders active drives from database");
                 } else {
                     fail("SD.3", "Available job drives not displayed");
                 }
@@ -1600,13 +1605,44 @@ public class ConsoleInputEdgeCaseTestRunner {
                 boolean hasCgpaPass = outStr.contains("CGPA") && outStr.contains("PASS");
                 boolean hasBranchPass = outStr.contains("Branch") && outStr.contains("PASS");
                 boolean hasGradPass = outStr.contains("Graduation Year") && outStr.contains("PASS");
-                boolean hasOverall = outStr.contains("OVERALL RESULT: ELIGIBLE");
+                boolean hasOverall = outStr.contains("OVERALL RESULT: NOT ELIGIBLE");
+                boolean hasMissing = outStr.contains("OOP");
                 boolean hasActions = outStr.contains("1. CHECK SKILL MATCH") && outStr.contains("0. BACK");
 
-                if (hasHeader && hasStudent && hasJob && hasChecklist && hasCgpaPass && hasBranchPass && hasGradPass && hasOverall && hasActions) {
-                    pass("ES.1: Page 9 Part A renders exact layout, checklist columns, PASS indicators, and OVERALL RESULT: ELIGIBLE");
+                if (hasHeader && hasStudent && hasJob && hasChecklist && hasCgpaPass && hasBranchPass && hasGradPass && hasOverall && hasMissing && hasActions) {
+                    pass("ES.1: Page 9 Part A renders checklist columns, PASS indicators, missing skills, and unified OVERALL RESULT: NOT ELIGIBLE when skills missing");
                 } else {
                     fail("ES.1", "Eligibility Result Part A layout or calculations did not match specifications");
+                }
+            }
+
+            {
+                // Test ES.1b: Page 9 Part A renders OVERALL RESULT: ELIGIBLE and direct Apply option for fully qualified student
+                String eligUser = "test_elig_" + timestamp;
+                String eligUsn = "ELIG" + (timestamp % 100000);
+                Student eligStudent = p9Auth.registerStudent(
+                        eligUser, "pass123", eligUser + "@test.edu",
+                        eligUsn, "Eligible Student", "9876543219",
+                        "CSE", 8.5, 0, 2029, java.util.List.of("Java", "SQL", "OOP", "DSA")
+                );
+
+                ByteArrayOutputStream out = new ByteArrayOutputStream();
+                String inputs = createdJobId + "\n0\n";
+                System.setIn(new ByteArrayInputStream(inputs.getBytes(StandardCharsets.UTF_8)));
+                System.setOut(new PrintStream(out, true, StandardCharsets.UTF_8));
+
+                Main app = new Main();
+                app.showEligibilityAndSkillAnalysis(new Scanner(System.in), eligStudent);
+                System.setOut(originalOut);
+
+                String outStr = out.toString(StandardCharsets.UTF_8);
+                boolean hasEligible = outStr.contains("OVERALL RESULT: ELIGIBLE");
+                boolean hasApplyOption = outStr.contains("2. APPLY FOR THIS JOB");
+
+                if (hasEligible && hasApplyOption) {
+                    pass("ES.1b: Page 9 Part A renders OVERALL RESULT: ELIGIBLE and direct Apply option for fully qualified student");
+                } else {
+                    fail("ES.1b", "Fully qualified student did not see ELIGIBLE or Apply option");
                 }
             }
 
@@ -1680,7 +1716,7 @@ public class ConsoleInputEdgeCaseTestRunner {
             }
 
             {
-                // Test ES.5: Student Dashboard Option 5 direct skill match integration
+                // Test ES.5: Student Dashboard Option 2 eligibility & skill match integration
                 ByteArrayOutputStream out = new ByteArrayOutputStream();
                 String inputs = String.join("\n",
                         "1",              // Page 1 -> Page 2
@@ -1689,9 +1725,11 @@ public class ConsoleInputEdgeCaseTestRunner {
                         p9StudentUser,    // Username
                         "pass123",        // Password
                         "1",              // Page 4 -> 1. SIGN IN
-                        "5",              // Page 6 -> Option 5 (Analyse Skill Match)
+                        "2",              // Page 6 -> Option 2 (Check Job Eligibility & Skill Match)
                         String.valueOf(createdJobId), // Job ID
+                        "1",              // Part A -> 1. CHECK SKILL MATCH
                         "0",              // Part B -> Option 0 (BACK)
+                        "0",              // Part A -> Option 0 (BACK)
                         "0",              // Page 6 -> Option 0 (Sign Out)
                         "0",              // Page 2 -> Page 1
                         "0"               // Page 1 -> Exit
@@ -1708,9 +1746,9 @@ public class ConsoleInputEdgeCaseTestRunner {
                 boolean returnedToDashboard = outStr.contains("Signing out from Student Portal...");
 
                 if (reachedSkillMatch && returnedToDashboard) {
-                    pass("ES.5: Student Dashboard Option 5 directly analyzes skill match for specified job and returns cleanly");
+                    pass("ES.5: Student Dashboard Option 2 directly inspects eligibility & analyzes skill match returning cleanly");
                 } else {
-                    fail("ES.5", "Student Dashboard Option 5 did not execute direct skill match analysis");
+                    fail("ES.5", "Student Dashboard Option 2 did not execute direct skill match analysis");
                 }
             }
 
@@ -1750,12 +1788,33 @@ public class ConsoleInputEdgeCaseTestRunner {
 
             {
                 // Test AC.1: Header, labels, dynamic calculated eligibility & skill match, and action footer
+                // First verify that when skills are missing, p9Student is blocked with NOT ELIGIBLE
+                ByteArrayOutputStream outBlocked = new ByteArrayOutputStream();
+                String inputsBlocked = createdJobId + "\n0\n";
+                System.setIn(new ByteArrayInputStream(inputsBlocked.getBytes(StandardCharsets.UTF_8)));
+                System.setOut(new PrintStream(outBlocked, true, StandardCharsets.UTF_8));
+
+                Main app = new Main();
+                app.showApplicationConfirmation(new Scanner(System.in), p9Student);
+                System.setOut(originalOut);
+
+                String outBlockedStr = outBlocked.toString(StandardCharsets.UTF_8);
+                boolean hasBlockedNotice = outBlockedStr.contains("Eligibility:         NOT ELIGIBLE")
+                        && outBlockedStr.contains("Skill Match:         75%")
+                        && outBlockedStr.contains("[BLOCKED] Application rejected:");
+
+                // Now grant required skill 'OOP' to p9Student so they become fully eligible
+                StudentDAO sDao = new StudentDAO();
+                try (Connection conn = DatabaseConnection.getConnection()) {
+                    sDao.saveStudentSkills(conn, p9Student.getId(), java.util.List.of("OOP"));
+                }
+                p9Student.setSkills(sDao.getStudentSkills(p9Student.getId()));
+
                 ByteArrayOutputStream out = new ByteArrayOutputStream();
                 String inputs = createdJobId + "\n0\n";
                 System.setIn(new ByteArrayInputStream(inputs.getBytes(StandardCharsets.UTF_8)));
                 System.setOut(new PrintStream(out, true, StandardCharsets.UTF_8));
 
-                Main app = new Main();
                 app.showApplicationConfirmation(new Scanner(System.in), p9Student);
                 System.setOut(originalOut);
 
@@ -1766,12 +1825,12 @@ public class ConsoleInputEdgeCaseTestRunner {
                 boolean hasJobId = outStr.contains("Job ID:              " + createdJobId);
                 boolean hasRole = outStr.contains("Job Role:            Test Job Software Engineer Intern");
                 boolean hasEligibility = outStr.contains("Eligibility:         ELIGIBLE");
-                boolean hasSkillMatch = outStr.contains("Skill Match:         75%");
+                boolean hasSkillMatch = outStr.contains("Skill Match:         100%");
                 boolean hasPrompt = outStr.contains("Are you sure you want to apply?");
                 boolean hasChoices = outStr.contains("1. CONFIRM APPLICATION") && outStr.contains("0. CANCEL");
 
-                if (hasHeader && hasStudentId && hasJobId && hasRole && hasEligibility && hasSkillMatch && hasPrompt && hasChoices) {
-                    pass("AC.1: Page 10 header, labels, dynamic eligibility, skill match (75%), and confirmation choices match specifications");
+                if (hasBlockedNotice && hasHeader && hasStudentId && hasJobId && hasRole && hasEligibility && hasSkillMatch && hasPrompt && hasChoices) {
+                    pass("AC.1: Page 10 header, labels, dynamic unified eligibility (blocked when missing skills, eligible when satisfied), and confirmation choices verified");
                 } else {
                     fail("AC.1", "Application Confirmation layout or values did not match Page 10 specifications");
                 }

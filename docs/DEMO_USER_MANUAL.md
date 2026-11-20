@@ -273,13 +273,10 @@ flowchart TD
 - **Screen Header:** `NEXTSTEP | STUDENT PORTAL — STUDENT DASHBOARD`
 - **Welcome Line:** Displays student's full name and student USN from MySQL.
 - **Available Options:**
-  - `1. View My Profile ` `[Coming Soon]` — Displays informative notice; returns to dashboard.
-  - `2. Update My Profile ` `[Coming Soon]` — Displays informative notice; returns to dashboard.
-  - `3. Available Job Drives` — Displays open job openings sorted by CTC (highest first).
-  - `4. Check Job Eligibility` — Prompts for Job ID and opens Page 9 Part A (Eligibility Result).
-  - `5. Analyse Skill Match` — Prompts for Job ID and directly analyzes skill alignment.
-  - `6. Apply for a Job` — Prompts for Job ID and opens Page 10 (Application Confirmation).
-  - `7. View My Applications` — Displays table of student's own submitted applications with status.
+  - `1. View Available Job Drives` — Displays open job openings sorted by CTC (highest first) and allows selecting a job to inspect eligibility and apply.
+  - `2. Check Job Eligibility & Skill Match` — Prompts for Job ID and opens Page 9 (Unified Eligibility & Skill Match Analysis).
+  - `3. Apply for an Eligible Job` — Prompts for Job ID and opens Page 10 (Application Confirmation) for eligible drives.
+  - `4. View My Applications` — Displays table of student's own submitted applications with status.
   - `0. Sign Out` — Signs out of session and returns to Page 2 (Account Portal).
 
 ---
@@ -326,22 +323,25 @@ flowchart TD
 ### Page 9 — Eligibility Result & Skill Match Result
 
 #### Part A: Criteria Checklist (Eligibility Result)
-- **Displays:** Student Name, Job ID, and a 4-point criteria table:
+- **Displays:** Student Name, Job ID, and a 5-point criteria checklist:
   - CGPA requirement vs Student status (`PASS` / `FAIL`)
   - Active Backlogs cutoff vs Student backlogs (`PASS` / `FAIL`)
   - Eligible branches list vs Student branch (`PASS` / `FAIL`)
   - Graduation Year cutoff vs Student year (`PASS` / `FAIL`)
-- **Overall Result Banner:** `OVERALL RESULT: ELIGIBLE` (green) or `OVERALL RESULT: NOT ELIGIBLE` (red).
+  - Technical Skills requirement vs Student matched skills (`PASS` / `FAIL`)
+- **Overall Result Banner:** `OVERALL RESULT: ELIGIBLE` (green) or `OVERALL RESULT: NOT ELIGIBLE` (red) — strictly derived from `RecruitmentService.checkEligibility()`.
 - **Actions:**
-  - `1. CHECK SKILL MATCH` — Transitions smoothly to Part B.
-  - `0. BACK` — Returns to Student Dashboard.
+  - `1. CHECK SKILL MATCH` — Transitions smoothly to Part B (detailed per-skill breakdown).
+  - `2. APPLY FOR THIS JOB` — Offered only when overall eligible; allows immediate application without returning to dashboard.
+  - `0. BACK` — Returns to previous page.
 
 #### Part B: Skill Match Result
 - **Displays:**
   - Table of required skills matched against student skills with `[MATCH]` (green) or `[MISSING]` (red).
-  - Summary metrics: Matched Skills count (`3 / 4`), Skill Match percentage (`75%`), and missing skills list (`Docker, AWS`).
+  - Summary metrics: Matched Skills count (`3 / 4`), Skill Match percentage (`75%`), and missing skills list (`OOP`).
 - **Actions:**
-  - `0. BACK` — Returns to Student Dashboard.
+  - `1. APPLY FOR THIS JOB` — Offered when eligible.
+  - `0. BACK` — Returns to Part A / caller.
 
 ---
 

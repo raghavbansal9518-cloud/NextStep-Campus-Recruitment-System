@@ -9,6 +9,8 @@ import com.nextstep.model.Role;
 import com.nextstep.model.Student;
 import com.nextstep.model.User;
 import com.nextstep.service.AuthService;
+import com.nextstep.service.RecruitmentService;
+import com.nextstep.service.RecruitmentService.EligibilityResult;
 
 import java.sql.Connection;
 import java.sql.PreparedStatement;
@@ -226,6 +228,79 @@ public class Phase3TestRunner {
 
             List<Job> nexisJobs = jobDAO.findByCompanyId(cByName.getId());
             assertTrue("E6: Retrieve jobs by Company ID", !nexisJobs.isEmpty());
+
+            // -----------------------------------------------------------------
+            // TEST SUITE F: ELIGIBILITY & SKILL MATCHING CONSISTENCY
+            // -----------------------------------------------------------------
+            System.out.println("\n--- TEST SUITE F: Eligibility & Skill Matching Consistency ---");
+
+            RecruitmentService recruitmentService = new RecruitmentService(jobDAO, new com.nextstep.dao.ApplicationDAO());
+            Job testJobF = new Job();
+            testJobF.setId(99901);
+            testJobF.setTitle("Test Job F Engineer");
+            testJobF.setMinCgpa(7.0);
+            testJobF.setMaxBacklogs(0);
+            testJobF.setEligibleBranches(Arrays.asList("Computer Science", "Information Technology"));
+            testJobF.setGraduationYear(2026);
+            testJobF.setRequiredSkills(Arrays.asList("Java", "SQL", "Git"));
+
+            // F1: Academic eligible + skills matched => overall eligible
+            Student sF1 = new Student(901, 901, "USN_F1", "Student F1", "123", "Computer Science", 8.0, 0, 2026, Arrays.asList("Java", "SQL", "Git"));
+            EligibilityResult resF1 = recruitmentService.checkEligibility(sF1, testJobF);
+            assertTrue("F1: Academic eligible + skills matched => overall eligible",
+                    resF1.isAcademicEligible() && resF1.isSkillsEligible() && resF1.isEligible());
+
+            // F2: Academic eligible + skills missing => overall ineligible
+            Student sF2 = new Student(902, 902, "USN_F2", "Student F2", "123", "Computer Science", 8.0, 0, 2026, Arrays.asList("Java"));
+            EligibilityResult resF2 = recruitmentService.checkEligibility(sF2, testJobF);
+            assertTrue("F2: Academic eligible + skills missing => overall ineligible",
+                    resF2.isAcademicEligible() && !resF2.isSkillsEligible() && !resF2.isEligible() && resF2.getMissingSkills().contains("SQL"));
+
+            // F3: Academic ineligible (low CGPA) + skills matched => overall ineligible
+            Student sF3 = new Student(903, 903, "USN_F3", "Student F3", "123", "Computer Science", 6.0, 0, 2026, Arrays.asList("Java", "SQL", "Git"));
+            EligibilityResult resF3 = recruitmentService.checkEligibility(sF3, testJobF);
+            assertTrue("F3: Academic ineligible (low CGPA) + skills matched => overall ineligible",
+                    !resF3.isAcademicEligible() && resF3.isSkillsEligible() && !resF3.isEligible());
+
+            // F4: Academic ineligible (backlogs) + skills missing => overall ineligible
+            Student sF4 = new Student(904, 904, "USN_F4", "Student F4", "123", "Computer Science", 6.0, 2, 2026, Arrays.asList("Python"));
+            EligibilityResult resF4 = recruitmentService.checkEligibility(sF4, testJobF);
+            assertTrue("F4: Academic ineligible (backlogs) + skills missing => overall ineligible",
+                    !resF4.isAcademicEligible() && !resF4.isSkillsEligible() && !resF4.isEligible());
+
+            // F5: Empty student skills with required job skills => overall ineligible
+            Student sF5 = new Student(905, 905, "USN_F5", "Student F5", "123", "Computer Science", 8.5, 0, 2026, java.util.Collections.emptyList());
+            EligibilityResult resF5 = recruitmentService.checkEligibility(sF5, testJobF);
+            assertTrue("F5: Empty student skills with required job skills => overall ineligible and missing all skills",
+                    resF5.isAcademicEligible() && !resF5.isSkillsEligible() && !resF5.isEligible() && resF5.getMissingSkills().size() == 3);
+
+            // F6: Case-insensitive skill matching
+            Student sF6 = new Student(906, 906, "USN_F6", "Student F6", "123", "Computer Science", 8.0, 0, 2026, Arrays.asList("java", "sql", "GIT"));
+            EligibilityResult resF6 = recruitmentService.checkEligibility(sF6, testJobF);
+            assertTrue("F6: Case-insensitive skill matching ('java', 'sql', 'GIT') => overall eligible",
+                    resF6.isSkillsEligible() && resF6.isEligible());
+
+            // F7: Job with no required skills => all skills pass
+            Job testJobNoSkills = new Job();
+            testJobNoSkills.setId(99902);
+            testJobNoSkills.setTitle("No Skills Job");
+            testJobNoSkills.setMinCgpa(6.0);
+            testJobNoSkills.setMaxBacklogs(0);
+            testJobNoSkills.setGraduationYear(2026);
+            testJobNoSkills.setRequiredSkills(java.util.Collections.emptyList());
+            EligibilityResult resF7 = recruitmentService.checkEligibility(sF5, testJobNoSkills);
+            assertTrue("F7: Job with no required skills => skill criteria satisfied",
+                    resF7.isSkillsEligible() && resF7.isEligible());
+
+            // F8: Ineligible student applyForJob throws IllegalStateException
+            boolean applyBlocked = false;
+            try {
+                recruitmentService.applyForJob(sF2, j1.getId());
+            } catch (IllegalStateException e) {
+                applyBlocked = true;
+            } catch (Exception ignored) {
+            }
+            assertTrue("F8: Ineligible student application blocked with IllegalStateException", applyBlocked);
 
         } finally {
             // Cleanup test student and user
