@@ -1,5 +1,6 @@
 package com.nextstep.util;
 
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
@@ -78,6 +79,35 @@ public class ValidationUtil {
      */
     public static boolean isValidGraduationYear(int year) {
         return year >= 2020 && year <= 2035;
+    }
+
+    /**
+     * Parses a comma-separated string of items (e.g. technical skills) into a clean List<String>.
+     * Removes leading and trailing spaces, ignores empty tokens, and removes duplicates
+     * without regard to case while preserving original input case.
+     */
+    public static List<String> parseCommaSeparatedList(String input) {
+        if (isNullOrBlank(input)) {
+            return Collections.emptyList();
+        }
+        List<String> list = new ArrayList<>();
+        String[] tokens = input.split(",");
+        for (String token : tokens) {
+            String trimmed = token.trim();
+            if (!trimmed.isEmpty()) {
+                boolean duplicate = false;
+                for (String existing : list) {
+                    if (existing.equalsIgnoreCase(trimmed)) {
+                        duplicate = true;
+                        break;
+                    }
+                }
+                if (!duplicate) {
+                    list.add(trimmed);
+                }
+            }
+        }
+        return list;
     }
 
     /**

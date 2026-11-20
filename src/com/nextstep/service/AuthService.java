@@ -16,8 +16,9 @@ import java.security.SecureRandom;
 import java.security.spec.InvalidKeySpecException;
 import java.sql.Connection;
 import java.sql.SQLException;
-import java.util.HexFormat;
+import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HexFormat;
 import java.util.List;
 
 /**
@@ -129,6 +130,31 @@ public class AuthService {
                                branch, cgpa, 0, graduationYear, Collections.emptyList());
     }
 
+    /**
+     * Registers a student using Page 3 (Student Sign Up) form inputs including technical skills,
+     * applying standard defaults (phone = "N/A", activeBacklogs = 0).
+     *
+     * @param username student account username
+     * @param password student account plaintext password (hashed with PBKDF2)
+     * @param email student email address
+     * @param studentId University Roll No / USN
+     * @param fullName student full name
+     * @param branch degree branch
+     * @param cgpa cumulative GPA (0.00 - 10.00)
+     * @param graduationYear expected graduation year (2020 - 2035)
+     * @param skills list of technical skills
+     * @return Registered Student profile
+     * @throws IllegalArgumentException on validation failure
+     * @throws SQLException on database error
+     */
+    public Student registerStudent(String username, String password, String email,
+                                   String studentId, String fullName,
+                                   String branch, double cgpa, int graduationYear,
+                                   List<String> skills) throws SQLException {
+        return registerStudent(username, password, email, studentId, fullName, "N/A",
+                               branch, cgpa, 0, graduationYear, skills);
+    }
+
     public Student registerStudent(String username, String password, String email,
                                    String studentId, String fullName, String phone,
                                    String branch, double cgpa, int activeBacklogs,
@@ -199,9 +225,27 @@ public class AuthService {
 
                 // C. Save Skills
                 if (skills != null && !skills.isEmpty()) {
-                    studentDAO.saveStudentSkills(conn, student.getId(), skills);
-                    for (String skill : skills) {
-                        student.addSkill(skill);
+                    List<String> cleanSkills = new ArrayList<>();
+                    for (String s : skills) {
+                        if (s != null && !s.trim().isEmpty()) {
+                            String trimmed = s.trim();
+                            boolean dup = false;
+                            for (String existing : cleanSkills) {
+                                if (existing.equalsIgnoreCase(trimmed)) {
+                                    dup = true;
+                                    break;
+                                }
+                            }
+                            if (!dup) {
+                                cleanSkills.add(trimmed);
+                            }
+                        }
+                    }
+                    if (!cleanSkills.isEmpty()) {
+                        studentDAO.saveStudentSkills(conn, student.getId(), cleanSkills);
+                        for (String skill : cleanSkills) {
+                            student.addSkill(skill);
+                        }
                     }
                 }
 

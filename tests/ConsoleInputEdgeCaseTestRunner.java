@@ -20,6 +20,7 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
+import java.util.List;
 import java.util.Scanner;
 
 /**
@@ -203,6 +204,7 @@ public class ConsoleInputEdgeCaseTestRunner {
                         "CS",           // Branch
                         "8.0",          // CGPA
                         "2026",         // Grad Year
+                        "Java, SQL, Git", // Technical Skills
                         "cancel_user",  // Username
                         "password123",  // Password
                         "password123",  // Confirm Password
@@ -227,6 +229,7 @@ public class ConsoleInputEdgeCaseTestRunner {
                 boolean hasField4 = outStr.contains("Branch:");
                 boolean hasField5 = outStr.contains("CGPA:");
                 boolean hasField6 = outStr.contains("Graduation Year:");
+                boolean hasFieldSkills = outStr.contains("Technical Skills:");
                 boolean hasField7 = outStr.contains("Username:");
                 boolean hasField8 = outStr.contains("Password:");
                 boolean hasField9 = outStr.contains("Confirm Password:");
@@ -234,7 +237,7 @@ public class ConsoleInputEdgeCaseTestRunner {
                 boolean hasOpt0 = outStr.contains("0. BACK");
 
                 if (hasHeader && hasField1 && hasField2 && hasField3 && hasField4 &&
-                        hasField5 && hasField6 && hasField7 && hasField8 && hasField9 &&
+                        hasField5 && hasField6 && hasFieldSkills && hasField7 && hasField8 && hasField9 &&
                         hasOpt1 && hasOpt0) {
                     pass("SU.1: Page 3 layout strictly matches reference layout and field alignment");
                 } else {
@@ -261,6 +264,7 @@ public class ConsoleInputEdgeCaseTestRunner {
                         "Information Science",// Branch
                         "8.50",            // CGPA
                         "2026",            // Grad Year
+                        "Java, SQL",       // Technical Skills
                         "user_mismatch",   // Username
                         "password123",     // Password
                         "DIFFERENT_PASS",  // Confirm Password (mismatch!)
@@ -298,6 +302,7 @@ public class ConsoleInputEdgeCaseTestRunner {
                         "Computer Science",// Branch
                         "11.5",            // Invalid CGPA (> 10.0)
                         "2026",            // Grad Year
+                        "Java, Python",    // Technical Skills
                         "valid_user_x",    // Username
                         "password123",     // Password
                         "password123",     // Confirm Password
@@ -335,6 +340,7 @@ public class ConsoleInputEdgeCaseTestRunner {
                         "Computer Science",// Branch
                         "9.00",            // CGPA
                         "2026",            // Grad Year
+                        "Java, SQL",       // Technical Skills
                         testOfficerUser,   // Duplicate Username (already exists!)
                         "password123",     // Password
                         "password123",     // Confirm Password
@@ -377,6 +383,7 @@ public class ConsoleInputEdgeCaseTestRunner {
                         "Computer Science Engineering", // Branch
                         "9.45",            // CGPA
                         "2026",            // Graduation Year
+                        "Java, Spring Boot, SQL, Git", // Technical Skills
                         newStdUser,        // Username
                         "securePassword99",// Password
                         "securePassword99",// Confirm Password
@@ -415,10 +422,59 @@ public class ConsoleInputEdgeCaseTestRunner {
                 StudentDAO studentDAO = new StudentDAO();
                 Student studentInDb = studentDAO.findByStudentId(newStdUsn);
                 if (studentInDb != null && newStdName.equals(studentInDb.getFullName()) &&
-                        studentInDb.getCgpa() == 9.45 && studentInDb.getGraduationYear() == 2026) {
-                    pass("SU.8: Student profile attributes persisted accurately in MySQL database");
+                        studentInDb.getCgpa() == 9.45 && studentInDb.getGraduationYear() == 2026 &&
+                        studentInDb.getSkills().contains("Java") && studentInDb.getSkills().contains("Spring Boot") &&
+                        studentInDb.getSkills().contains("SQL") && studentInDb.getSkills().contains("Git")) {
+                    pass("SU.8: Student profile attributes and skills persisted accurately in MySQL database");
                 } else {
                     fail("SU.8", "Student profile database record verification failed");
+                }
+            }
+
+            {
+                // Test SU.9: Technical skills parsing helper and empty skills rejection
+                List<String> parsedSkills = ValidationUtil.parseCommaSeparatedList("  Java ,  SQL , java, Git, , Python , SQL  ");
+                boolean skillsParsedCorrectly = parsedSkills.size() == 4 &&
+                        parsedSkills.contains("Java") &&
+                        parsedSkills.contains("SQL") &&
+                        parsedSkills.contains("Git") &&
+                        parsedSkills.contains("Python");
+
+                ByteArrayOutputStream out = new ByteArrayOutputStream();
+                String inputs = String.join("\n",
+                        "1",               // Page 1 -> Page 2
+                        "1",               // Page 2 -> Student Menu
+                        "1",               // Student Menu -> Page 3
+                        "ID_EMPTY_SKILLS", // Student ID
+                        "No Skills Student",// Full Name
+                        "noskills@test.com",// Email
+                        "Computer Science",// Branch
+                        "8.00",            // CGPA
+                        "2026",            // Grad Year
+                        "   ,  ,   ",      // Empty/whitespace Technical Skills!
+                        "noskills_user",   // Username
+                        "password123",     // Password
+                        "password123",     // Confirm Password
+                        "1",               // Choice: 1. CREATE ACCOUNT
+                        "0",               // Decline retry -> return to Student Menu
+                        "0",               // Student Menu -> Page 2
+                        "0",               // Page 2 -> Page 1
+                        "0"                // Page 1 -> Exit
+                ) + "\n";
+                System.setIn(new ByteArrayInputStream(inputs.getBytes(StandardCharsets.UTF_8)));
+                System.setOut(new PrintStream(out, true, StandardCharsets.UTF_8));
+
+                Main app = new Main();
+                app.run(new Scanner(System.in));
+                System.setOut(originalOut);
+
+                String outStr = out.toString(StandardCharsets.UTF_8);
+                boolean emptySkillsRejected = outStr.contains("Technical skills cannot be empty");
+
+                if (skillsParsedCorrectly && emptySkillsRejected) {
+                    pass("SU.9: Technical skills comma-parsing, trimming, case-insensitive deduplication, and empty-check verified");
+                } else {
+                    fail("SU.9", "Technical skills parsing or empty validation failed");
                 }
             }
 
@@ -2007,6 +2063,7 @@ public class ConsoleInputEdgeCaseTestRunner {
                         "CSE",             // Branch
                         "8.5",             // CGPA
                         "2026",            // Grad Year
+                        "Java, SQL",       // Technical Skills
                         "b_user_" + timestamp, // Username
                         "password123",     // Password
                         "password123",     // Confirm Password
@@ -2047,6 +2104,7 @@ public class ConsoleInputEdgeCaseTestRunner {
                         "CSE",             // Branch
                         "8.5",             // CGPA
                         "2026",            // Grad Year
+                        "Java, SQL",       // Technical Skills
                         "n_user_" + timestamp, // Username
                         "password123",     // Password
                         "password123",     // Confirm Password
@@ -2087,6 +2145,7 @@ public class ConsoleInputEdgeCaseTestRunner {
                         "CSE",             // Branch
                         "8.5",             // CGPA
                         "2026",            // Grad Year
+                        "Java, SQL",       // Technical Skills
                         "esc_user_" + timestamp, // Username
                         "password123",     // Password
                         "password123",     // Confirm Password

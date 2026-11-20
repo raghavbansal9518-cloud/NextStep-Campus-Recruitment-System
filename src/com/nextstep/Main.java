@@ -328,7 +328,7 @@ public class Main {
      * @return boolean true if account was created, false if cancelled/returned
      */
     public boolean showStudentSignUp(Scanner scanner) {
-        String[] values = new String[9];
+        String[] values = new String[10];
         while (true) {
             clearConsole();
             renderStudentSignUpHeader();
@@ -342,14 +342,15 @@ public class Main {
                     "Branch:                 ",
                     "CGPA:                   ",
                     "Graduation Year:        ",
+                    "Technical Skills:       ",
                     "Username:               ",
                     "Password:               ",
                     "Confirm Password:       "
             };
             boolean[] isPassword = {
-                    false, false, false, false, false, false, false, true, true
+                    false, false, false, false, false, false, false, false, true, true
             };
-            int[] blankLines = { 5 };
+            int[] blankLines = { 6 };
 
             boolean completed = fillMultiFieldForm(scanner, prompts, isPassword, blankLines, values);
             if (!completed) {
@@ -362,9 +363,10 @@ public class Main {
             String branch = values[3];
             String cgpaStr = values[4];
             String gradYearStr = values[5];
-            String username = values[6];
-            String password = values[7];
-            String confirmPassword = values[8];
+            String skillsStr = values[6];
+            String username = values[7];
+            String password = values[8];
+            String confirmPassword = values[9];
 
             renderStudentSignUpFooter();
 
@@ -382,7 +384,7 @@ public class Main {
                 if ("1".equals(choice)) {
                     boolean created = processStudentRegistration(
                             studentId, fullName, email, branch, cgpaStr, gradYearStr,
-                            username, password, confirmPassword
+                            skillsStr, username, password, confirmPassword
                     );
                     if (created) {
                         return true;
@@ -399,8 +401,8 @@ public class Main {
                             return false;
                         }
                         // Reset sensitive password fields on retry, keep filled demographic fields
-                        values[7] = "";
                         values[8] = "";
+                        values[9] = "";
                         break; // re-run outer loop to show form again
                     }
                 } else if ("0".equals(choice)) {
@@ -576,6 +578,7 @@ public class Main {
      */
     private boolean processStudentRegistration(String studentId, String fullName, String email,
                                                String branch, String cgpaStr, String gradYearStr,
+                                               String skillsStr,
                                                String username, String password, String confirmPassword) {
         // 1. Password Confirmation Check
         if (!password.equals(confirmPassword)) {
@@ -598,6 +601,12 @@ public class Main {
         }
         if (ValidationUtil.isNullOrBlank(branch)) {
             System.out.println("\n[ERROR] Branch cannot be empty.");
+            return false;
+        }
+
+        List<String> skills = ValidationUtil.parseCommaSeparatedList(skillsStr);
+        if (skills.isEmpty()) {
+            System.out.println("\n[ERROR] Technical skills cannot be empty. Please enter at least one valid skill (e.g. Java, SQL, Git).");
             return false;
         }
 
@@ -639,7 +648,7 @@ public class Main {
         // 5. Transactional Persistence via AuthService
         try {
             Student registered = authService.registerStudent(
-                    username, password, email, studentId, fullName, branch, cgpa, graduationYear
+                    username, password, email, studentId, fullName, branch, cgpa, graduationYear, skills
             );
             System.out.println("\n[SUCCESS] Account created successfully for " + registered.getFullName() + "!");
             System.out.println("You can now log in using your username and password.");
