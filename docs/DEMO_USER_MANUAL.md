@@ -178,7 +178,7 @@ flowchart TD
     PO_Login -->|Success| P7["Page 7: Officer Dashboard"]
     PO_Login -->|0. Back| OM
     
-    P7 -->|3. Manage Drives| P8["Page 8: Create Job Drive"]
+    P7 -->|3. Create Job Drive| P8["Page 8: Create Job Drive"]
     P7 -->|4. View Applications| P11["Page 11: Application Records"]
     P7 -->|5. Update Status| P7_Status["Status Update Workflow"]
     P7 -->|0. Sign Out| P2
@@ -291,7 +291,7 @@ flowchart TD
 - **Available Options:**
   - `1. Manage Student Records ` `[Coming Soon]` — Future milestone placeholder.
   - `2. Manage Companies ` `[Coming Soon]` — Future milestone placeholder.
-  - `3. Manage Job Drives` — Opens Page 8 (Create Job Drive).
+  - `3. Create Job Drive` — Opens Page 8 (Create Job Drive).
   - `4. View Applications` — Opens Page 11 (Application Records).
   - `5. Update Application Status` — Prompts for Application ID and advances candidate status (`APPLIED` → `SHORTLISTED` → `SELECTED` / `REJECTED`).
   - `0. Sign Out` — Signs out and returns to Page 2 (Account Portal).
@@ -303,20 +303,22 @@ flowchart TD
 - **Screen Header:** `NEXTSTEP | PLACEMENT OFFICER PORTAL — CREATE JOB DRIVE`
 - **Live Company Lookup:** Queries MySQL and displays registered partner companies with their real IDs:
   ```text
-  Available Partner Companies:
-    [ID 1] Nexis Cloud Technologies
-    [ID 2] Apex Financial Software
-    [ID 3] Quantum Robotics Labs
+  Available Partner Companies (Select by ID):
+    [ID 1] Nexis Cloud Technologies       | Cloud Infrastructure   | Bengaluru, KA
+    [ID 2] Apex Financial Software        | Fintech & Banking      | Mumbai, MH
+    [ID 3] Quantum Robotics Labs          | AI & Robotics          | Hyderabad, TS
   ```
 - **Input Fields:**
-  1. `Job ID:                 ` (Auto-calculated next primary key ID, e.g., `4`)
-  2. `Company ID:             ` (Select an ID from the displayed partner list)
-  3. `Job Role:               ` (e.g., `Cloud Operations Engineer`)
-  4. `Minimum CGPA:           ` (Cutoff, e.g., `7.00`)
-  5. `Eligible Branches:      ` (Comma-separated, e.g., `Computer Science, Information Technology`)
-  6. `Graduation Year:        ` (Target batch, e.g., `2026`)
-  7. `Required Skills:        ` (Comma-separated, e.g., `Java, Linux, Docker, AWS`)
-  8. `Application Deadline:   ` (Formatted date string, e.g., `30-11-2026`)
+  1. `Company ID:             ` (Select an ID from the displayed partner list)
+  2. `Job Title:              ` (e.g., `Associate Cloud Engineer`)
+  3. `Job Description:        ` (e.g., `Design, build, and maintain cloud infrastructure on AWS and GCP.`)
+  4. `CTC (LPA):              ` (Package in LPA, e.g., `12.50`)
+  5. `Job Location:           ` (Job location, e.g., `Bengaluru, KA`)
+  6. `Minimum CGPA:           ` (Cutoff, e.g., `7.20`)
+  7. `Max Active Backlogs:    ` (Maximum allowed active backlogs, e.g., `0`)
+  8. `Eligible Branches:      ` (Comma-separated, e.g., `Computer Science, Information Technology`)
+  9. `Required Skills:        ` (Comma-separated, e.g., `Java, SQL, Linux, Git`)
+  10. `Graduation Year:        ` (Target batch, e.g., `2026`)
 - **Actions:**
   - `1. PUBLISH JOB` — Atomically inserts `jobs`, `job_eligible_branches`, and `job_required_skills` records into MySQL.
   - `0. CANCEL` — Aborts publishing without creating database records.
@@ -422,12 +424,15 @@ Use real Company ID `1` (`Nexis Cloud Technologies`) from the seeded database:
 
 ```text
 Company ID:             1
-Job Role:               Associate Cloud Engineer
+Job Title:              Associate Cloud Engineer
+Job Description:        Design, build, and maintain cloud infrastructure on AWS and GCP.
+CTC (LPA):              12.50
+Job Location:           Bengaluru, KA
 Minimum CGPA:           7.20
+Max Active Backlogs:    0
 Eligible Branches:      Computer Science, Information Technology
-Graduation Year:        2026
 Required Skills:        Java, SQL, Linux, Git
-Application Deadline:   31-12-2026
+Graduation Year:        2026
 ```
 
 ---

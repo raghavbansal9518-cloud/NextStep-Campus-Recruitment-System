@@ -1,3 +1,4 @@
+import com.nextstep.Main;
 import com.nextstep.dao.ApplicationDAO;
 import com.nextstep.dao.CompanyDAO;
 import com.nextstep.dao.JobDAO;
@@ -48,6 +49,15 @@ public class Phase4TestRunner {
              PreparedStatement stmt = conn.prepareStatement("DELETE FROM applications WHERE student_id = ? AND job_id = ?")) {
             stmt.setInt(1, studentId);
             stmt.setInt(2, jobId);
+            stmt.executeUpdate();
+        } catch (Exception ignored) {
+        }
+    }
+
+    private static void cleanupJobs() {
+        try (Connection conn = DatabaseConnection.getConnection();
+             PreparedStatement stmt = conn.prepareStatement(
+                     "DELETE FROM jobs WHERE title LIKE 'P4 %' OR title LIKE 'Test Job %' OR title LIKE 'Zero CTC%'")) {
             stmt.executeUpdate();
         } catch (Exception ignored) {
         }
@@ -233,14 +243,132 @@ public class Phase4TestRunner {
             assertTrue("Test 13a: CompanyDAO still functions", companyDAO.findAllCompanies().size() >= 3);
             assertTrue("Test 13b: StudentDAO findByUserId functions", studentDAO.findByUserId(student1.getUserId()) != null);
 
+            // -----------------------------------------------------------------
+            // TEST 14: JOB CREATION VALIDATION & PERSISTENCE (PHASE 4 CORE)
+            // -----------------------------------------------------------------
+            System.out.println("\n--- 6. JOB CREATION VALIDATION & PERSISTENCE ---");
+            Main app = new Main();
+
+            // 14a. Valid Job Creation with real CTC, Location, Max Backlogs, Description, Company ID
+            String p4JobTitle = "P4 Senior Cloud Architect " + System.currentTimeMillis();
+            boolean createdSuccess = app.processJobDriveCreation(
+                    "1",                          // Company ID (Nexis Cloud Technologies)
+                    p4JobTitle,                   // Job Title
+                    "Full-time cloud architect role designing scalable microservices.", // Description
+                    "18.75",                      // CTC (LPA)
+                    "Hyderabad, TS",              // Location
+                    "7.50",                       // Min CGPA
+                    "2",                          // Max Backlogs
+                    "CSE, IT, ECE",               // Eligible Branches
+                    "Java, Spring, SQL, Docker",  // Required Skills
+                    "2026"                        // Graduation Year
+            );
+            assertTrue("Test 14a: Valid job drive creation succeeds", createdSuccess);
+
+            // 14b. Verify persisted Job fields in MySQL
+            Job persistedJob = null;
+            for (Job j : jobDAO.findAllJobs()) {
+                if (p4JobTitle.equals(j.getTitle())) {
+                    persistedJob = j;
+                    break;
+                }
+            }
+            assertTrue("Test 14b-1: Persisted job found in database", persistedJob != null);
+            if (persistedJob != null) {
+                assertTrue("Test 14b-2: Correct company FK associated", persistedJob.getCompanyId() == 1);
+                assertTrue("Test 14b-3: Real CTC persisted (18.75 LPA)",
+                        persistedJob.getCtcLpa() != null && persistedJob.getCtcLpa().compareTo(new java.math.BigDecimal("18.75")) == 0);
+                assertTrue("Test 14b-4: Real Location persisted ('Hyderabad, TS')",
+                        "Hyderabad, TS".equals(persistedJob.getLocation()));
+                assertTrue("Test 14b-5: Real Max Backlogs persisted (2)",
+                        persistedJob.getMaxBacklogs() == 2);
+                assertTrue("Test 14b-6: Real Description persisted",
+                        persistedJob.getDescription().contains("Full-time cloud architect role"));
+                assertTrue("Test 14b-7: Eligible branches persisted in DB",
+                        persistedJob.getEligibleBranches().contains("CSE") && persistedJob.getEligibleBranches().contains("ECE"));
+                assertTrue("Test 14b-8: Required skills persisted in DB",
+                        persistedJob.getRequiredSkills().contains("Java") && persistedJob.getRequiredSkills().contains("Docker"));
+            }
+
+            // 14c. CTC Validation: Zero CTC is accepted
+            boolean zeroCtcSuccess = app.processJobDriveCreation(
+                    "1", "Zero CTC Internship " + System.currentTimeMillis(), "Internship",
+                    "0.00", "Remote", "6.00", "0", "CSE", "Java", "2026"
+            );
+            assertTrue("Test 14c: Zero CTC (0.00 LPA) is accepted", zeroCtcSuccess);
+
+            // 14d. CTC Validation: Negative CTC rejected
+            boolean negCtcRejected = !app.processJobDriveCreation(
+                    "1", "Invalid CTC Job", "Desc", "-5.00", "Campus", "7.00", "0", "CSE", "Java", "2026"
+            );
+            assertTrue("Test 14d: Negative CTC is rejected", negCtcRejected);
+
+            // 14e. CTC Validation: Non-numeric CTC rejected
+            boolean nanCtcRejected = !app.processJobDriveCreation(
+                    "1", "Invalid CTC Job", "Desc", "fifteen", "Campus", "7.00", "0", "CSE", "Java", "2026"
+            );
+            assertTrue("Test 14e: Non-numeric CTC is rejected", nanCtcRejected);
+
+            // 14f. CTC Validation: Blank CTC rejected
+            boolean blankCtcRejected = !app.processJobDriveCreation(
+                    "1", "Invalid CTC Job", "Desc", "   ", "Campus", "7.00", "0", "CSE", "Java", "2026"
+            );
+            assertTrue("Test 14f: Blank CTC is rejected", blankCtcRejected);
+
+            // 14g. Location Validation: Blank location rejected
+            boolean blankLocRejected = !app.processJobDriveCreation(
+                    "1", "Invalid Loc Job", "Desc", "10.00", "   ", "7.00", "0", "CSE", "Java", "2026"
+            );
+            assertTrue("Test 14g: Blank Location is rejected", blankLocRejected);
+
+            // 14h. Max Backlogs Validation: Negative backlogs rejected
+            boolean negBacklogsRejected = !app.processJobDriveCreation(
+                    "1", "Invalid Backlogs Job", "Desc", "10.00", "Pune", "7.00", "-1", "CSE", "Java", "2026"
+            );
+            assertTrue("Test 14h: Negative Max Backlogs is rejected", negBacklogsRejected);
+
+            // 14i. Max Backlogs Validation: Non-integer backlogs rejected
+            boolean nanBacklogsRejected = !app.processJobDriveCreation(
+                    "1", "Invalid Backlogs Job", "Desc", "10.00", "Pune", "7.00", "two", "CSE", "Java", "2026"
+            );
+            assertTrue("Test 14i: Non-integer Max Backlogs ('two') is rejected", nanBacklogsRejected);
+
+            // 14j. Company Validation: Non-existent Company ID rejected
+            boolean missingCompanyRejected = !app.processJobDriveCreation(
+                    "999999", "Invalid Company Job", "Desc", "10.00", "Pune", "7.00", "0", "CSE", "Java", "2026"
+            );
+            assertTrue("Test 14j: Non-existent Company ID (999999) is rejected", missingCompanyRejected);
+
+            // 14k. Company Validation: Non-numeric Company ID rejected
+            boolean nanCompanyRejected = !app.processJobDriveCreation(
+                    "ABC", "Invalid Company Job", "Desc", "10.00", "Pune", "7.00", "0", "CSE", "Java", "2026"
+            );
+            assertTrue("Test 14k: Non-numeric Company ID ('ABC') is rejected", nanCompanyRejected);
+
+            // 14l. Dynamic Eligibility with Custom Max Backlogs
+            if (persistedJob != null) {
+                // student2 has 3 backlogs, persistedJob allows 2 backlogs -> rejected on backlogs
+                EligibilityResult p4Elig = recruitmentService.checkEligibility(student2, persistedJob);
+                boolean failedOnBacklogs = p4Elig.getReasons().stream().anyMatch(r -> r.toLowerCase().contains("backlog"));
+                assertTrue("Test 14l: Student with 3 backlogs rejected when job max_backlogs is 2", failedOnBacklogs);
+            }
+
+            // 14m. Backward-compatible 7-parameter overload functions properly
+            String legacyJobTitle = "P4 Legacy 7-Param Job " + System.currentTimeMillis();
+            boolean legacyCreated = app.processJobDriveCreation(
+                    "1", legacyJobTitle, "7.00", "CSE", "2026", "Java, SQL", "2026-12-31"
+            );
+            assertTrue("Test 14m: Backward-compatible 7-parameter overload executes successfully", legacyCreated);
+
         } finally {
-            // Cleanup: remove test applications first, then test users (cascades to students & student_skills)
+            // Cleanup: remove test applications first, then test users (cascades to students & student_skills), and created test jobs
             if (student1 != null && backendJob != null) {
                 cleanupApplication(student1.getId(), backendJob.getId());
             }
             cleanupUser(testUsername1);
             cleanupUser(testUsername2);
-            System.out.println("\n[CLEANUP] Temporary test students and applications cleaned up from MySQL.");
+            cleanupJobs();
+            System.out.println("\n[CLEANUP] Temporary test students, jobs, and applications cleaned up from MySQL.");
         }
 
         System.out.println("\n==================================================");

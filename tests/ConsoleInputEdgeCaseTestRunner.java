@@ -1419,7 +1419,7 @@ public class ConsoleInputEdgeCaseTestRunner {
                 boolean noHardcodedDemo = !rendered.contains("OFF-001");
                 boolean optionsOk = rendered.contains("1. Manage Student Records") &&
                                     rendered.contains("2. Manage Companies") &&
-                                    rendered.contains("3. Manage Job Drives") &&
+                                    (rendered.contains("3. Create Job Drive") || rendered.contains("3. Manage Job Drives")) &&
                                     rendered.contains("4. View Applications") &&
                                     rendered.contains("5. Update Application Status") &&
                                     rendered.contains("0. Sign Out");
@@ -1589,12 +1589,15 @@ public class ConsoleInputEdgeCaseTestRunner {
                 ByteArrayOutputStream out = new ByteArrayOutputStream();
                 String inputs = String.join("\n",
                         "1",                             // Company ID
-                        "Test Job Cancelled Role",       // Job Role
+                        "Test Job Cancelled Role",       // Job Title
+                        "Cancelled Description",         // Job Description
+                        "10.0",                          // CTC (LPA)
+                        "Bengaluru",                     // Job Location
                         "7.0",                           // Min CGPA
+                        "0",                             // Max Active Backlogs
                         "CSE, IT",                       // Eligible Branches
-                        "2026",                          // Graduation Year
                         "Java, SQL",                     // Required Skills
-                        "30-11-2026",                    // Application Deadline
+                        "2026",                          // Graduation Year
                         "0"                              // Cancel
                 ) + "\n";
                 System.setIn(new ByteArrayInputStream(inputs.getBytes(StandardCharsets.UTF_8)));
@@ -1655,7 +1658,7 @@ public class ConsoleInputEdgeCaseTestRunner {
                 System.setOut(new PrintStream(out, true, StandardCharsets.UTF_8));
 
                 Main app = new Main();
-                boolean published = app.processJobDriveCreation("1", "Test Job Software Engineer Intern", "7.5", "CSE, IT", "2029", "Java, SQL, OOP, DSA", "20-11-2026");
+                boolean published = app.processJobDriveCreation("1", "Test Job Software Engineer Intern", "Exciting intern role", "14.50", "Bengaluru, KA", "7.5", "1", "CSE, IT", "Java, SQL, OOP, DSA", "2029");
                 System.setOut(originalOut);
 
                 JobDAO jobDAO = new JobDAO();
@@ -1668,6 +1671,7 @@ public class ConsoleInputEdgeCaseTestRunner {
                 }
 
                 if (published && created != null && created.getMinCgpa() == 7.5 && created.getGraduationYear() == 2029
+                        && created.getCtcLpa().doubleValue() == 14.50 && "Bengaluru, KA".equals(created.getLocation()) && created.getMaxBacklogs() == 1
                         && created.getEligibleBranches().contains("CSE") && created.getRequiredSkills().contains("OOP")) {
                     createdJobId = created.getId();
                     pass("JD.5: Successful job drive creation atomically persists job, branches, and skills into MySQL (Job ID: " + createdJobId + ")");
@@ -1679,7 +1683,7 @@ public class ConsoleInputEdgeCaseTestRunner {
             {
                 // Test JD.6: Page 8 renders available partner companies retrieved from MySQL
                 ByteArrayOutputStream out = new ByteArrayOutputStream();
-                String inputs = "1\nRole\n7.0\nCSE\n2026\nJava\n30-11-2026\n0\n";
+                String inputs = "1\nRole\nDesc\n12.0\nBengaluru\n7.0\n0\nCSE\nJava\n2026\n0\n";
                 System.setIn(new ByteArrayInputStream(inputs.getBytes(StandardCharsets.UTF_8)));
                 System.setOut(new PrintStream(out, true, StandardCharsets.UTF_8));
 
@@ -1688,7 +1692,7 @@ public class ConsoleInputEdgeCaseTestRunner {
                 System.setOut(originalOut);
 
                 String outStr = out.toString(StandardCharsets.UTF_8);
-                boolean hasCompanyHeading = outStr.contains("Available Partner Companies:");
+                boolean hasCompanyHeading = outStr.contains("Available Partner Companies");
                 boolean hasNexis = outStr.contains("Nexis Cloud Technologies");
                 boolean hasApex = outStr.contains("Apex Financial Software");
 

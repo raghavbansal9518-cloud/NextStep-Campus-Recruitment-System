@@ -1326,7 +1326,7 @@ public class Main {
         System.out.println();
         System.out.println(ConsoleTheme.text("  1. Manage Student Records ") + ConsoleTheme.comingSoon());
         System.out.println(ConsoleTheme.text("  2. Manage Companies ") + ConsoleTheme.comingSoon());
-        System.out.println(ConsoleTheme.text("  3. Manage Job Drives"));
+        System.out.println(ConsoleTheme.text("  3. Create Job Drive"));
         System.out.println(ConsoleTheme.text("  4. View Applications"));
         System.out.println(ConsoleTheme.text("  5. Update Application Status"));
         System.out.println(ConsoleTheme.text("  0. Sign Out"));
@@ -1550,7 +1550,7 @@ public class Main {
      * @return boolean true if job drive was published, false if cancelled/returned
      */
     public boolean showCreateJobDrive(Scanner scanner, User officer) {
-        String[] values = new String[7];
+        String[] values = new String[10];
         while (true) {
             clearConsole();
             renderCreateJobDriveHeader();
@@ -1574,11 +1574,14 @@ public class Main {
             }
 
             if (companies.isEmpty()) {
-                System.out.println(ConsoleTheme.warn("[NOTICE] No partner companies registered in database."));
+                System.out.println(ConsoleTheme.warn("[NOTICE] No partner companies registered in the database."));
+                System.out.println(ConsoleTheme.dim("Partner companies must be registered before publishing job drives."));
+                System.out.println();
             } else {
-                System.out.println(ConsoleTheme.text("Available Partner Companies:"));
+                System.out.println(ConsoleTheme.header("Available Partner Companies (Select by ID):"));
                 for (Company c : companies) {
-                    System.out.printf("  [ID %d] %s%n", c.getId(), c.getName());
+                    System.out.printf("  [ID %d] %-30s | %-22s | %s%n",
+                            c.getId(), c.getName(), c.getIndustry(), c.getLocation());
                 }
                 System.out.println();
             }
@@ -1587,29 +1590,34 @@ public class Main {
 
             String[] prompts = {
                     "Company ID:             ",
-                    "Job Role:               ",
+                    "Job Title:              ",
+                    "Job Description:        ",
+                    "CTC (LPA):              ",
+                    "Job Location:           ",
                     "Minimum CGPA:           ",
+                    "Max Active Backlogs:    ",
                     "Eligible Branches:      ",
-                    "Graduation Year:        ",
                     "Required Skills:        ",
-                    "Application Deadline:   "
+                    "Graduation Year:        "
             };
-            boolean[] isPassword = {
-                    false, false, false, false, false, false, false
-            };
+            boolean[] isPassword = new boolean[10];
+            int[] blankLines = { 4 };
 
-            boolean completed = fillMultiFieldForm(scanner, prompts, isPassword, null, values);
+            boolean completed = fillMultiFieldForm(scanner, prompts, isPassword, blankLines, values);
             if (!completed) {
                 return false;
             }
 
             String companyIdStr = values[0];
-            String jobRole = values[1];
-            String minCgpaStr = values[2];
-            String branchesStr = values[3];
-            String gradYearStr = values[4];
-            String skillsStr = values[5];
-            String deadlineStr = values[6];
+            String jobTitle = values[1];
+            String description = values[2];
+            String ctcStr = values[3];
+            String location = values[4];
+            String minCgpaStr = values[5];
+            String maxBacklogsStr = values[6];
+            String branchesStr = values[7];
+            String skillsStr = values[8];
+            String gradYearStr = values[9];
 
             renderCreateJobDriveFooter();
 
@@ -1625,7 +1633,8 @@ public class Main {
                 System.out.println(ConsoleTheme.border("================================================================"));
 
                 if ("1".equals(choice)) {
-                    boolean created = processJobDriveCreation(companyIdStr, jobRole, minCgpaStr, branchesStr, gradYearStr, skillsStr, deadlineStr);
+                    boolean created = processJobDriveCreation(companyIdStr, jobTitle, description, ctcStr,
+                            location, minCgpaStr, maxBacklogsStr, branchesStr, skillsStr, gradYearStr);
                     if (created) {
                         return true;
                     } else {
@@ -1659,11 +1668,13 @@ public class Main {
 
     /**
      * Validates all form inputs and executes job drive creation within a database transaction.
+     * Full 10-parameter signature persisting real CTC, Location, Backlogs, Description, and Company FK.
      */
-    public boolean processJobDriveCreation(String companyIdStr, String jobRole, String minCgpaStr,
-                                           String branchesStr, String gradYearStr, String skillsStr,
-                                           String deadlineStr) {
-        // 1. Validate Company ID
+    public boolean processJobDriveCreation(String companyIdStr, String jobTitle, String description,
+                                           String ctcStr, String location, String minCgpaStr,
+                                           String maxBacklogsStr, String branchesStr, String skillsStr,
+                                           String gradYearStr) {
+        // 1. Validate Company ID & verify existence in database
         if (ValidationUtil.isNullOrBlank(companyIdStr)) {
             System.out.println("\n[ERROR] Company ID cannot be empty.");
             return false;
@@ -1688,13 +1699,42 @@ public class Main {
             return false;
         }
 
-        // 2. Validate Job Role
-        if (ValidationUtil.isNullOrBlank(jobRole)) {
-            System.out.println("\n[ERROR] Job Role cannot be empty.");
+        // 2. Validate Job Title
+        if (ValidationUtil.isNullOrBlank(jobTitle)) {
+            System.out.println("\n[ERROR] Job Title cannot be empty.");
             return false;
         }
 
-        // 3. Validate Minimum CGPA
+        // 3. Clean Description
+        String cleanDescription = (description != null && !description.trim().isEmpty())
+                ? description.trim()
+                : "Campus Recruitment Drive for " + jobTitle.trim();
+
+        // 4. Validate CTC (LPA)
+        if (ValidationUtil.isNullOrBlank(ctcStr)) {
+            System.out.println("\n[ERROR] CTC cannot be empty.");
+            return false;
+        }
+        BigDecimal ctc;
+        try {
+            ctc = new BigDecimal(ctcStr.trim());
+            if (ctc.compareTo(BigDecimal.ZERO) < 0) {
+                System.out.println("\n[ERROR] Invalid CTC: compensation package cannot be negative.");
+                return false;
+            }
+        } catch (Exception e) {
+            System.out.println("\n[ERROR] Invalid CTC: must be a valid numeric value in LPA (e.g. 12.50).");
+            return false;
+        }
+
+        // 5. Validate Location
+        if (ValidationUtil.isNullOrBlank(location)) {
+            System.out.println("\n[ERROR] Job Location cannot be empty.");
+            return false;
+        }
+        String cleanLocation = location.trim();
+
+        // 6. Validate Minimum CGPA
         if (ValidationUtil.isNullOrBlank(minCgpaStr)) {
             System.out.println("\n[ERROR] Minimum CGPA cannot be empty.");
             return false;
@@ -1706,26 +1746,51 @@ public class Main {
             System.out.println("\n[ERROR] Invalid Minimum CGPA: must be a numeric value between 0.00 and 10.00.");
             return false;
         }
-        if (minCgpa < 0.0 || minCgpa > 10.0) {
+        if (!ValidationUtil.isValidCgpa(minCgpa)) {
             System.out.println("\n[ERROR] Minimum CGPA must be between 0.00 and 10.00.");
             return false;
         }
 
-        // 4. Validate Eligible Branches
+        // 7. Validate Maximum Active Backlogs
+        if (ValidationUtil.isNullOrBlank(maxBacklogsStr)) {
+            System.out.println("\n[ERROR] Maximum Active Backlogs cannot be empty.");
+            return false;
+        }
+        int maxBacklogs;
+        try {
+            maxBacklogs = Integer.parseInt(maxBacklogsStr.trim());
+        } catch (NumberFormatException e) {
+            System.out.println("\n[ERROR] Invalid Maximum Active Backlogs: must be an integer greater than or equal to zero.");
+            return false;
+        }
+        if (!ValidationUtil.isValidBacklogs(maxBacklogs)) {
+            System.out.println("\n[ERROR] Maximum active backlogs cannot be negative.");
+            return false;
+        }
+
+        // 8. Validate Eligible Branches
         if (ValidationUtil.isNullOrBlank(branchesStr)) {
             System.out.println("\n[ERROR] Eligible Branches cannot be empty.");
             return false;
         }
-        List<String> branches = Arrays.stream(branchesStr.split(","))
-                .map(String::trim)
-                .filter(s -> !s.isEmpty())
-                .toList();
+        List<String> branches = ValidationUtil.parseCommaSeparatedList(branchesStr);
         if (branches.isEmpty()) {
             System.out.println("\n[ERROR] At least one eligible branch must be specified.");
             return false;
         }
 
-        // 5. Validate Graduation Year
+        // 9. Validate Required Skills
+        if (ValidationUtil.isNullOrBlank(skillsStr)) {
+            System.out.println("\n[ERROR] Required Skills cannot be empty.");
+            return false;
+        }
+        List<String> skills = ValidationUtil.parseCommaSeparatedList(skillsStr);
+        if (skills.isEmpty()) {
+            System.out.println("\n[ERROR] At least one required technical skill must be specified.");
+            return false;
+        }
+
+        // 10. Validate Graduation Year
         if (ValidationUtil.isNullOrBlank(gradYearStr)) {
             System.out.println("\n[ERROR] Graduation Year cannot be empty.");
             return false;
@@ -1742,36 +1807,16 @@ public class Main {
             return false;
         }
 
-        // 6. Validate Required Skills
-        if (ValidationUtil.isNullOrBlank(skillsStr)) {
-            System.out.println("\n[ERROR] Required Skills cannot be empty.");
-            return false;
-        }
-        List<String> skills = Arrays.stream(skillsStr.split(","))
-                .map(String::trim)
-                .filter(s -> !s.isEmpty())
-                .toList();
-        if (skills.isEmpty()) {
-            System.out.println("\n[ERROR] At least one required skill must be specified.");
-            return false;
-        }
-
-        // 7. Validate Application Deadline
-        if (ValidationUtil.isNullOrBlank(deadlineStr)) {
-            System.out.println("\n[ERROR] Application Deadline cannot be empty.");
-            return false;
-        }
-
-        // 8. Construct Job and persist via JobDAO
+        // 11. Construct Job and persist via JobDAO in transaction
         try {
             Job job = new Job();
             job.setCompanyId(companyId);
-            job.setTitle(jobRole.trim());
-            job.setDescription("Role: " + jobRole.trim() + " | Deadline: " + deadlineStr.trim());
-            job.setCtcLpa(BigDecimal.ZERO);
-            job.setLocation("Campus");
+            job.setTitle(jobTitle.trim());
+            job.setDescription(cleanDescription);
+            job.setCtcLpa(ctc);
+            job.setLocation(cleanLocation);
             job.setMinCgpa(minCgpa);
-            job.setMaxBacklogs(0);
+            job.setMaxBacklogs(maxBacklogs);
             job.setGraduationYear(gradYear);
             job.setStatus("OPEN");
 
@@ -1780,12 +1825,27 @@ public class Main {
             System.out.println("Job ID:     " + createdJob.getId());
             System.out.println("Role:       " + createdJob.getTitle());
             System.out.println("Company:    " + company.getName());
+            System.out.println("Package:    " + createdJob.getCtcLpa() + " LPA");
+            System.out.println("Location:   " + createdJob.getLocation());
             System.out.println("Target:     Batch of " + createdJob.getGraduationYear());
             return true;
         } catch (SQLException e) {
             System.out.println("\n[ERROR] Database error publishing job drive: " + e.getMessage());
             return false;
         }
+    }
+
+    /**
+     * Backward-compatible 7-parameter overload for existing tests.
+     */
+    public boolean processJobDriveCreation(String companyIdStr, String jobRole, String minCgpaStr,
+                                           String branchesStr, String gradYearStr, String skillsStr,
+                                           String deadlineStr) {
+        String description = (deadlineStr != null && !deadlineStr.trim().isEmpty())
+                ? "Role: " + jobRole + " | Deadline: " + deadlineStr.trim()
+                : "Campus Recruitment Drive for " + jobRole;
+        return processJobDriveCreation(companyIdStr, jobRole, description,
+                "0.00", "Campus", minCgpaStr, "0", branchesStr, skillsStr, gradYearStr);
     }
 
     // =========================================================================
