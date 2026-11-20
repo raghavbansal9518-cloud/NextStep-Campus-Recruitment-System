@@ -100,7 +100,7 @@ public class Phase3TestRunner {
             boolean missingFieldCaught = false;
             try {
                 authService.registerStudent(
-                        "", testPassword, testEmail, "USN_X", "Name", "123", "CSE", 8.0, 0, 2026, null
+                        "", testPassword, testEmail, "USN_X", "Name", "9876543210", "CSE", 8.0, 0, 2026, null
                 );
             } catch (IllegalArgumentException e) {
                 missingFieldCaught = true;
@@ -111,7 +111,7 @@ public class Phase3TestRunner {
             boolean invalidEmailCaught = false;
             try {
                 authService.registerStudent(
-                        "validuser_88", testPassword, "invalid-email-string", "USN_Y", "Name", "123", "CSE", 8.0, 0, 2026, null
+                        "validuser_88", testPassword, "invalid-email-string", "USN_Y", "Name", "9876543210", "CSE", 8.0, 0, 2026, null
                 );
             } catch (IllegalArgumentException e) {
                 invalidEmailCaught = true;
@@ -122,7 +122,7 @@ public class Phase3TestRunner {
             boolean invalidCgpaCaught = false;
             try {
                 authService.registerStudent(
-                        "validuser_88", testPassword, "valid@test.com", "USN_Z", "Name", "123", "CSE", 11.5, 0, 2026, null
+                        "validuser_88", testPassword, "valid@test.com", "USN_Z", "Name", "9876543210", "CSE", 11.5, 0, 2026, null
                 );
             } catch (IllegalArgumentException e) {
                 invalidCgpaCaught = true;
@@ -133,7 +133,7 @@ public class Phase3TestRunner {
             boolean negBacklogsCaught = false;
             try {
                 authService.registerStudent(
-                        "validuser_88", testPassword, "valid@test.com", "USN_W", "Name", "123", "CSE", 7.0, -1, 2026, null
+                        "validuser_88", testPassword, "valid@test.com", "USN_W", "Name", "9876543210", "CSE", 7.0, -1, 2026, null
                 );
             } catch (IllegalArgumentException e) {
                 negBacklogsCaught = true;
@@ -144,12 +144,55 @@ public class Phase3TestRunner {
             boolean invalidYearCaught = false;
             try {
                 authService.registerStudent(
-                        "validuser_88", testPassword, "valid@test.com", "USN_V", "Name", "123", "CSE", 7.0, 0, 1995, null
+                        "validuser_88", testPassword, "valid@test.com", "USN_V", "Name", "9876543210", "CSE", 7.0, 0, 1995, null
                 );
             } catch (IllegalArgumentException e) {
                 invalidYearCaught = true;
             }
             assertTrue("A8: Unrealistic graduation year rejected", invalidYearCaught);
+
+            // 9. Invalid phone numbers (< 10 digits, > 10 digits, non-digits)
+            boolean invalidPhoneCaught = false;
+            try {
+                authService.registerStudent(
+                        "validuser_89", testPassword, "valid@test.com", "USN_P1", "Name", "12345", "CSE", 7.0, 0, 2026, null
+                );
+            } catch (IllegalArgumentException e) {
+                invalidPhoneCaught = true;
+            }
+            assertTrue("A9: Short phone number (< 10 digits) rejected", invalidPhoneCaught);
+
+            boolean nonDigitPhoneCaught = false;
+            try {
+                authService.registerStudent(
+                        "validuser_89", testPassword, "valid@test.com", "USN_P2", "Name", "98765ABCDE", "CSE", 7.0, 0, 2026, null
+                );
+            } catch (IllegalArgumentException e) {
+                nonDigitPhoneCaught = true;
+            }
+            assertTrue("A10: Non-digit phone number rejected", nonDigitPhoneCaught);
+
+            // 10. Empty phone number
+            boolean emptyPhoneCaught = false;
+            try {
+                authService.registerStudent(
+                        "validuser_89", testPassword, "valid@test.com", "USN_P3", "Name", "   ", "CSE", 7.0, 0, 2026, null
+                );
+            } catch (IllegalArgumentException e) {
+                emptyPhoneCaught = true;
+            }
+            assertTrue("A11: Empty phone number rejected", emptyPhoneCaught);
+
+            // 11. Zero backlogs and multiple active backlogs accepted
+            Student sZeroBacklog = authService.registerStudent(
+                    "user_zero_b", testPassword, "zero@test.com", "USN_ZERO_B", "Zero Backlogs", "9876543210", "CSE", 8.0, 0, 2026, Arrays.asList("Java")
+            );
+            assertTrue("A12: Zero backlogs accepted and persisted", sZeroBacklog != null && sZeroBacklog.getActiveBacklogs() == 0 && "9876543210".equals(sZeroBacklog.getPhone()));
+
+            Student sMultiBacklog = authService.registerStudent(
+                    "user_multi_b", testPassword, "multi@test.com", "USN_MULTI_B", "Multi Backlogs", "9123456789", "CSE", 7.5, 3, 2026, Arrays.asList("Python")
+            );
+            assertTrue("A13: Multiple active backlogs accepted and persisted", sMultiBacklog != null && sMultiBacklog.getActiveBacklogs() == 3 && "9123456789".equals(sMultiBacklog.getPhone()));
 
             // -----------------------------------------------------------------
             // TEST SUITE B: AUTHENTICATION & PASSWORD HASHING
@@ -305,6 +348,8 @@ public class Phase3TestRunner {
         } finally {
             // Cleanup test student and user
             cleanupUser(testUsername);
+            cleanupUser("user_zero_b");
+            cleanupUser("user_multi_b");
             System.out.println("\n[CLEANUP] Fictional test student account cleaned up from MySQL.");
         }
 

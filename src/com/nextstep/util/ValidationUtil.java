@@ -61,6 +61,25 @@ public class ValidationUtil {
     }
 
     /**
+     * Validates that a phone number consists of exactly 10 digits.
+     */
+    public static boolean isValidPhone(String phone) {
+        if (isNullOrBlank(phone)) {
+            return false;
+        }
+        String trimmed = phone.trim();
+        if (trimmed.length() != 10) {
+            return false;
+        }
+        for (int i = 0; i < 10; i++) {
+            if (!Character.isDigit(trimmed.charAt(i))) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    /**
      * Validates that CGPA is within the academic range of 0.00 to 10.00.
      */
     public static boolean isValidCgpa(double cgpa) {

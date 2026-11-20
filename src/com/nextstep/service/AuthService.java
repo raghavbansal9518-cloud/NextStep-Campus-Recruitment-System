@@ -179,6 +179,9 @@ public class AuthService {
         if (ValidationUtil.isNullOrBlank(phone)) {
             throw new IllegalArgumentException("Phone number cannot be empty.");
         }
+        if (!"N/A".equals(phone) && !ValidationUtil.isValidPhone(phone)) {
+            throw new IllegalArgumentException("Phone number must be exactly 10 digits.");
+        }
         if (ValidationUtil.isNullOrBlank(branch)) {
             throw new IllegalArgumentException("Branch cannot be empty.");
         }

@@ -226,18 +226,20 @@ public class ConsoleInputEdgeCaseTestRunner {
                 boolean hasField1 = outStr.contains("Student ID:");
                 boolean hasField2 = outStr.contains("Full Name:");
                 boolean hasField3 = outStr.contains("Email:");
+                boolean hasFieldPhone = outStr.contains("Phone Number:");
                 boolean hasField4 = outStr.contains("Branch:");
                 boolean hasField5 = outStr.contains("CGPA:");
-                boolean hasField6 = outStr.contains("Graduation Year:");
                 boolean hasFieldSkills = outStr.contains("Technical Skills:");
+                boolean hasFieldBacklogs = outStr.contains("Active Backlogs:");
+                boolean hasField6 = outStr.contains("Graduation Year:");
                 boolean hasField7 = outStr.contains("Username:");
                 boolean hasField8 = outStr.contains("Password:");
                 boolean hasField9 = outStr.contains("Confirm Password:");
                 boolean hasOpt1 = outStr.contains("1. CREATE ACCOUNT");
                 boolean hasOpt0 = outStr.contains("0. BACK");
 
-                if (hasHeader && hasField1 && hasField2 && hasField3 && hasField4 &&
-                        hasField5 && hasField6 && hasFieldSkills && hasField7 && hasField8 && hasField9 &&
+                if (hasHeader && hasField1 && hasField2 && hasField3 && hasFieldPhone && hasField4 &&
+                        hasField5 && hasFieldSkills && hasFieldBacklogs && hasField6 && hasField7 && hasField8 && hasField9 &&
                         hasOpt1 && hasOpt0) {
                     pass("SU.1: Page 3 layout strictly matches reference layout and field alignment");
                 } else {
@@ -261,10 +263,12 @@ public class ConsoleInputEdgeCaseTestRunner {
                         "ID_MISMATCH",     // Student ID
                         "Mismatch Student",// Full Name
                         "mismatch@test.com",// Email
+                        "9876543210",      // Phone Number
                         "Information Science",// Branch
                         "8.50",            // CGPA
-                        "2026",            // Grad Year
                         "Java, SQL",       // Technical Skills
+                        "0",               // Active Backlogs
+                        "2026",            // Grad Year
                         "user_mismatch",   // Username
                         "password123",     // Password
                         "DIFFERENT_PASS",  // Confirm Password (mismatch!)
@@ -299,10 +303,12 @@ public class ConsoleInputEdgeCaseTestRunner {
                         "ID_INVAL",        // Student ID
                         "Invalid Student", // Full Name
                         "not-an-email",    // Invalid Email format
+                        "9876543210",      // Phone Number
                         "Computer Science",// Branch
                         "11.5",            // Invalid CGPA (> 10.0)
-                        "2026",            // Grad Year
                         "Java, Python",    // Technical Skills
+                        "0",               // Active Backlogs
+                        "2026",            // Grad Year
                         "valid_user_x",    // Username
                         "password123",     // Password
                         "password123",     // Confirm Password
@@ -328,6 +334,120 @@ public class ConsoleInputEdgeCaseTestRunner {
             }
 
             {
+                // Test SU.4b: Invalid phone number rejected
+                ByteArrayOutputStream out = new ByteArrayOutputStream();
+                String inputs = String.join("\n",
+                        "1",               // Page 1 -> Page 2
+                        "1",               // Page 2 -> Student Menu
+                        "1",               // Student Menu -> Page 3
+                        "ID_INVAL_PHONE",  // Student ID
+                        "Phone Student",   // Full Name
+                        "phone@test.com",  // Email
+                        "12345",           // Invalid Phone (< 10 digits)
+                        "Computer Science",// Branch
+                        "8.50",            // CGPA
+                        "Java, SQL",       // Technical Skills
+                        "0",               // Active Backlogs
+                        "2026",            // Grad Year
+                        "phone_user_x",    // Username
+                        "password123",     // Password
+                        "password123",     // Confirm Password
+                        "1",               // 1. CREATE ACCOUNT
+                        "0",               // Decline retry
+                        "0", "0", "0"
+                ) + "\n";
+                System.setIn(new ByteArrayInputStream(inputs.getBytes(StandardCharsets.UTF_8)));
+                System.setOut(new PrintStream(out, true, StandardCharsets.UTF_8));
+
+                Main app = new Main();
+                app.run(new Scanner(System.in));
+                System.setOut(originalOut);
+
+                String outStr = out.toString(StandardCharsets.UTF_8);
+                if (outStr.contains("Invalid phone number. Must be exactly 10 digits.")) {
+                    pass("SU.4b: Invalid phone number (< 10 digits) rejected on registration form");
+                } else {
+                    fail("SU.4b", "Invalid phone number was not rejected");
+                }
+            }
+
+            {
+                // Test SU.4c: Negative active backlogs rejected
+                ByteArrayOutputStream out = new ByteArrayOutputStream();
+                String inputs = String.join("\n",
+                        "1",               // Page 1 -> Page 2
+                        "1",               // Page 2 -> Student Menu
+                        "1",               // Student Menu -> Page 3
+                        "ID_NEG_BACK",     // Student ID
+                        "Backlog Student", // Full Name
+                        "backlog@test.com",// Email
+                        "9876543210",      // Phone Number
+                        "Computer Science",// Branch
+                        "8.50",            // CGPA
+                        "Java, SQL",       // Technical Skills
+                        "-1",              // Negative Backlogs!
+                        "2026",            // Grad Year
+                        "backlog_user_x",  // Username
+                        "password123",     // Password
+                        "password123",     // Confirm Password
+                        "1",               // 1. CREATE ACCOUNT
+                        "0",               // Decline retry
+                        "0", "0", "0"
+                ) + "\n";
+                System.setIn(new ByteArrayInputStream(inputs.getBytes(StandardCharsets.UTF_8)));
+                System.setOut(new PrintStream(out, true, StandardCharsets.UTF_8));
+
+                Main app = new Main();
+                app.run(new Scanner(System.in));
+                System.setOut(originalOut);
+
+                String outStr = out.toString(StandardCharsets.UTF_8);
+                if (outStr.contains("Active backlogs cannot be negative.")) {
+                    pass("SU.4c: Negative active backlogs rejected on registration form");
+                } else {
+                    fail("SU.4c", "Negative active backlogs was not rejected");
+                }
+            }
+
+            {
+                // Test SU.4d: Non-numeric active backlogs rejected
+                ByteArrayOutputStream out = new ByteArrayOutputStream();
+                String inputs = String.join("\n",
+                        "1",               // Page 1 -> Page 2
+                        "1",               // Page 2 -> Student Menu
+                        "1",               // Student Menu -> Page 3
+                        "ID_STR_BACK",     // Student ID
+                        "Backlog Student", // Full Name
+                        "backlog2@test.com",// Email
+                        "9876543210",      // Phone Number
+                        "Computer Science",// Branch
+                        "8.50",            // CGPA
+                        "Java, SQL",       // Technical Skills
+                        "TWO",             // Non-numeric Backlogs!
+                        "2026",            // Grad Year
+                        "backlog_user_y",  // Username
+                        "password123",     // Password
+                        "password123",     // Confirm Password
+                        "1",               // 1. CREATE ACCOUNT
+                        "0",               // Decline retry
+                        "0", "0", "0"
+                ) + "\n";
+                System.setIn(new ByteArrayInputStream(inputs.getBytes(StandardCharsets.UTF_8)));
+                System.setOut(new PrintStream(out, true, StandardCharsets.UTF_8));
+
+                Main app = new Main();
+                app.run(new Scanner(System.in));
+                System.setOut(originalOut);
+
+                String outStr = out.toString(StandardCharsets.UTF_8);
+                if (outStr.contains("Invalid Active Backlogs: must be a valid integer greater than or equal to zero.")) {
+                    pass("SU.4d: Non-numeric active backlogs rejected on registration form");
+                } else {
+                    fail("SU.4d", "Non-numeric active backlogs was not rejected");
+                }
+            }
+
+            {
                 // Test SU.5: Duplicate username rejected
                 ByteArrayOutputStream out = new ByteArrayOutputStream();
                 String inputs = String.join("\n",
@@ -337,10 +457,12 @@ public class ConsoleInputEdgeCaseTestRunner {
                         "ID_DUP_USER",     // Student ID
                         "Dup User Student",// Full Name
                         "dupuser@test.com",// Email
+                        "9876543210",      // Phone Number
                         "Computer Science",// Branch
                         "9.00",            // CGPA
-                        "2026",            // Grad Year
                         "Java, SQL",       // Technical Skills
+                        "0",               // Active Backlogs
+                        "2026",            // Grad Year
                         testOfficerUser,   // Duplicate Username (already exists!)
                         "password123",     // Password
                         "password123",     // Confirm Password
@@ -380,10 +502,12 @@ public class ConsoleInputEdgeCaseTestRunner {
                         newStdUsn,         // Student ID
                         newStdName,        // Full Name
                         newStdEmail,       // Email
+                        "9876543210",      // Phone Number (10 digits)
                         "Computer Science Engineering", // Branch
                         "9.45",            // CGPA
-                        "2026",            // Graduation Year
                         "Java, Spring Boot, SQL, Git", // Technical Skills
+                        "2",               // Active Backlogs (testing non-zero persistence!)
+                        "2026",            // Graduation Year
                         newStdUser,        // Username
                         "securePassword99",// Password
                         "securePassword99",// Confirm Password
@@ -422,10 +546,12 @@ public class ConsoleInputEdgeCaseTestRunner {
                 StudentDAO studentDAO = new StudentDAO();
                 Student studentInDb = studentDAO.findByStudentId(newStdUsn);
                 if (studentInDb != null && newStdName.equals(studentInDb.getFullName()) &&
+                        "9876543210".equals(studentInDb.getPhone()) &&
+                        studentInDb.getActiveBacklogs() == 2 &&
                         studentInDb.getCgpa() == 9.45 && studentInDb.getGraduationYear() == 2026 &&
                         studentInDb.getSkills().contains("Java") && studentInDb.getSkills().contains("Spring Boot") &&
                         studentInDb.getSkills().contains("SQL") && studentInDb.getSkills().contains("Git")) {
-                    pass("SU.8: Student profile attributes and skills persisted accurately in MySQL database");
+                    pass("SU.8: Student profile attributes, phone (9876543210), backlogs (2), and skills persisted accurately in MySQL database");
                 } else {
                     fail("SU.8", "Student profile database record verification failed");
                 }
@@ -448,10 +574,12 @@ public class ConsoleInputEdgeCaseTestRunner {
                         "ID_EMPTY_SKILLS", // Student ID
                         "No Skills Student",// Full Name
                         "noskills@test.com",// Email
+                        "9876543210",      // Phone Number
                         "Computer Science",// Branch
                         "8.00",            // CGPA
-                        "2026",            // Grad Year
                         "   ,  ,   ",      // Empty/whitespace Technical Skills!
+                        "0",               // Active Backlogs
+                        "2026",            // Grad Year
                         "noskills_user",   // Username
                         "password123",     // Password
                         "password123",     // Confirm Password
@@ -2119,10 +2247,12 @@ public class ConsoleInputEdgeCaseTestRunner {
                         "B",               // Shortcut 'B': Navigate back to Full Name!
                         "Correct Name",    // Corrected Full Name
                         "b_test@test.edu", // Email
+                        "9876543210",      // Phone Number
                         "CSE",             // Branch
                         "8.5",             // CGPA
-                        "2026",            // Grad Year
                         "Java, SQL",       // Technical Skills
+                        "0",               // Active Backlogs
+                        "2026",            // Grad Year
                         "b_user_" + timestamp, // Username
                         "password123",     // Password
                         "password123",     // Confirm Password
@@ -2160,10 +2290,12 @@ public class ConsoleInputEdgeCaseTestRunner {
                         "B",               // Go back to Full Name
                         "N",               // Shortcut 'N': Keep existing value and move forward!
                         "n_test@test.edu", // Email
+                        "9876543210",      // Phone Number
                         "CSE",             // Branch
                         "8.5",             // CGPA
-                        "2026",            // Grad Year
                         "Java, SQL",       // Technical Skills
+                        "0",               // Active Backlogs
+                        "2026",            // Grad Year
                         "n_user_" + timestamp, // Username
                         "password123",     // Password
                         "password123",     // Confirm Password
@@ -2201,10 +2333,12 @@ public class ConsoleInputEdgeCaseTestRunner {
                         "Correct Esc Name",// Corrected Full Name
                         "TAB",             // Shortcut 'TAB': Advance retaining value!
                         "esc@test.edu",    // Email
+                        "9876543210",      // Phone Number
                         "CSE",             // Branch
                         "8.5",             // CGPA
-                        "2026",            // Grad Year
                         "Java, SQL",       // Technical Skills
+                        "0",               // Active Backlogs
+                        "2026",            // Grad Year
                         "esc_user_" + timestamp, // Username
                         "password123",     // Password
                         "password123",     // Confirm Password

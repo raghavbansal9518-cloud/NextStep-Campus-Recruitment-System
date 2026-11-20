@@ -219,12 +219,15 @@ flowchart TD
   1. `Student ID:             ` (University Roll No / USN, e.g., `24BCE1001`)
   2. `Full Name:              ` (Student's full legal name)
   3. `Email:                  ` (Valid RFC-compliant email containing `@` and a domain)
-  4. `Branch:                 ` (e.g., `Computer Science`, `Information Technology`)
-  5. `CGPA:                   ` (Decimal between `0.00` and `10.00`)
-  6. `Graduation Year:        ` (Integer between `2020` and `2035`)
-  7. `Username:               ` (3 to 30 alphanumeric characters)
-  8. `Password:               ` (Masked input, minimum 6 characters)
-  9. `Confirm Password:       ` (Masked input, must match Password)
+  4. `Phone Number:           ` (10-digit mobile number)
+  5. `Branch:                 ` (e.g., `Computer Science`, `Information Technology`)
+  6. `CGPA:                   ` (Decimal between `0.00` and `10.00`)
+  7. `Technical Skills:       ` (Comma-separated list, e.g., `Java, SQL, Git`)
+  8. `Active Backlogs:        ` (Integer greater than or equal to zero)
+  9. `Graduation Year:        ` (Integer between `2020` and `2035`)
+  10. `Username:               ` (3 to 30 alphanumeric characters)
+  11. `Password:               ` (Masked input, minimum 6 characters)
+  12. `Confirm Password:       ` (Masked input, must match Password)
 - **Form Navigation Shortcuts:**
   - Type `B` or `ESC` to return to the previous field and edit typos.
   - Type `N` or `TAB` to move forward retaining the existing entry.
