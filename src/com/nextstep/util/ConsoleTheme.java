@@ -82,8 +82,16 @@ public final class ConsoleTheme {
         return ansiEnabled ? CYAN_RGB + text + RESET : text;
     }
 
+    public static String blue(String text) {
+        return cyan(text);
+    }
+
     public static String yellow(String text) {
         return ansiEnabled ? YELLOW_RGB + text + RESET : text;
+    }
+
+    public static String gold(String text) {
+        return yellow(text);
     }
 
     public static String text(String text) {

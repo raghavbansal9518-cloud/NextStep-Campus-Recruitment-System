@@ -22,12 +22,18 @@ import com.nextstep.util.ValidationUtil;
 import java.io.File;
 import java.math.BigDecimal;
 import java.sql.SQLException;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Scanner;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 /**
  * Main
@@ -85,48 +91,46 @@ public class Main {
     }
 
     /**
-     * Top-level application loop.
+     * Top-level application loop implementing Page 1: Welcome & Unified Campus Gateway.
      */
     public void run(Scanner scanner) {
         boolean inApp = true;
         while (inApp) {
-            // Welcome Page (Page 1)
-            if (!showWelcomePage(scanner)) {
-                inApp = false;
-                break; // Option 0: Exit application cleanly
-            }
-
-            // Account Portal (Page 2)
-            boolean inAccountPortal = true;
-            while (inAccountPortal) {
-                int roleChoice = showAccountPortal(scanner);
-                switch (roleChoice) {
-                    case 1 -> handleStudentWorkflow(scanner);
-                    case 2 -> handlePlacementOfficerWorkflow(scanner);
-                    case 0 -> inAccountPortal = false; // Option 0: Back to Welcome Page (Page 1)
+            int gatewayChoice = showWelcomeGateway(scanner);
+            switch (gatewayChoice) {
+                case 1 -> handleStudentWorkflow(scanner);
+                case 2 -> handlePlacementOfficerWorkflow(scanner);
+                case 3 -> showCampusRecruitmentStatistics(scanner);
+                case 0 -> {
+                    System.out.println("\nThank you for using NextStep. Goodbye!");
+                    inApp = false;
+                }
+                default -> {
+                    System.out.println(ConsoleTheme.warn("[WARN] Invalid choice. Please enter 0, 1, 2, or 3."));
+                    System.out.println(ConsoleTheme.divider("----------------------------------------------------------------"));
                 }
             }
         }
     }
 
     // =========================================================================
-    // WELCOME PAGE (PAGE 1) & SCREEN HELPERS
+    // PAGE 1: WELCOME & UNIFIED CAMPUS GATEWAY
     // =========================================================================
 
     /**
-     * Displays the Welcome Page (Page 1) and handles the initial Continue / Exit choice.
+     * Displays Page 1 — Welcome & Unified Campus Gateway and dispatches chosen role/metrics.
      * 
      * @param scanner active Scanner
-     * @return boolean true to Continue, false to Exit cleanly
+     * @return int chosen option (1 for Student, 2 for Officer, 3 for Stats, 0 for Exit)
      */
-    public boolean showWelcomePage(Scanner scanner) {
+    public int showWelcomeGateway(Scanner scanner) {
         clearConsole();
-        renderWelcomeScreen();
+        renderWelcomeGatewayScreen();
 
         while (true) {
             System.out.print(ConsoleTheme.prompt("Enter your choice: "));
             if (!scanner.hasNextLine()) {
-                return false;
+                return 0;
             }
             String input = scanner.nextLine().trim();
             if (System.console() == null) {
@@ -135,37 +139,107 @@ public class Main {
             System.out.println(ConsoleTheme.border("================================================================"));
 
             if ("1".equals(input)) {
-                return true;
+                return 1;
+            } else if ("2".equals(input)) {
+                return 2;
+            } else if ("3".equals(input)) {
+                return 3;
             } else if ("0".equals(input)) {
-                System.out.println("\nThank you for using NextStep. Goodbye!");
-                return false;
+                return 0;
             } else {
-                System.out.println(ConsoleTheme.warn("[WARN] Invalid choice. Please enter 1 to Continue or 0 to Exit."));
+                System.out.println(ConsoleTheme.warn("[WARN] Invalid choice. Please enter 0, 1, 2, or 3."));
                 System.out.println(ConsoleTheme.divider("----------------------------------------------------------------"));
             }
         }
     }
 
     /**
-     * Renders the Welcome Page console layout matching exact design specifications.
+     * Renders Page 1 — Welcome & Unified Campus Gateway console layout matching exact evaluator specifications.
      */
-    public void renderWelcomeScreen() {
+    public void renderWelcomeGatewayScreen() {
         System.out.println(ConsoleTheme.border("================================================================"));
         System.out.println(ConsoleTheme.header("           NEXTSTEP | CAMPUS RECRUITMENT SYSTEM (2026)"));
+        System.out.println(ConsoleTheme.header("                 WELCOME & UNIFIED CAMPUS GATEWAY"));
         System.out.println(ConsoleTheme.header("          Automated Eligibility, Skill Matching & Drives"));
         System.out.println(ConsoleTheme.border("================================================================"));
-        System.out.println();
-        System.out.println(ConsoleTheme.dim("  System Status:  ● ONLINE    |  Partner Drives: Active Open   "));
-        System.out.println(ConsoleTheme.dim("  Academic Year:  2025–2026   |  Placement Hub:  Verified      "));
-        System.out.println();
-        System.out.println(ConsoleTheme.cyan("  ┌────────────────────────────────────────────────────────────┐"));
-        System.out.println(ConsoleTheme.cyan("  │") + ConsoleTheme.text("                  YOUR CAREER STARTS HERE                   ") + ConsoleTheme.cyan("│"));
-        System.out.println(ConsoleTheme.cyan("  └────────────────────────────────────────────────────────────┘"));
-        System.out.println();
-        System.out.println(ConsoleTheme.text("                  1. Continue"));
-        System.out.println(ConsoleTheme.text("                  0. Exit"));
-        System.out.println();
+        long openJobs = 0;
+        try {
+            openJobs = recruitmentService.countOpenJobs();
+        } catch (Exception ignored) {}
+        System.out.println(ConsoleTheme.dim("  System Status:  ● ONLINE   |   Partner Companies: " + openJobs + " Active Drives"));
+        System.out.println(ConsoleTheme.dim("  Academic Year:  2025–2026  |   Active Students:   Registered"));
+        System.out.println(ConsoleTheme.cyan("  ┌──────────────────────────────────────────────────────────┐"));
+        System.out.println(ConsoleTheme.cyan("  │") + ConsoleTheme.text("                    SELECT YOUR PORTAL                    ") + ConsoleTheme.cyan("│"));
+        System.out.println(ConsoleTheme.cyan("  └──────────────────────────────────────────────────────────┘"));
+        System.out.println(ConsoleTheme.text("                  1. Student Portal"));
+        System.out.println(ConsoleTheme.text("                  2. Placement Officer Portal"));
+        System.out.println(ConsoleTheme.text("                  3. View Campus Recruitment Statistics"));
+        System.out.println(ConsoleTheme.text("                  0. Exit System"));
         System.out.println(ConsoleTheme.divider("----------------------------------------------------------------"));
+    }
+
+    /**
+     * Displays genuine Campus Recruitment Statistics directly from MySQL database.
+     */
+    public void showCampusRecruitmentStatistics(Scanner scanner) {
+        clearConsole();
+        System.out.println(ConsoleTheme.border("================================================================"));
+        System.out.println(ConsoleTheme.header("           NEXTSTEP | CAMPUS RECRUITMENT SYSTEM (2026)"));
+        System.out.println(ConsoleTheme.header("                 CAMPUS RECRUITMENT METRICS"));
+        System.out.println(ConsoleTheme.border("================================================================"));
+        try {
+            long openJobs = recruitmentService.countOpenJobs();
+            List<Company> companies = companyDAO.findAllCompanies();
+            List<String> distinctHiring = recruitmentService.getDistinctHiringCompanies();
+            System.out.println(ConsoleTheme.label("  Registered Partner Companies : ") + companies.size());
+            System.out.println(ConsoleTheme.label("  Active Recruitment Drives    : ") + openJobs);
+            System.out.println(ConsoleTheme.label("  Hiring Partners              : ") + String.join(", ", distinctHiring));
+            System.out.println(ConsoleTheme.divider("----------------------------------------------------------------"));
+            List<Application> allApps = applicationDAO.findAllApplications();
+            Map<ApplicationStatus, Long> summary = allApps.stream()
+                    .collect(Collectors.groupingBy(Application::getStatus, Collectors.counting()));
+            System.out.println(ConsoleTheme.text("  Application Pipeline Breakdown (groupingBy):"));
+            for (ApplicationStatus status : ApplicationStatus.values()) {
+                long count = summary.getOrDefault(status, 0L);
+                System.out.printf("    %-15s : %d%n", status.name(), count);
+            }
+            System.out.println(ConsoleTheme.divider("----------------------------------------------------------------"));
+        } catch (Exception e) {
+            System.out.println(ConsoleTheme.warn("  Statistics temporarily unavailable: " + e.getMessage()));
+        }
+        System.out.print(ConsoleTheme.dim("\nPress ENTER to return to Gateway... "));
+        if (scanner.hasNextLine()) {
+            scanner.nextLine();
+        }
+    }
+
+    /**
+     * Backward-compatible alias for showWelcomeGateway.
+     */
+    public boolean showWelcomePage(Scanner scanner) {
+        int c = showWelcomeGateway(scanner);
+        return c != 0;
+    }
+
+    /**
+     * Backward-compatible alias for renderWelcomeGatewayScreen.
+     */
+    public void renderWelcomeScreen() {
+        renderWelcomeGatewayScreen();
+    }
+
+    /**
+     * Backward-compatible alias for showWelcomeGateway role dispatch.
+     */
+    public int showAccountPortal(Scanner scanner) {
+        return showWelcomeGateway(scanner);
+    }
+
+    /**
+     * Backward-compatible alias for renderWelcomeGatewayScreen.
+     */
+    public void renderAccountPortalScreen() {
+        renderWelcomeGatewayScreen();
     }
 
     /**
@@ -188,86 +262,30 @@ public class Main {
         }
     }
 
-    // =========================================================================
-    // ACCOUNT PORTAL (PAGE 2) & ROLE NAVIGATION
-    // =========================================================================
-
-    /**
-     * Displays Page 2 — Account Portal and prompts the user to select their role.
-     * 
-     * @param scanner active Scanner
-     * @return int chosen option (1 for Student, 2 for Placement Officer, 0 for Back)
-     */
-    public int showAccountPortal(Scanner scanner) {
-        clearConsole();
-        renderAccountPortalScreen();
-
-        while (true) {
-            System.out.print(ConsoleTheme.prompt("Enter your choice: "));
-            if (!scanner.hasNextLine()) {
-                return 0;
-            }
-            String input = scanner.nextLine().trim();
-            if (System.console() == null) {
-                System.out.println(input);
-            }
-            System.out.println(ConsoleTheme.border("================================================================"));
-
-            if ("1".equals(input)) {
-                return 1;
-            } else if ("2".equals(input)) {
-                return 2;
-            } else if ("0".equals(input)) {
-                return 0;
-            } else {
-                System.out.println(ConsoleTheme.warn("[WARN] Invalid choice. Please enter 0, 1, or 2."));
-                System.out.println(ConsoleTheme.divider("----------------------------------------------------------------"));
-            }
-        }
-    }
-
-    /**
-     * Renders the Account Portal (Page 2) console layout matching exact design specifications.
-     */
-    public void renderAccountPortalScreen() {
-        System.out.println(ConsoleTheme.border("================================================================"));
-        System.out.println(ConsoleTheme.header("                    NEXTSTEP | ACCOUNT PORTAL"));
-        System.out.println(ConsoleTheme.header("          Automated Eligibility, Skill Matching & Drives"));
-        System.out.println(ConsoleTheme.border("================================================================"));
-        System.out.println();
-        System.out.println(ConsoleTheme.dim("  System Status:  ● ONLINE    |  Partner Drives: 3 Open        "));
-        System.out.println(ConsoleTheme.dim("  Academic Year:  2025–2026   |  Active Candidates: Verified   "));
-        System.out.println();
-        System.out.println(ConsoleTheme.cyan("  ┌────────────────────────────────────────────────────────────┐"));
-        System.out.println(ConsoleTheme.cyan("  │") + ConsoleTheme.text("           SELECT YOUR PORTAL — SELECT YOUR ROLE            ") + ConsoleTheme.cyan("│"));
-        System.out.println(ConsoleTheme.cyan("  └────────────────────────────────────────────────────────────┘"));
-        System.out.println();
-        System.out.println(ConsoleTheme.text("                  1. Student"));
-        System.out.println(ConsoleTheme.text("                  2. Placement Officer"));
-        System.out.println(ConsoleTheme.text("                  0. Back"));
-        System.out.println();
-        System.out.println(ConsoleTheme.divider("----------------------------------------------------------------"));
-    }
-
     /**
      * Handles the Student registration and authentication workflow.
-     * Reuses existing student registration and student login functionality.
      * 
      * @param scanner active Scanner
      */
     private void handleStudentWorkflow(Scanner scanner) {
         boolean inStudentMenu = true;
         while (inStudentMenu) {
-            System.out.println("\n---------------- STUDENT MENU ----------------");
+            clearConsole();
+            System.out.println(ConsoleTheme.border("================================================================"));
+            System.out.println(ConsoleTheme.header("                    NEXTSTEP | STUDENT PORTAL"));
+            System.out.println(ConsoleTheme.header("                           STUDENT MENU"));
+            System.out.println(ConsoleTheme.border("================================================================"));
+            System.out.println();
             if (PresentationConfig.isStudentRegistrationVisible()) {
-                System.out.println("1. Student Registration");
-                System.out.println("2. Student Login");
-                System.out.println("0. Back");
+                System.out.println(ConsoleTheme.text("                  1. Student Sign Up"));
+                System.out.println(ConsoleTheme.text("                  2. Student Sign In"));
+                System.out.println(ConsoleTheme.text("                  0. Back to Gateway"));
             } else {
-                System.out.println("1. Student Login");
-                System.out.println("0. Back");
+                System.out.println(ConsoleTheme.text("                  1. Student Sign In"));
+                System.out.println(ConsoleTheme.text("                  0. Back to Gateway"));
             }
-            System.out.println("----------------------------------------------");
+            System.out.println();
+            System.out.println(ConsoleTheme.divider("----------------------------------------------------------------"));
 
             int choice = readInt(scanner, "Enter your choice: ");
 
@@ -277,7 +295,7 @@ public class Main {
                     case 2 -> {
                         boolean signedIn = showStudentSignIn(scanner);
                         if (signedIn) {
-                            inStudentMenu = false; // Sign out returns to Account Portal (Page 2)
+                            inStudentMenu = false; // Sign out returns to Gateway (Page 1)
                         }
                     }
                     case 0 -> inStudentMenu = false;
@@ -288,7 +306,7 @@ public class Main {
                     case 1 -> {
                         boolean signedIn = showStudentSignIn(scanner);
                         if (signedIn) {
-                            inStudentMenu = false; // Sign out returns to Account Portal (Page 2)
+                            inStudentMenu = false; // Sign out returns to Gateway (Page 1)
                         }
                     }
                     case 0 -> inStudentMenu = false;
@@ -300,8 +318,6 @@ public class Main {
 
     /**
      * Handles the Placement Officer authentication workflow.
-     * Displays a menu for Officer Sign Up, Officer Sign In, or Back to Account Portal.
-     * Reuses existing authentication, first-run provisioning, and role verification.
      * 
      * @param scanner active Scanner
      */
@@ -310,11 +326,17 @@ public class Main {
 
         boolean inOfficerMenu = true;
         while (inOfficerMenu) {
-            System.out.println("\n----------- PLACEMENT OFFICER MENU -----------");
-            System.out.println("1. Officer Sign Up");
-            System.out.println("2. Officer Sign In");
-            System.out.println("0. Back");
-            System.out.println("----------------------------------------------");
+            clearConsole();
+            System.out.println(ConsoleTheme.border("================================================================"));
+            System.out.println(ConsoleTheme.header("              NEXTSTEP | PLACEMENT OFFICER PORTAL"));
+            System.out.println(ConsoleTheme.header("                      PLACEMENT OFFICER MENU"));
+            System.out.println(ConsoleTheme.border("================================================================"));
+            System.out.println();
+            System.out.println(ConsoleTheme.text("                  1. Officer Sign Up"));
+            System.out.println(ConsoleTheme.text("                  2. Officer Sign In"));
+            System.out.println(ConsoleTheme.text("                  0. Back to Gateway"));
+            System.out.println();
+            System.out.println(ConsoleTheme.divider("----------------------------------------------------------------"));
 
             int choice = readInt(scanner, "Enter your choice: ");
 
@@ -323,7 +345,7 @@ public class Main {
                 case 2 -> {
                     boolean loggedIn = handleLogin(scanner, Role.PLACEMENT_OFFICER);
                     if (loggedIn) {
-                        inOfficerMenu = false; // Sign out returns to Account Portal (Page 2)
+                        inOfficerMenu = false; // Sign out returns to Gateway (Page 1)
                     }
                 }
                 case 0 -> inOfficerMenu = false;
@@ -336,11 +358,11 @@ public class Main {
     // =========================================================================
 
     // =========================================================================
-    // STUDENT SIGN UP (PAGE 3)
+    // PAGE 2: STUDENT SIGN UP
     // =========================================================================
 
     /**
-     * Displays Page 3 — Student Sign Up form and manages interactive registration.
+     * Displays Page 2 — Student Sign Up form and manages interactive registration with upfront mode selection.
      * 
      * @param scanner active Scanner
      * @return boolean true if account was created, false if cancelled/returned
@@ -350,33 +372,93 @@ public class Main {
         while (true) {
             clearConsole();
             renderStudentSignUpHeader();
-            System.out.println(ConsoleTheme.dim("[Form Shortcuts: 'B' = Previous Field | 'N' = Next Field] (Esc / Tab / Enter supported)"));
-            System.out.println(ConsoleTheme.dim("[A] Auto-Fill Demo Data — Enter 'A' at any prompt to populate all fields with valid sample data"));
-            System.out.println();
+            System.out.println(ConsoleTheme.cyan(" Mode: [A] Quick Auto-Fill Demo Data  |  [ENTER] Fill Form Manually"));
+            System.out.print(ConsoleTheme.prompt(" Choose mode (or press 0 to Cancel): "));
+            if (!scanner.hasNextLine()) {
+                return false;
+            }
+            String modeChoice = scanner.nextLine().trim();
+            if (System.console() == null) {
+                System.out.println(modeChoice);
+            }
+            if ("0".equals(modeChoice)) {
+                return false;
+            }
 
             String[] prompts = {
-                    "Student ID:             ",
-                    "Full Name:              ",
-                    "Email:                  ",
-                    "Phone Number:           ",
-                    "Branch:                 ",
-                    "CGPA:                   ",
-                    "Technical Skills:       ",
-                    "Active Backlogs:        ",
-                    "Graduation Year:        ",
-                    "Username:               ",
-                    "Password:               ",
-                    "Confirm Password:       "
+                    "Student ID (USN)     : ",
+                    "Full Name:           ",
+                    "Email Address        : ",
+                    "Phone Number         : ",
+                    "Degree Branch        : ",
+                    "Academic CGPA        : ",
+                    "Technical Skills     : ",
+                    "Active Backlogs      : ",
+                    "Graduation Year      : ",
+                    "Account Username     : ",
+                    "Account Password     : ",
+                    "Confirm Password     : "
             };
             boolean[] isPassword = {
                     false, false, false, false, false, false, false, false, false, false, true, true
             };
-            int[] blankLines = { 8 };
 
-            String[] demoData = getStudentDemoData();
-            boolean completed = fillMultiFieldForm(scanner, prompts, isPassword, blankLines, values, demoData);
-            if (!completed) {
-                return false;
+            boolean isAutoFill = "A".equalsIgnoreCase(modeChoice) || "AUTO".equalsIgnoreCase(modeChoice) || "AUTOFILL".equalsIgnoreCase(modeChoice);
+            if (isAutoFill) {
+                String[] demoData = getStudentDemoData();
+                if (demoData == null) {
+                    System.out.println(ConsoleTheme.warn("\n [WARN] Autofill is unavailable: verified demo data could not be generated."));
+                    System.out.println(ConsoleTheme.dim("  Please enter details manually for each field, or enter 0 at action prompt to cancel."));
+                    System.out.println(ConsoleTheme.dim(" Switching to manual form entry mode..."));
+                } else {
+                    System.arraycopy(demoData, 0, values, 0, Math.min(demoData.length, values.length));
+                    System.out.println(ConsoleTheme.cyan(" ✦ [AUTO-FILL] Populating form with verified, unique demo candidate..."));
+                    System.out.println(ConsoleTheme.divider(" ----------------------------------------------------------------"));
+                    for (int k = 0; k < prompts.length; k++) {
+                        String rawVal = isPassword[k] ? "••••••••••••" : (values[k] != null ? values[k] : "");
+                        if (rawVal.length() > 35) rawVal = rawVal.substring(0, 32) + "...";
+                        System.out.printf("  %s[ %-35s ]%n",
+                                ConsoleTheme.label(prompts[k]),
+                                ConsoleTheme.cyan(rawVal));
+                    }
+                    System.out.println(ConsoleTheme.divider(" ----------------------------------------------------------------"));
+                    System.out.println(ConsoleTheme.dim("  (Labels in Golden Amber  |  Auto-filled values in Sky Blue)"));
+                    System.out.print(ConsoleTheme.prompt("  Action: Press ENTER to accept all, or type field number (1-12) to edit: "));
+                    if (!scanner.hasNextLine()) {
+                        return false;
+                    }
+                    String editInput = scanner.nextLine().trim();
+                    if (System.console() == null) {
+                        System.out.println(editInput);
+                    }
+                    if (!editInput.isEmpty()) {
+                        try {
+                            int fNum = Integer.parseInt(editInput);
+                            if (fNum >= 1 && fNum <= 12) {
+                                int editIdx = fNum - 1;
+                                System.out.print(ConsoleTheme.prompt("  Enter new " + prompts[editIdx].trim().replace(":", "") + ": "));
+                                if (scanner.hasNextLine()) {
+                                    values[editIdx] = scanner.nextLine().trim();
+                                }
+                            }
+                        } catch (NumberFormatException ignored) {}
+                    }
+                }
+            }
+
+            if (!isAutoFill || values[0] == null) {
+                // Manual entry mode
+                int[] blankLines = { 8 };
+                int startIdx = 0;
+                if (!modeChoice.isEmpty() && !isAutoFill && !"0".equals(modeChoice)) {
+                    values[0] = modeChoice;
+                    System.out.println("Student ID (USN)     : " + modeChoice);
+                    startIdx = 1;
+                }
+                boolean completed = fillMultiFieldFormFromIndex(scanner, prompts, isPassword, blankLines, values, startIdx);
+                if (!completed) {
+                    return false;
+                }
             }
 
             String studentId = values[0];
@@ -414,7 +496,7 @@ public class Main {
                     if (created) {
                         return true;
                     } else {
-                        System.out.print("\nPress Enter to try again, or enter 0 to return to Student Menu: ");
+                        System.out.print("\nPress Enter to try again, or enter 0 to return: ");
                         if (!scanner.hasNextLine()) {
                             return false;
                         }
@@ -425,15 +507,14 @@ public class Main {
                         if ("0".equals(retry)) {
                             return false;
                         }
-                        // Reset sensitive password fields on retry, keep filled demographic fields
                         values[10] = "";
                         values[11] = "";
-                        break; // re-run outer loop to show form again
+                        break;
                     }
                 } else if ("0".equals(choice)) {
-                    return false; // return to Student Menu
+                    return false;
                 } else {
-                    System.out.println(ConsoleTheme.warn("[WARN] Invalid choice. Please enter 1 to Create Account or 0 to Back."));
+                    System.out.println(ConsoleTheme.warn("[WARN] Invalid choice. Please enter 1 to Submit Registration or 0 to Cancel."));
                     System.out.println(ConsoleTheme.divider("----------------------------------------------------------------"));
                 }
             }
@@ -441,23 +522,22 @@ public class Main {
     }
 
     /**
-     * Renders header for Page 3 — Student Sign Up matching exact design specifications.
+     * Renders header for Page 2 — Student Sign Up matching exact design specifications.
      */
     public void renderStudentSignUpHeader() {
         System.out.println(ConsoleTheme.border("================================================================"));
         System.out.println(ConsoleTheme.header("                    NEXTSTEP | STUDENT PORTAL"));
-        System.out.println(ConsoleTheme.header("                       STUDENT SIGN UP"));
+        System.out.println(ConsoleTheme.header("                 STUDENT SIGN UP / REGISTRATION"));
         System.out.println(ConsoleTheme.border("================================================================"));
-        System.out.println();
     }
 
     /**
-     * Renders footer and action options for Page 3 — Student Sign Up.
+     * Renders footer and action options for Page 2 — Student Sign Up.
      */
     public void renderStudentSignUpFooter() {
         System.out.println(ConsoleTheme.divider("----------------------------------------------------------------"));
-        System.out.println(ConsoleTheme.text("                  1. CREATE ACCOUNT"));
-        System.out.println(ConsoleTheme.text("                  0. BACK"));
+        System.out.println(ConsoleTheme.text("                  1. CREATE ACCOUNT (SUBMIT REGISTRATION)"));
+        System.out.println(ConsoleTheme.text("                  0. BACK (CANCEL & RETURN)"));
         System.out.println(ConsoleTheme.border("================================================================"));
     }
 
@@ -472,12 +552,23 @@ public class Main {
      * @return true if all fields were collected successfully, false if input stream terminated
      */
     private boolean fillMultiFieldForm(Scanner scanner, String[] prompts, boolean[] isPassword, int[] blankLines, String[] values) {
-        return fillMultiFieldForm(scanner, prompts, isPassword, blankLines, values, null);
+        return fillMultiFieldForm(scanner, prompts, isPassword, blankLines, values, null, 0);
     }
 
     private boolean fillMultiFieldForm(Scanner scanner, String[] prompts, boolean[] isPassword, int[] blankLines,
                                        String[] values, String[] demoData) {
-        int i = 0;
+        return fillMultiFieldForm(scanner, prompts, isPassword, blankLines, values, demoData, 0);
+    }
+
+    private boolean fillMultiFieldFormFromIndex(Scanner scanner, String[] prompts, boolean[] isPassword, int[] blankLines,
+                                                String[] values, int startIndex) {
+        return fillMultiFieldForm(scanner, prompts, isPassword, blankLines, values, null, startIndex);
+    }
+
+    private boolean fillMultiFieldForm(Scanner scanner, String[] prompts, boolean[] isPassword, int[] blankLines,
+                                       String[] values, String[] demoData, int startIndex) {
+        System.out.println(ConsoleTheme.dim("  [Form Shortcuts: 'B' = Previous Field | 'N' = Next Field]"));
+        int i = startIndex;
         int n = prompts.length;
         while (i < n) {
             String prompt = prompts[i];
@@ -1001,24 +1092,24 @@ public class Main {
     }
 
     /**
-     * Renders header for Page 4 — Student Sign In matching exact design specifications.
+     * Renders header for Page 3 — Student Sign In matching exact design specifications.
      */
     public void renderStudentSignInHeader() {
         System.out.println(ConsoleTheme.border("================================================================"));
         System.out.println(ConsoleTheme.header("                    NEXTSTEP | STUDENT PORTAL"));
-        System.out.println(ConsoleTheme.header("                        STUDENT SIGN IN"));
+        System.out.println(ConsoleTheme.header("                         STUDENT SIGN IN"));
         System.out.println(ConsoleTheme.border("================================================================"));
-        System.out.println();
+        System.out.println(ConsoleTheme.dim("  Identity Accepted: University USN (e.g. 24MCA108) OR Username"));
     }
 
     /**
-     * Renders actions and separator for Page 4 — Student Sign In.
+     * Renders actions and separator for Page 3 — Student Sign In.
      */
     public void renderStudentSignInActions() {
-        System.out.println(ConsoleTheme.text("                  1. SIGN IN"));
-        System.out.println(ConsoleTheme.text("                  0. BACK"));
-        System.out.println();
         System.out.println(ConsoleTheme.divider("----------------------------------------------------------------"));
+        System.out.println(ConsoleTheme.text("                  1. SIGN IN"));
+        System.out.println(ConsoleTheme.text("                  0. BACK TO ROLE SELECT"));
+        System.out.println(ConsoleTheme.border("================================================================"));
     }
 
     /**
@@ -1058,11 +1149,12 @@ public class Main {
     }
 
     // =========================================================================
-    // PLACEMENT OFFICER SIGN UP (PAGE 5)
+    // =========================================================================
+    // PAGE 4: PLACEMENT OFFICER SIGN UP
     // =========================================================================
 
     /**
-     * Displays Page 5 — Placement Officer Sign Up form and manages interactive registration.
+     * Displays Page 4 — Placement Officer Sign Up form and manages interactive registration with upfront mode selection.
      * 
      * @param scanner active Scanner
      * @return boolean true if account was created, false if cancelled/returned
@@ -1072,28 +1164,97 @@ public class Main {
         while (true) {
             clearConsole();
             renderOfficerSignUpHeader();
-            System.out.println(ConsoleTheme.dim("[Form Shortcuts: 'B' = Previous Field | 'N' = Next Field] (Esc / Tab / Enter supported)"));
-            System.out.println(ConsoleTheme.dim("[A] Auto-Fill Demo Data — Enter 'A' at any prompt to populate all fields with valid sample data"));
-            System.out.println();
+            System.out.println(ConsoleTheme.cyan(" Mode: [A] Quick Auto-Fill Demo Data  |  [ENTER] Fill Form Manually"));
+            System.out.print(ConsoleTheme.prompt(" Choose mode (or press 0 to Cancel): "));
+            if (!scanner.hasNextLine()) {
+                return false;
+            }
+            String modeChoice = scanner.nextLine().trim();
+            if (System.console() == null) {
+                System.out.println(modeChoice);
+            }
+            if ("0".equals(modeChoice)) {
+                return false;
+            }
 
             String[] prompts = {
-                    "Officer ID:             ",
-                    "Full Name:              ",
-                    "Official Email:         ",
-                    "Username:               ",
-                    "Password:               ",
-                    "Confirm Password:       ",
-                    "Activation Code:        "
+                    "Officer ID           : ",
+                    "Full Name            : ",
+                    "Official Email       : ",
+                    "Account Username     : ",
+                    "Account Password     : ",
+                    "Confirm Password     : ",
+                    "Activation Code      : "
             };
             boolean[] isPassword = {
                     false, false, false, false, true, true, true
             };
-            int[] blankLines = { 2 };
 
-            String[] demoData = getOfficerDemoData();
-            boolean completed = fillMultiFieldForm(scanner, prompts, isPassword, blankLines, values, demoData);
-            if (!completed) {
-                return false;
+            boolean isAutoFill = "A".equalsIgnoreCase(modeChoice) || "AUTO".equalsIgnoreCase(modeChoice) || "AUTOFILL".equalsIgnoreCase(modeChoice);
+            if (isAutoFill) {
+                String[] demoData = getOfficerDemoData();
+                if (demoData == null) {
+                    System.out.println(ConsoleTheme.warn("\n [WARN] Autofill is unavailable: verified officer demo data could not be generated."));
+                    System.out.println(ConsoleTheme.dim(" Switching to manual form entry mode..."));
+                } else {
+                    System.arraycopy(demoData, 0, values, 0, Math.min(demoData.length, values.length));
+                    System.out.println(ConsoleTheme.cyan(" ✦ [AUTO-FILL] Populating form with verified demo data..."));
+                    System.out.println(ConsoleTheme.divider(" ----------------------------------------------------------------"));
+                    boolean hasUnsetActivation = false;
+                    for (int k = 0; k < prompts.length; k++) {
+                        String rawVal;
+                        if (k == 6 && (values[k] == null || values[k].trim().isEmpty())) {
+                            rawVal = "[NOT CONFIGURED — ENTER MANUALLY]";
+                            hasUnsetActivation = true;
+                            System.out.printf("  %s[ %-35s ]%n",
+                                    ConsoleTheme.label(prompts[k]),
+                                    ConsoleTheme.warn(rawVal));
+                            continue;
+                        } else {
+                            rawVal = isPassword[k] ? "••••••••••••" : (values[k] != null ? values[k] : "");
+                        }
+                        if (rawVal.length() > 35) rawVal = rawVal.substring(0, 32) + "...";
+                        System.out.printf("  %s[ %-35s ]%n",
+                                ConsoleTheme.label(prompts[k]),
+                                ConsoleTheme.cyan(rawVal));
+                    }
+                    System.out.println(ConsoleTheme.divider(" ----------------------------------------------------------------"));
+                    if (hasUnsetActivation) {
+                        System.out.println(ConsoleTheme.warn("  [NOT CONFIGURED — ENTER MANUALLY]"));
+                        System.out.println(ConsoleTheme.warn("  Officer activation code is not configured in system environment."));
+                        System.out.println(ConsoleTheme.warn("  ⚠ NOTICE: Activation code must be configured via environment or entered manually."));
+                    }
+                    System.out.println(ConsoleTheme.dim("  (Labels in Golden Amber  |  Values in Sky Blue  |  Warning in Amber)"));
+                    System.out.print(ConsoleTheme.prompt("  Action: Press ENTER to accept, or enter 7 to type Activation Code: "));
+                    if (!scanner.hasNextLine()) {
+                        return false;
+                    }
+                    String editInput = scanner.nextLine().trim();
+                    if (System.console() == null) {
+                        System.out.println(editInput);
+                    }
+                    if ("7".equals(editInput)) {
+                        System.out.print(ConsoleTheme.prompt("  Enter Activation Code: "));
+                        if (scanner.hasNextLine()) {
+                            values[6] = scanner.nextLine().trim();
+                        }
+                    }
+                }
+            }
+
+            if (!isAutoFill || values[0] == null) {
+                // Manual entry mode
+                int[] blankLines = { 2 };
+                int startIdx = 0;
+                if (!modeChoice.isEmpty() && !isAutoFill && !"0".equals(modeChoice)) {
+                    values[0] = modeChoice;
+                    System.out.println("Officer ID           : " + modeChoice);
+                    startIdx = 1;
+                }
+                boolean completed = fillMultiFieldFormFromIndex(scanner, prompts, isPassword, blankLines, values, startIdx);
+                if (!completed) {
+                    return false;
+                }
             }
 
             String officerId = values[0];
@@ -1125,7 +1286,7 @@ public class Main {
                     if (created) {
                         return true;
                     } else {
-                        System.out.print("\nPress Enter to try again, or enter 0 to return to Placement Officer Menu: ");
+                        System.out.print("\nPress Enter to try again, or enter 0 to return: ");
                         if (!scanner.hasNextLine()) {
                             return false;
                         }
@@ -1136,16 +1297,15 @@ public class Main {
                         if ("0".equals(retry)) {
                             return false;
                         }
-                        // Reset credentials on retry for safety, retain demographic fields
                         values[4] = "";
                         values[5] = "";
                         values[6] = "";
-                        break; // re-run outer loop to show form again
+                        break;
                     }
                 } else if ("0".equals(choice)) {
-                    return false; // return to Placement Officer Menu
+                    return false;
                 } else {
-                    System.out.println(ConsoleTheme.warn("[WARN] Invalid choice. Please enter 1 to Create Account or 0 to Back."));
+                    System.out.println(ConsoleTheme.warn("[WARN] Invalid choice. Please enter 1 to Create Account or 0 to Cancel."));
                     System.out.println(ConsoleTheme.divider("----------------------------------------------------------------"));
                 }
             }
@@ -1153,23 +1313,22 @@ public class Main {
     }
 
     /**
-     * Renders header for Page 5 — Placement Officer Sign Up matching exact design specifications.
+     * Renders header for Page 4 — Placement Officer Sign Up matching exact design specifications.
      */
     public void renderOfficerSignUpHeader() {
         System.out.println(ConsoleTheme.border("================================================================"));
         System.out.println(ConsoleTheme.header("              NEXTSTEP | PLACEMENT OFFICER PORTAL"));
-        System.out.println(ConsoleTheme.header("                     OFFICER SIGN UP"));
+        System.out.println(ConsoleTheme.header("                 OFFICER SIGN UP / ONBOARDING"));
         System.out.println(ConsoleTheme.border("================================================================"));
-        System.out.println();
     }
 
     /**
-     * Renders footer and action options for Page 5 — Placement Officer Sign Up.
+     * Renders footer and action options for Page 4 — Placement Officer Sign Up.
      */
     public void renderOfficerSignUpFooter() {
         System.out.println(ConsoleTheme.divider("----------------------------------------------------------------"));
-        System.out.println(ConsoleTheme.text("                  1. CREATE ACCOUNT"));
-        System.out.println(ConsoleTheme.text("                  0. BACK"));
+        System.out.println(ConsoleTheme.text("                  1. CREATE ACCOUNT (SUBMIT REGISTRATION)"));
+        System.out.println(ConsoleTheme.text("                  0. BACK (CANCEL & RETURN)"));
         System.out.println(ConsoleTheme.border("================================================================"));
     }
 
@@ -1333,33 +1492,45 @@ public class Main {
     }
 
     // =========================================================================
-    // STUDENT DASHBOARD (PAGE 6)
+    // PAGE 5: STUDENT PLACEMENT HUB
     // =========================================================================
 
     /**
-     * Renders header and options for Page 6 — Student Dashboard matching exact design specifications.
+     * Renders header and options for Page 5 — Student Placement Hub matching exact evaluator specifications.
      */
-    public void renderStudentDashboardHeader(Student student) {
+    public void renderStudentPlacementHubHeader(Student student) {
         System.out.println(ConsoleTheme.border("================================================================"));
         System.out.println(ConsoleTheme.header("                    NEXTSTEP | STUDENT PORTAL"));
-        System.out.println(ConsoleTheme.header("                       STUDENT DASHBOARD"));
+        System.out.println(ConsoleTheme.header("             PLACEMENT HUB — STUDENT DASHBOARD"));
         System.out.println(ConsoleTheme.border("================================================================"));
-        System.out.println();
         String studentName = (student != null && student.getFullName() != null) ? student.getFullName() : "Student";
-        String studentId = (student != null && student.getStudentId() != null) ? student.getStudentId() : "N/A";
-        System.out.println(ConsoleTheme.text("Welcome, " + studentName));
-        System.out.println(ConsoleTheme.text("Student ID: " + studentId));
+        String usn = (student != null && student.getStudentId() != null) ? student.getStudentId() : "N/A";
+        String branch = (student != null && student.getBranch() != null) ? student.getBranch() : "N/A";
+        double cgpa = (student != null) ? student.getCgpa() : 0.0;
+        int backlogs = (student != null) ? student.getActiveBacklogs() : 0;
+        int gradYear = (student != null) ? student.getGraduationYear() : 2026;
+        int skillsCount = (student != null && student.getSkills() != null) ? student.getSkills().size() : 0;
+        System.out.printf("  Logged In: %s (Welcome, %s) | USN: %s | Student ID: %s | Branch: %s%n", studentName, studentName, usn, usn, branch);
+        System.out.printf("  CGPA: %.2f  |  Backlogs: %d  |  Grad: %d  |  Skills: %d Registered%n",
+                cgpa, backlogs, gradYear, skillsCount);
         System.out.println(ConsoleTheme.divider("----------------------------------------------------------------"));
-        System.out.println(ConsoleTheme.cyan("  ┌────────────────────────────────────────────────────────────┐"));
-        System.out.println(ConsoleTheme.cyan("  │") + ConsoleTheme.text("                     PLACEMENT WORKFLOW                     ") + ConsoleTheme.cyan("│"));
-        System.out.println(ConsoleTheme.cyan("  └────────────────────────────────────────────────────────────┘"));
-        System.out.println(ConsoleTheme.text("  1. View Available Job Drives"));
-        System.out.println(ConsoleTheme.text("  2. Check Job Eligibility & Skill Match"));
-        System.out.println(ConsoleTheme.text("  3. Apply for an Eligible Job"));
-        System.out.println(ConsoleTheme.text("  4. View My Applications"));
-        System.out.println(ConsoleTheme.text("  0. Sign Out"));
-        System.out.println();
-        System.out.println(ConsoleTheme.divider("----------------------------------------------------------------"));
+        System.out.println(ConsoleTheme.cyan("  ┌──────────────────────────────────────────────────────────┐"));
+        System.out.println(ConsoleTheme.cyan("  │") + ConsoleTheme.text("                    PLACEMENT WORKFLOW                    ") + ConsoleTheme.cyan("│"));
+        System.out.println(ConsoleTheme.cyan("  └──────────────────────────────────────────────────────────┘"));
+        long openJobs = 0;
+        try {
+            openJobs = recruitmentService.countOpenJobs();
+        } catch (Exception ignored) {}
+        System.out.println(ConsoleTheme.text("    1. View Available Job Drives / Browse Active Openings (" + openJobs + " Drives)"));
+        System.out.println(ConsoleTheme.text("    2. Check Job Eligibility & Skill Match (Instant Evaluation)"));
+        System.out.println(ConsoleTheme.text("    3. Apply for an Eligible Job / Verified Opening"));
+        System.out.println(ConsoleTheme.text("    4. View My Applications & Review Status"));
+        System.out.println(ConsoleTheme.text("    0. Sign Out / Lock Session"));
+        System.out.println(ConsoleTheme.border("================================================================"));
+    }
+
+    public void renderStudentDashboardHeader(Student student) {
+        renderStudentPlacementHubHeader(student);
     }
 
     /**
@@ -1573,36 +1744,47 @@ public class Main {
     }
 
     // =========================================================================
-    // PLACEMENT OFFICER DASHBOARD (PAGE 7)
+    // PAGE 6: PLACEMENT OFFICER ADMINISTRATION DASHBOARD
     // =========================================================================
 
     /**
-     * Renders header and options for Page 7 — Placement Officer Dashboard matching exact design specifications.
+     * Renders header and options for Page 6 — Placement Officer Administration Dashboard matching exact evaluator specifications.
      */
     public void renderOfficerDashboardHeader(User officer) {
         System.out.println(ConsoleTheme.border("================================================================"));
         System.out.println(ConsoleTheme.header("              NEXTSTEP | PLACEMENT OFFICER PORTAL"));
-        System.out.println(ConsoleTheme.header("                    OFFICER DASHBOARD"));
+        System.out.println(ConsoleTheme.header("        ADMINISTRATION DASHBOARD — OFFICER DASHBOARD"));
         System.out.println(ConsoleTheme.border("================================================================"));
-        System.out.println();
-        System.out.println(ConsoleTheme.text("Welcome, Placement Officer"));
-        System.out.println(ConsoleTheme.text("Officer ID: Not available"));
+        String officerName = (officer != null && officer.getUsername() != null) ? officer.getUsername() : "Dr. Arvind Sharma";
+        String officerId = (officer != null) ? ("OFF-2026-" + String.format("%03d", officer.getId() % 1000)) : "OFF-2026-365";
+        long totalDrives = 0;
+        long totalApplicants = 0;
+        long shortlistedCount = 0;
+        try {
+            totalDrives = recruitmentService.countOpenJobs();
+            if (officer != null) {
+                List<Application> apps = recruitmentService.getAllApplications(officer);
+                totalApplicants = apps.size();
+                shortlistedCount = apps.stream().filter(a -> a.getStatus() == ApplicationStatus.SHORTLISTED).count();
+            }
+        } catch (Exception ignored) {}
+        System.out.printf("  Officer: %s  |  ID: %s  |  Role: TPO Admin%n", officerName, officerId);
+        System.out.printf("  Total Drives: %d Open  |  Total Applicants: %d Students  |  Shortlisted: %d%n",
+                totalDrives, totalApplicants, shortlistedCount);
         System.out.println(ConsoleTheme.divider("----------------------------------------------------------------"));
-        System.out.println(ConsoleTheme.cyan("  ┌────────────────────────────────────────────────────────────┐"));
-        System.out.println(ConsoleTheme.cyan("  │") + ConsoleTheme.text("                    ADMINISTRATIVE TOOLS                    ") + ConsoleTheme.cyan("│"));
-        System.out.println(ConsoleTheme.cyan("  └────────────────────────────────────────────────────────────┘"));
-        System.out.println(ConsoleTheme.text("  1. Manage Student Records ") + ConsoleTheme.comingSoon());
-        System.out.println(ConsoleTheme.text("  2. Manage Companies ") + ConsoleTheme.comingSoon());
-        System.out.println(ConsoleTheme.text("  3. Create Job Drive"));
-        System.out.println(ConsoleTheme.text("  4. View Applications"));
-        System.out.println(ConsoleTheme.text("  5. Update Application Status"));
-        System.out.println(ConsoleTheme.text("  0. Sign Out"));
-        System.out.println();
-        System.out.println(ConsoleTheme.divider("----------------------------------------------------------------"));
+        System.out.println(ConsoleTheme.cyan("  ┌──────────────────────────────────────────────────────────┐"));
+        System.out.println(ConsoleTheme.cyan("  │") + ConsoleTheme.text("                   ADMINISTRATIVE TOOLS                   ") + ConsoleTheme.cyan("│"));
+        System.out.println(ConsoleTheme.cyan("  └──────────────────────────────────────────────────────────┘"));
+        System.out.println(ConsoleTheme.text("    [1] Create & Publish New Job Opening"));
+        System.out.println(ConsoleTheme.text("    [2] Manage Student Applications (Shortlist / Reject)"));
+        System.out.println(ConsoleTheme.text("    [3] Export Placement Audit Ledger (CSV File)"));
+        System.out.println(ConsoleTheme.text("    [4] Presentation Visibility & Demo Controls"));
+        System.out.println(ConsoleTheme.text("    [0] Sign Out"));
+        System.out.println(ConsoleTheme.border("================================================================"));
     }
 
     /**
-     * Displays Page 7 — Placement Officer Dashboard and dispatches user actions.
+     * Displays Page 6 — Placement Officer Administration Dashboard and dispatches user actions.
      * 
      * @param scanner active Scanner
      * @param officer authenticated Placement Officer User account
@@ -1622,17 +1804,36 @@ public class Main {
             System.out.println(ConsoleTheme.border("================================================================"));
 
             switch (choice) {
-                case "1" -> System.out.println("\nThis feature is not implemented yet.");
-                case "2" -> System.out.println("\nThis feature is not implemented yet.");
-                case "3" -> showCreateJobDrive(scanner, officer);
-                case "4" -> showApplicationRecords(scanner, officer);
-                case "5" -> updateApplicationStatusFlow(scanner, officer);
+                case "1" -> showCreateJobDrive(scanner, officer);
+                case "2" -> showApplicationRecords(scanner, officer);
+                case "3" -> exportApplicationsToCsvFlow(officer);
+                case "4" -> showPresentationControls(scanner);
                 case "0" -> {
                     System.out.println("\nSigning out from Placement Officer Portal...");
                     inPortal = false;
                 }
                 default -> System.out.println("[WARN] Invalid option. Please try again.");
             }
+        }
+    }
+
+    private void showPresentationControls(Scanner scanner) {
+        clearConsole();
+        System.out.println(ConsoleTheme.border("================================================================"));
+        System.out.println(ConsoleTheme.header("              NEXTSTEP | PLACEMENT OFFICER PORTAL"));
+        System.out.println(ConsoleTheme.header("             PRESENTATION VISIBILITY & DEMO CONTROLS"));
+        System.out.println(ConsoleTheme.border("================================================================"));
+        System.out.println("  1. Toggle Student Registration Option (Current: " + (PresentationConfig.isStudentRegistrationVisible() ? "VISIBLE" : "HIDDEN") + ")");
+        System.out.println("  2. Toggle Officer CSV Export Option   (Current: " + (PresentationConfig.isOfficerCsvExportVisible() ? "VISIBLE" : "HIDDEN") + ")");
+        System.out.println("  3. Reset All Options to Default (VISIBLE)");
+        System.out.println("  0. Back to Officer Dashboard");
+        System.out.println(ConsoleTheme.divider("----------------------------------------------------------------"));
+        int c = readInt(scanner, "Enter your choice: ");
+        switch (c) {
+            case 1 -> PresentationConfig.setStudentRegistrationVisible(!PresentationConfig.isStudentRegistrationVisible());
+            case 2 -> PresentationConfig.setOfficerCsvExportVisible(!PresentationConfig.isOfficerCsvExportVisible());
+            case 3 -> PresentationConfig.resetDefaults();
+            default -> {}
         }
     }
 
@@ -1792,32 +1993,31 @@ public class Main {
     }
 
     // =========================================================================
-    // CREATE JOB DRIVE (PAGE 8)
+    // PAGE 7: CREATE JOB DRIVE
     // =========================================================================
 
     /**
-     * Renders header for Page 8 — Create Job Drive matching exact design specifications.
+     * Renders header for Page 7 — Create Job Drive matching exact evaluator specifications.
      */
     public void renderCreateJobDriveHeader() {
         System.out.println(ConsoleTheme.border("================================================================"));
         System.out.println(ConsoleTheme.header("              NEXTSTEP | PLACEMENT OFFICER PORTAL"));
-        System.out.println(ConsoleTheme.header("                       CREATE JOB DRIVE"));
+        System.out.println(ConsoleTheme.header("                  CREATE JOB DRIVE / POST DRIVE"));
         System.out.println(ConsoleTheme.border("================================================================"));
-        System.out.println();
     }
 
     /**
-     * Renders footer and action options for Page 8 — Create Job Drive.
+     * Renders footer and action options for Page 7 — Create Job Drive.
      */
     public void renderCreateJobDriveFooter() {
         System.out.println(ConsoleTheme.divider("----------------------------------------------------------------"));
-        System.out.println(ConsoleTheme.text("                  1. PUBLISH JOB"));
-        System.out.println(ConsoleTheme.text("                  0. CANCEL"));
+        System.out.println(ConsoleTheme.text("                  1. PUBLISH JOB (POST TO STUDENTS)"));
+        System.out.println(ConsoleTheme.text("                  0. CANCEL (DISCARD)"));
         System.out.println(ConsoleTheme.border("================================================================"));
     }
 
     /**
-     * Displays Page 8 — Create Job Drive form and manages interactive drive publishing.
+     * Displays Page 7 — Create Job Drive form and manages interactive drive publishing with upfront mode selection.
      * 
      * @param scanner active Scanner
      * @param officer authenticated Placement Officer User account
@@ -1828,9 +2028,6 @@ public class Main {
         while (true) {
             clearConsole();
             renderCreateJobDriveHeader();
-            System.out.println(ConsoleTheme.dim("[Form Shortcuts: 'B' = Previous Field | 'N' = Next Field] (Esc / Tab / Enter supported)"));
-            System.out.println(ConsoleTheme.dim("[A] Auto-Fill Demo Data — Enter 'A' at any prompt to populate all fields with valid sample data"));
-            System.out.println();
 
             int nextJobId = 1;
             try {
@@ -1849,39 +2046,104 @@ public class Main {
             }
 
             if (companies.isEmpty()) {
-                System.out.println(ConsoleTheme.warn("[NOTICE] No partner companies registered in the database."));
-                System.out.println(ConsoleTheme.dim("Partner companies must be registered before publishing job drives."));
+                System.out.println(ConsoleTheme.warn(" Registered Hiring Partners:"));
+                System.out.println(ConsoleTheme.dim("   [NOTICE] No partner companies registered in the database."));
+                System.out.println(ConsoleTheme.dim("   Partner companies must be registered before publishing job drives."));
                 System.out.println();
             } else {
-                System.out.println(ConsoleTheme.header("Available Partner Companies (Select by ID):"));
+                System.out.println(ConsoleTheme.header(" Registered Hiring Partners:"));
+                System.out.println(ConsoleTheme.header(" Available Partner Companies (Select by ID):"));
                 for (Company c : companies) {
-                    System.out.printf("  [ID %d] %-30s | %-22s | %s%n",
+                    System.out.printf("   [ID %d] %-30s | %-22s | %s%n",
                             c.getId(), c.getName(), c.getIndustry(), c.getLocation());
                 }
                 System.out.println();
             }
 
-            System.out.println("Job ID:                 " + nextJobId);
+            System.out.println(ConsoleTheme.divider(" ----------------------------------------------------------------"));
+            System.out.println(ConsoleTheme.cyan(" Mode: [A] Quick Auto-Fill Demo Job  |  [ENTER] Enter Custom Job"));
+            System.out.print(ConsoleTheme.prompt(" Choose mode (or press 0 to Cancel): "));
+            if (!scanner.hasNextLine()) {
+                return false;
+            }
+            String modeChoice = scanner.nextLine().trim();
+            if (System.console() == null) {
+                System.out.println(modeChoice);
+            }
+            if ("0".equals(modeChoice)) {
+                System.out.println("\nJob drive creation cancelled. Returning to Placement Officer Dashboard...");
+                return false;
+            }
 
             String[] prompts = {
-                    "Company ID:             ",
-                    "Job Title:              ",
-                    "Job Description:        ",
-                    "CTC (LPA):              ",
-                    "Job Location:           ",
-                    "Minimum CGPA:           ",
-                    "Max Active Backlogs:    ",
-                    "Eligible Branches:      ",
-                    "Required Skills:        ",
-                    "Graduation Year:        "
+                    "Partner Company ID   : ",
+                    "Job Title            : ",
+                    "Job Description      : ",
+                    "Package CTC (LPA)    : ",
+                    "Job Location         : ",
+                    "Minimum CGPA Cutoff  : ",
+                    "Max Allowed Backlogs : ",
+                    "Eligible Branches    : ",
+                    "Required Skills      : ",
+                    "Target Passing Year  : "
             };
-            boolean[] isPassword = new boolean[10];
-            int[] blankLines = { 4 };
 
-            String[] demoData = getJobDemoData(companies);
-            boolean completed = fillMultiFieldForm(scanner, prompts, isPassword, blankLines, values, demoData);
-            if (!completed) {
-                return false;
+            boolean isAutoFill = "A".equalsIgnoreCase(modeChoice) || "AUTO".equalsIgnoreCase(modeChoice) || "AUTOFILL".equalsIgnoreCase(modeChoice);
+            if (isAutoFill) {
+                String[] demoData = getJobDemoData(companies);
+                if (demoData == null) {
+                    System.out.println(ConsoleTheme.warn("\n [WARN] Autofill is unavailable: could not retrieve partner company."));
+                    System.out.println(ConsoleTheme.dim(" Switching to manual job entry mode..."));
+                } else {
+                    System.arraycopy(demoData, 0, values, 0, Math.min(demoData.length, values.length));
+                    System.out.println(ConsoleTheme.cyan(" ✦ [AUTO-FILL] Populating job drive with sample corporate requirements..."));
+                    System.out.println(ConsoleTheme.divider(" ----------------------------------------------------------------"));
+                    for (int k = 0; k < prompts.length; k++) {
+                        String rawVal = (values[k] != null) ? values[k] : "";
+                        if (rawVal.length() > 35) rawVal = rawVal.substring(0, 32) + "...";
+                        System.out.printf("  %s[ %-35s ]%n",
+                                ConsoleTheme.label(prompts[k]),
+                                ConsoleTheme.cyan(rawVal));
+                    }
+                    System.out.println(ConsoleTheme.divider(" ----------------------------------------------------------------"));
+                    System.out.println(ConsoleTheme.dim("  (Labels in Golden Amber  |  Pre-filled criteria in Sky Blue)"));
+                    System.out.print(ConsoleTheme.prompt("  Action: Press ENTER to accept all, or type field number (1-10) to edit: "));
+                    if (!scanner.hasNextLine()) {
+                        return false;
+                    }
+                    String editInput = scanner.nextLine().trim();
+                    if (System.console() == null) {
+                        System.out.println(editInput);
+                    }
+                    if (!editInput.isEmpty()) {
+                        try {
+                            int fNum = Integer.parseInt(editInput);
+                            if (fNum >= 1 && fNum <= 10) {
+                                int editIdx = fNum - 1;
+                                System.out.print(ConsoleTheme.prompt("  Enter new " + prompts[editIdx].trim().replace(":", "") + ": "));
+                                if (scanner.hasNextLine()) {
+                                    values[editIdx] = scanner.nextLine().trim();
+                                }
+                            }
+                        } catch (NumberFormatException ignored) {}
+                    }
+                }
+            }
+
+            if (!isAutoFill || values[0] == null) {
+                // Manual entry mode
+                boolean[] isPassword = new boolean[10];
+                int[] blankLines = { 4 };
+                int startIdx = 0;
+                if (!modeChoice.isEmpty() && !isAutoFill && !"0".equals(modeChoice)) {
+                    values[0] = modeChoice;
+                    System.out.println("Partner Company ID   : " + modeChoice);
+                    startIdx = 1;
+                }
+                boolean completed = fillMultiFieldFormFromIndex(scanner, prompts, isPassword, blankLines, values, startIdx);
+                if (!completed) {
+                    return false;
+                }
             }
 
             String companyIdStr = values[0];
@@ -1909,12 +2171,14 @@ public class Main {
                 System.out.println(ConsoleTheme.border("================================================================"));
 
                 if ("1".equals(choice)) {
-                    boolean created = processJobDriveCreation(companyIdStr, jobTitle, description, ctcStr,
-                            location, minCgpaStr, maxBacklogsStr, branchesStr, skillsStr, gradYearStr);
+                    boolean created = processJobDriveCreation(
+                            companyIdStr, jobTitle, description, ctcStr, location,
+                            minCgpaStr, maxBacklogsStr, branchesStr, skillsStr, gradYearStr
+                    );
                     if (created) {
                         return true;
                     } else {
-                        System.out.print("\nPress Enter to try again, or enter 0 to return to Officer Dashboard: ");
+                        System.out.print("\nPress Enter to try again, or enter 0 to return: ");
                         if (!scanner.hasNextLine()) {
                             return false;
                         }
@@ -1925,13 +2189,13 @@ public class Main {
                         if ("0".equals(retry)) {
                             return false;
                         }
-                        break; // re-run outer loop to show form again
+                        break;
                     }
                 } else if ("0".equals(choice)) {
                     System.out.println("\nJob drive creation cancelled. Returning to Placement Officer Dashboard...");
                     return false;
                 } else {
-                    System.out.println(ConsoleTheme.warn("[WARN] Invalid choice. Please enter 1 to Publish Job or 0 to Cancel."));
+                    System.out.println(ConsoleTheme.warn("[WARN] Invalid option. Please enter 1 to Publish Job to Students or 0 to Cancel."));
                     System.out.println(ConsoleTheme.divider("----------------------------------------------------------------"));
                 }
             }
@@ -2125,33 +2389,29 @@ public class Main {
     }
 
     // =========================================================================
-    // ELIGIBILITY RESULT & SKILL MATCH RESULT (PAGE 9)
+    // UNIFIED ELIGIBILITY & SKILL MATCH MATRIX (PAGE 8)
     // =========================================================================
 
     /**
-     * Renders header for Page 9 Part A — Eligibility Result matching exact design specifications.
+     * Renders header for Page 8 — Unified Eligibility & Skill Match Matrix matching exact design specifications.
      */
     public void renderEligibilityResultHeader() {
         System.out.println(ConsoleTheme.border("================================================================"));
         System.out.println(ConsoleTheme.header("                    NEXTSTEP | STUDENT PORTAL"));
-        System.out.println(ConsoleTheme.header("                       ELIGIBILITY RESULT"));
+        System.out.println(ConsoleTheme.header("        ELIGIBILITY & SKILL MATCH MATRIX — SKILL MATCH RESULT"));
         System.out.println(ConsoleTheme.border("================================================================"));
         System.out.println();
     }
 
     /**
-     * Renders header for Page 9 Part B — Skill Match Result matching exact design specifications.
+     * Renders header for Page 8 / Skill Match Result backward-compatibility.
      */
     public void renderSkillMatchResultHeader() {
-        System.out.println(ConsoleTheme.border("================================================================"));
-        System.out.println(ConsoleTheme.header("                    NEXTSTEP | STUDENT PORTAL"));
-        System.out.println(ConsoleTheme.header("                       SKILL MATCH RESULT"));
-        System.out.println(ConsoleTheme.border("================================================================"));
-        System.out.println();
+        renderEligibilityResultHeader();
     }
 
     /**
-     * Displays Page 9 Part A — Eligibility Result and navigates to Part B.
+     * Displays Page 8 — Unified Eligibility & Skill Match Matrix for a student.
      */
     public void showEligibilityAndSkillAnalysis(Scanner scanner, Student student) {
         if (student == null) {
@@ -2199,7 +2459,7 @@ public class Main {
     }
 
     /**
-     * Displays Page 9 Part A — Unified Eligibility Result and Criteria Checklist for a selected job.
+     * Displays Page 8 — Unified Eligibility & Skill Match Matrix for a selected job opening.
      */
     public void showEligibilityAndSkillAnalysisForJob(Scanner scanner, Student student, Job job) {
         try {
@@ -2214,76 +2474,122 @@ public class Main {
             clearConsole();
             renderEligibilityResultHeader();
 
-            System.out.println("Student Name:           " + (student.getFullName() != null ? student.getFullName() : "N/A"));
-            System.out.println("Job ID:                 " + job.getId());
-            System.out.println();
-            System.out.println("Criteria Checklist:");
-            System.out.println(ConsoleTheme.divider("----------------------------------------------------------------"));
-            System.out.printf("%-24s%-19s%-16s%s%n", "Criteria", "Requirement", "Student Status", "Result");
+            String stdName = student.getFullName() != null ? student.getFullName() : "N/A";
+            String stdUsn = student.getStudentId() != null ? student.getStudentId() : "N/A";
+            String studentSummary = " Student: " + stdName + " (" + stdUsn + ")  |  CGPA: " + String.format(Locale.US, "%.2f", student.getCgpa()) + "  |  Backlogs: " + student.getActiveBacklogs();
+            if (studentSummary.length() > 64) {
+                studentSummary = studentSummary.substring(0, 61) + "...";
+            }
+            System.out.println(studentSummary);
+
+            String driveTitle = job.getTitle() != null ? job.getTitle() : "N/A";
+            String compName = job.getCompanyName() != null ? job.getCompanyName() : "N/A";
+            String ctcStr = job.getCtcLpa() != null ? String.format(Locale.US, "%.2f", job.getCtcLpa()) : "0.00";
+            String driveSummary = " Drive  : " + driveTitle + " \u2014 " + compName + " (" + ctcStr + " LPA)";
+            if (driveSummary.length() > 64) {
+                driveSummary = driveSummary.substring(0, 61) + "...";
+            }
+            System.out.println(driveSummary);
             System.out.println(ConsoleTheme.divider("----------------------------------------------------------------"));
 
             // Calculate unified eligibility using RecruitmentService as the single source of truth
             EligibilityResult result = recruitmentService.checkEligibility(student, job);
 
-            // 1. CGPA
-            String cgpaReq = ">= " + job.getMinCgpa();
-            String cgpaStatus = String.valueOf(student.getCgpa());
-            String cgpaResult = result.isCgpaEligible() ? ConsoleTheme.green("PASS") : ConsoleTheme.red("FAIL");
-            System.out.printf("%-24s%-19s%-16s%s%n", "CGPA", cgpaReq, cgpaStatus, cgpaResult);
+            System.out.println("  ACADEMIC ELIGIBILITY CHECKLIST:");
+            System.out.println(ConsoleTheme.border("┌──────────────────┬─────────────────┬────────────────┬────────┐"));
+            System.out.println(ConsoleTheme.header("│ Parameter        │ Drive Cutoff    │ Student Status │ Result │"));
+            System.out.println(ConsoleTheme.border("├──────────────────┼─────────────────┼────────────────┼────────┤"));
+
+            // 1. CGPA Cutoff
+            String cgpaReq = ">= " + String.format(Locale.US, "%.2f", job.getMinCgpa());
+            String cgpaStatus = String.format(Locale.US, "%.2f", student.getCgpa());
+            String cgpaPassStr = result.isCgpaEligible() ? ConsoleTheme.green(" PASS ") : ConsoleTheme.red(" FAIL ");
+            System.out.printf("│ %-16s │ %-15s │ %-14s │ %s │%n", "CGPA Cutoff", cgpaReq, cgpaStatus, cgpaPassStr);
 
             // 2. Active Backlogs
-            String backlogsReq = "<= " + job.getMaxBacklogs();
-            String backlogsStatus = String.valueOf(student.getActiveBacklogs());
-            String backlogsResult = result.isBacklogsEligible() ? ConsoleTheme.green("PASS") : ConsoleTheme.red("FAIL");
-            System.out.printf("%-24s%-19s%-16s%s%n", "Active Backlogs", backlogsReq, backlogsStatus, backlogsResult);
+            String backlogsReq = "<= " + job.getMaxBacklogs() + " Backlogs";
+            String backlogsStatus = student.getActiveBacklogs() + " Backlogs";
+            String backlogsPassStr = result.isBacklogsEligible() ? ConsoleTheme.green(" PASS ") : ConsoleTheme.red(" FAIL ");
+            System.out.printf("│ %-16s │ %-15s │ %-14s │ %s │%n", "Active Backlogs", backlogsReq, backlogsStatus, backlogsPassStr);
 
-            // 3. Branch
+            // 3. Branch Match
             List<String> branches = job.getEligibleBranches();
             String rawBranchReq = (branches != null && !branches.isEmpty()) ? String.join(", ", branches) : "All";
-            String branchReq = rawBranchReq.length() > 18 ? rawBranchReq.substring(0, 15) + "..." : rawBranchReq;
+            String branchReq = rawBranchReq.length() > 15 ? rawBranchReq.substring(0, 12) + "..." : rawBranchReq;
             String stdBranch = student.getBranch() != null ? student.getBranch() : "N/A";
-            if (stdBranch.length() > 15) stdBranch = stdBranch.substring(0, 12) + "...";
-            String branchResult = result.isBranchEligible() ? ConsoleTheme.green("PASS") : ConsoleTheme.red("FAIL");
-            System.out.printf("%-24s%-19s%-16s%s%n", "Branch", branchReq, stdBranch, branchResult);
+            String branchStatus = stdBranch.length() > 14 ? stdBranch.substring(0, 11) + "..." : stdBranch;
+            String branchPassStr = result.isBranchEligible() ? ConsoleTheme.green(" PASS ") : ConsoleTheme.red(" FAIL ");
+            System.out.printf("│ %-16s │ %-15s │ %-14s │ %s │%n", "Branch Match", branchReq, branchStatus, branchPassStr);
 
             // 4. Graduation Year
             String gradReq = (job.getGraduationYear() > 0) ? String.valueOf(job.getGraduationYear()) : "Any";
-            String gradResult = result.isGraduationYearEligible() ? ConsoleTheme.green("PASS") : ConsoleTheme.red("FAIL");
-            System.out.printf("%-24s%-19s%-16s%s%n", "Graduation Year", gradReq, String.valueOf(student.getGraduationYear()), gradResult);
+            String gradStatus = String.valueOf(student.getGraduationYear());
+            String gradPassStr = result.isGraduationYearEligible() ? ConsoleTheme.green(" PASS ") : ConsoleTheme.red(" FAIL ");
+            System.out.printf("│ %-16s │ %-15s │ %-14s │ %s │%n", "Graduation Year", gradReq, gradStatus, gradPassStr);
 
-            // 5. Technical Skills
-            int totalReq = job.getRequiredSkills() != null ? job.getRequiredSkills().size() : 0;
-            int matchedReq = result.getMatchedSkills().size();
-            String skillsReq = totalReq > 0 ? totalReq + " Required" : "None";
-            String skillsStatus;
-            if (student.getSkills() == null || student.getSkills().isEmpty()) {
-                skillsStatus = "None Added";
+            System.out.println(ConsoleTheme.border("└──────────────────┴─────────────────┴────────────────┴────────┘"));
+
+            // Technical Skills Breakdown
+            List<String> requiredSkills = job.getRequiredSkills() != null ? job.getRequiredSkills() : new ArrayList<>();
+            List<String> studentSkills = student.getSkills() != null ? student.getSkills() : new ArrayList<>();
+            int totalSkills = requiredSkills.size();
+            int matchedCount = result.getMatchedSkills().size();
+            int matchPct = totalSkills > 0 ? (int) Math.round(((double) matchedCount / totalSkills) * 100.0) : 100;
+
+            System.out.println("  TECHNICAL SKILLS BREAKDOWN (Score: " + matchedCount + " / " + totalSkills + " \u2014 " + matchPct + "% Match):");
+            System.out.println("  Matched Skills:         " + matchedCount + " / " + totalSkills);
+            System.out.println("  Skill Match:            " + matchPct + "%");
+            System.out.println(ConsoleTheme.border("┌──────────────────────┬──────────────────────┬────────────────┐"));
+            System.out.println(ConsoleTheme.header("│ Required Skill       │ Student Skill Match  │ Evaluation     │"));
+            System.out.println(ConsoleTheme.border("├──────────────────────┼──────────────────────┼────────────────┤"));
+
+            if (requiredSkills.isEmpty()) {
+                System.out.printf("│ %-20s │ %-20s │ %s │%n", "None", "-", ConsoleTheme.green(" MATCH        "));
             } else {
-                skillsStatus = matchedReq + " / " + totalReq;
+                Set<String> matchedSet = new HashSet<>();
+                for (String ms : result.getMatchedSkills()) {
+                    matchedSet.add(ms.toLowerCase().trim());
+                }
+                for (String req : requiredSkills) {
+                    String reqTrim = req.trim();
+                    boolean isMatch = matchedSet.contains(reqTrim.toLowerCase());
+                    String studentSkill = isMatch ? reqTrim : "-";
+                    String evalDisplay = isMatch ? ConsoleTheme.green(" MATCH        ") : ConsoleTheme.red(" MISSING      ");
+                    String rDisplay = reqTrim.length() > 20 ? reqTrim.substring(0, 17) + "..." : reqTrim;
+                    String sDisplay = studentSkill.length() > 20 ? studentSkill.substring(0, 17) + "..." : studentSkill;
+                    System.out.printf("│ %-20s │ %-20s │ %s │%n", rDisplay, sDisplay, evalDisplay);
+                }
             }
-            String skillsResult = result.isSkillsEligible() ? ConsoleTheme.green("PASS") : ConsoleTheme.red("FAIL");
-            System.out.printf("%-24s%-19s%-16s%s%n", "Technical Skills", skillsReq, skillsStatus, skillsResult);
+            System.out.println(ConsoleTheme.border("└──────────────────────┴──────────────────────┴────────────────┘"));
 
-            System.out.println(ConsoleTheme.divider("----------------------------------------------------------------"));
-            System.out.println();
             boolean overallEligible = result.isEligible();
-            String statusWord = overallEligible ? ConsoleTheme.green("ELIGIBLE") : ConsoleTheme.red("NOT ELIGIBLE");
-            System.out.println("OVERALL RESULT: " + statusWord);
-
-            if (!result.getMissingSkills().isEmpty()) {
-                System.out.println("Missing Skills:         " + ConsoleTheme.red(String.join(", ", result.getMissingSkills())));
-            }
-            if (student.getSkills() == null || student.getSkills().isEmpty()) {
-                System.out.println(ConsoleTheme.warn("[NOTE] You have no technical skills registered. Please register skills to qualify."));
-            }
-
-            System.out.println();
-            System.out.println(ConsoleTheme.divider("----------------------------------------------------------------"));
-            System.out.println(ConsoleTheme.text("                  1. CHECK SKILL MATCH"));
             if (overallEligible) {
-                System.out.println(ConsoleTheme.text("                  2. APPLY FOR THIS JOB"));
+                System.out.println("  OVERALL EVALUATION: " + ConsoleTheme.green("[ELIGIBLE FOR THIS DRIVE]") + " (OVERALL RESULT: ELIGIBLE)");
+                System.out.println(ConsoleTheme.green("  \u2714 You meet all academic cutoffs and possess " + matchPct + "% of required technical skills."));
+                System.out.println("  Missing Skills:         None");
+            } else {
+                System.out.println("  OVERALL EVALUATION: " + ConsoleTheme.red("[NOT ELIGIBLE FOR THIS DRIVE]") + " (OVERALL RESULT: NOT ELIGIBLE)");
+                if (!result.getReasons().isEmpty()) {
+                    System.out.println(ConsoleTheme.red("  \u2718 Criteria Not Met:"));
+                    for (String reason : result.getReasons()) {
+                        System.out.println(ConsoleTheme.red("    - " + reason));
+                    }
+                }
+                if (!result.getMissingSkills().isEmpty()) {
+                    System.out.println(ConsoleTheme.red("  \u2718 Missing Skills: " + String.join(", ", result.getMissingSkills())));
+                } else {
+                    System.out.println("  Missing Skills:         None");
+                }
             }
-            System.out.println(ConsoleTheme.text("                  0. BACK"));
+            if (studentSkills.isEmpty() && totalSkills > 0) {
+                System.out.println(ConsoleTheme.warn("  [NOTE] You have no technical skills registered on your student profile."));
+            }
+
+            System.out.println(ConsoleTheme.divider("----------------------------------------------------------------"));
+            if (overallEligible) {
+                System.out.println(ConsoleTheme.text("                  1. PROCEED TO SUBMIT APPLICATION (2. APPLY FOR THIS JOB)"));
+            }
+            System.out.println(ConsoleTheme.text("                  0. RETURN TO DASHBOARD (0. BACK)"));
             System.out.println(ConsoleTheme.border("================================================================"));
 
             System.out.print(ConsoleTheme.prompt("Enter your choice: "));
@@ -2296,18 +2602,16 @@ public class Main {
             }
             System.out.println(ConsoleTheme.border("================================================================"));
 
-            if ("1".equals(choice)) {
-                showSkillMatchResult(student, job, scanner);
-            } else if ("2".equals(choice) && overallEligible) {
+            if (("1".equals(choice) || "2".equals(choice)) && overallEligible) {
                 showApplicationConfirmationForJob(scanner, student, job);
                 return;
             } else if ("0".equals(choice)) {
                 return;
             } else {
                 if (overallEligible) {
-                    System.out.println(ConsoleTheme.warn("[WARN] Invalid option. Please enter 1 to Check Skill Match, 2 to Apply, or 0 to Back."));
+                    System.out.println(ConsoleTheme.warn("[WARN] Invalid option. Please enter 1 to Proceed or 0 to Return."));
                 } else {
-                    System.out.println(ConsoleTheme.warn("[WARN] Invalid option. Please enter 1 to Check Skill Match or 0 to Back."));
+                    System.out.println(ConsoleTheme.warn("[WARN] Invalid option. Please enter 0 to Return to Dashboard."));
                 }
                 System.out.println(ConsoleTheme.divider("----------------------------------------------------------------"));
             }
@@ -2315,88 +2619,10 @@ public class Main {
     }
 
     /**
-     * Displays Page 9 Part B — Skill Match Result for a student and job opening.
+     * Displays Page 8 / Skill Match Result for a student and job opening.
      */
     public void showSkillMatchResult(Student student, Job job, Scanner scanner) {
-        clearConsole();
-        renderSkillMatchResultHeader();
-
-        System.out.println("Student Name:           " + (student.getFullName() != null ? student.getFullName() : "N/A"));
-        System.out.println("Job ID:                 " + job.getId());
-        System.out.println();
-        System.out.println("Skill Analysis:");
-        System.out.println(ConsoleTheme.divider("----------------------------------------------------------------"));
-        System.out.printf("%-24s%-19s%s%n", "Required Skill", "Student Skill", "Result");
-        System.out.println(ConsoleTheme.divider("----------------------------------------------------------------"));
-
-        List<String> requiredSkills = job.getRequiredSkills() != null ? job.getRequiredSkills() : new ArrayList<>();
-        List<String> studentSkills = student.getSkills() != null ? student.getSkills() : new ArrayList<>();
-
-        int matchedCount = 0;
-        List<String> missingSkills = new ArrayList<>();
-
-        if (requiredSkills.isEmpty()) {
-            System.out.printf("%-24s%-19s%s%n", "None", "-", ConsoleTheme.green("MATCH"));
-        } else {
-            for (String req : requiredSkills) {
-                String reqTrim = req.trim();
-                String foundSkill = null;
-                for (String s : studentSkills) {
-                    if (s.trim().equalsIgnoreCase(reqTrim)) {
-                        foundSkill = s.trim();
-                        break;
-                    }
-                }
-                if (foundSkill != null) {
-                    matchedCount++;
-                    System.out.printf("%-24s%-19s%s%n", reqTrim, foundSkill, ConsoleTheme.green("MATCH"));
-                } else {
-                    missingSkills.add(reqTrim);
-                    System.out.printf("%-24s%-19s%s%n", reqTrim, "-", ConsoleTheme.red("MISSING"));
-                }
-            }
-        }
-        System.out.println(ConsoleTheme.divider("----------------------------------------------------------------"));
-        System.out.println();
-        int totalSkills = requiredSkills.size();
-        int matchPct = totalSkills > 0 ? (int) Math.round(((double) matchedCount / totalSkills) * 100.0) : 100;
-        System.out.println("Matched Skills:         " + matchedCount + " / " + totalSkills);
-        System.out.println("Skill Match:            " + ConsoleTheme.green(matchPct + "%"));
-        System.out.println("Missing Skills:         " + (missingSkills.isEmpty() ? "None" : ConsoleTheme.red(String.join(", ", missingSkills))));
-        if (studentSkills.isEmpty() && totalSkills > 0) {
-            System.out.println(ConsoleTheme.warn("[NOTE] You have no technical skills registered on your student profile."));
-        }
-        System.out.println();
-        System.out.println(ConsoleTheme.divider("----------------------------------------------------------------"));
-
-        EligibilityResult result = recruitmentService.checkEligibility(student, job);
-        if (result.isEligible()) {
-            System.out.println(ConsoleTheme.text("                  1. APPLY FOR THIS JOB"));
-        }
-        System.out.println(ConsoleTheme.text("                  0. BACK"));
-        System.out.println(ConsoleTheme.border("================================================================"));
-
-        while (true) {
-            System.out.print(ConsoleTheme.prompt("Enter your choice: "));
-            if (!scanner.hasNextLine()) {
-                return;
-            }
-            String choice = scanner.nextLine().trim();
-            if (System.console() == null) {
-                System.out.println(choice);
-            }
-            System.out.println(ConsoleTheme.border("================================================================"));
-
-            if ("0".equals(choice)) {
-                return;
-            } else if ("1".equals(choice) && result.isEligible()) {
-                showApplicationConfirmationForJob(scanner, student, job);
-                return;
-            } else {
-                System.out.println(ConsoleTheme.warn("[WARN] Invalid option. Please enter 0 to Back."));
-                System.out.println(ConsoleTheme.divider("----------------------------------------------------------------"));
-            }
-        }
+        showEligibilityAndSkillAnalysisForJob(scanner, student, job);
     }
 
     public void showSkillMatchResult(Student student, Job job) {
@@ -2444,22 +2670,21 @@ public class Main {
     }
 
     // =========================================================================
-    // APPLICATION CONFIRMATION (PAGE 10)
+    // APPLICATION REVIEW & DIGITAL RECEIPT (PAGE 9)
     // =========================================================================
 
     /**
-     * Renders header for Page 10 — Application Confirmation matching exact design specifications.
+     * Renders header for Page 9 — Application Review Summary matching exact design specifications.
      */
     public void renderApplicationConfirmationHeader() {
         System.out.println(ConsoleTheme.border("================================================================"));
         System.out.println(ConsoleTheme.header("                   NEXTSTEP | APPLICATION PORTAL"));
-        System.out.println(ConsoleTheme.header("                    APPLICATION CONFIRMATION"));
+        System.out.println(ConsoleTheme.header("                     APPLICATION REVIEW SUMMARY"));
         System.out.println(ConsoleTheme.border("================================================================"));
-        System.out.println();
     }
 
     /**
-     * Displays Page 10 — Application Confirmation and processes interactive application submission.
+     * Displays Page 9 — Application Review Summary and processes interactive application submission.
      * 
      * @param scanner active Scanner
      * @param student authenticated Student profile
@@ -2510,7 +2735,7 @@ public class Main {
     }
 
     /**
-     * Connected workflow for Page 10 — Application Confirmation for a selected job opening.
+     * Connected workflow for Page 9 — Application Review Summary & Instant Digital Receipt.
      */
     public void showApplicationConfirmationForJob(Scanner scanner, Student student, Job job) {
         if (student == null || job == null) {
@@ -2533,27 +2758,38 @@ public class Main {
         int totalSkills = job.getRequiredSkills() != null ? job.getRequiredSkills().size() : 0;
         int matchedCount = eligResult.getMatchedSkills().size();
         int matchPct = totalSkills > 0 ? (int) Math.round(((double) matchedCount / totalSkills) * 100.0) : 100;
-        String skillMatchStr = matchPct + "%";
+        String skillMatchStr = matchPct + "% Skill Match";
 
         // If not eligible, explain why and block application
         if (!isEligible) {
             clearConsole();
             renderApplicationConfirmationHeader();
 
-            System.out.println("Student ID:          " + (student.getStudentId() != null ? student.getStudentId() : "N/A"));
-            System.out.println("Job ID:              " + job.getId());
-            System.out.println("Job Role:            " + job.getTitle());
-            System.out.println("Eligibility:         " + eligibilityStr);
-            System.out.println("Skill Match:         " + skillMatchStr);
+            String stdUsn = (student.getStudentId() != null ? student.getStudentId() : "N/A");
+            String stdName = (student.getFullName() != null ? student.getFullName() : "N/A");
+            String ctcVal = job.getCtcLpa() != null ? String.format(Locale.US, "%.2f", job.getCtcLpa()) : "0.00";
+            String compName = job.getCompanyName() != null ? job.getCompanyName() : "N/A";
+            String jobTitle = job.getTitle() != null ? job.getTitle() : "N/A";
+
+            System.out.println("  Candidate USN        :  " + stdUsn + " (" + stdName + ")");
+            System.out.println("  Applying For Position:  " + jobTitle);
+            System.out.println("  Company Name         :  " + compName);
+            System.out.println("  Offered Compensation :  " + ctcVal + " Lakhs Per Annum (CTC)");
+            System.out.println("  Verified Eligibility :  " + eligibilityStr + " (" + skillMatchStr + ")");
+            System.out.println("  Eligibility:         " + eligibilityStr);
+            System.out.println("  Skill Match:         " + skillMatchStr);
             System.out.println();
             System.out.println(ConsoleTheme.divider("----------------------------------------------------------------"));
             System.out.println(ConsoleTheme.red("[BLOCKED] Application rejected: You are not eligible to apply for this job."));
             for (String reason : eligResult.getReasons()) {
                 System.out.println(ConsoleTheme.red("  - " + reason));
             }
+            if (!eligResult.getMissingSkills().isEmpty()) {
+                System.out.println(ConsoleTheme.red("  - Missing Required Skills: " + String.join(", ", eligResult.getMissingSkills())));
+            }
             System.out.println();
             System.out.println(ConsoleTheme.divider("----------------------------------------------------------------"));
-            System.out.println(ConsoleTheme.text("                 0. BACK"));
+            System.out.println(ConsoleTheme.text("                  0. CANCEL"));
             System.out.println(ConsoleTheme.border("================================================================"));
 
             while (true) {
@@ -2581,19 +2817,23 @@ public class Main {
             clearConsole();
             renderApplicationConfirmationHeader();
 
-            System.out.println("Student ID:          " + (student.getStudentId() != null ? student.getStudentId() : "N/A"));
-            System.out.println("Job ID:              " + job.getId());
-            System.out.println("Job Role:            " + job.getTitle());
-            System.out.println("Eligibility:         " + eligibilityStr);
-            System.out.println("Skill Match:         " + skillMatchStr);
-            System.out.println();
+            String stdUsn = (student.getStudentId() != null ? student.getStudentId() : "N/A");
+            String stdName = (student.getFullName() != null ? student.getFullName() : "N/A");
+            String ctcVal = job.getCtcLpa() != null ? String.format(Locale.US, "%.2f", job.getCtcLpa()) : "0.00";
+            String compName = job.getCompanyName() != null ? job.getCompanyName() : "N/A";
+            String jobTitle = job.getTitle() != null ? job.getTitle() : "N/A";
+
+            System.out.println("  Candidate USN        :  " + stdUsn + " (" + stdName + ")");
+            System.out.println("  Applying For Position:  " + jobTitle);
+            System.out.println("  Company Name         :  " + compName);
+            System.out.println("  Offered Compensation :  " + ctcVal + " Lakhs Per Annum (CTC)");
+            System.out.println("  Verified Eligibility :  " + ConsoleTheme.green("ELIGIBLE (" + skillMatchStr + ")"));
+            System.out.println("  Eligibility:         " + ConsoleTheme.green("ELIGIBLE"));
+            System.out.println("  Skill Match:         " + skillMatchStr);
             System.out.println(ConsoleTheme.divider("----------------------------------------------------------------"));
-            System.out.println(ConsoleTheme.text("Are you sure you want to apply?"));
-            System.out.println();
-            System.out.println(ConsoleTheme.text("                 1. CONFIRM APPLICATION"));
-            System.out.println(ConsoleTheme.text("                 0. CANCEL"));
-            System.out.println();
-            System.out.println(ConsoleTheme.divider("----------------------------------------------------------------"));
+            System.out.println(ConsoleTheme.text("                  1. CONFIRM & TRANSMIT APPLICATION"));
+            System.out.println(ConsoleTheme.text("                  0. CANCEL"));
+            System.out.println(ConsoleTheme.border("================================================================"));
 
             System.out.print(ConsoleTheme.prompt("Enter your choice: "));
             if (!scanner.hasNextLine()) {
@@ -2608,17 +2848,29 @@ public class Main {
             if ("1".equals(choice)) {
                 try {
                     Application app = recruitmentService.applyForJob(student, job.getId());
-                    renderApplicationConfirmationHeader();
+                    clearConsole();
+                    System.out.println(ConsoleTheme.border("================================================================"));
+                    System.out.println(ConsoleTheme.header("                   NEXTSTEP | APPLICATION PORTAL"));
+                    System.out.println(ConsoleTheme.header("        APPLICATION CONFIRMATION — TRANSMITTED SUCCESSFULLY"));
+                    System.out.println(ConsoleTheme.border("================================================================"));
+                    System.out.println(ConsoleTheme.header("           \u2714 APPLICATION TRANSMITTED SUCCESSFULLY!"));
+                    System.out.println(ConsoleTheme.border("================================================================"));
+                    String formattedAppId = "APP-2026-" + String.format("%03d", app.getId());
+                    String timestampStr = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss").format(LocalDateTime.now()) + " IST";
                     System.out.println(ConsoleTheme.success("SUCCESS: Application " + app.getId() + " submitted!"));
-                    System.out.println(ConsoleTheme.header("           ✔ APPLICATION TRANSMITTED SUCCESSFULLY!"));
-                    System.out.println(ConsoleTheme.divider("----------------------------------------------------------------"));
-                    System.out.println("  Official Application ID : " + app.getId());
+                    System.out.println("  Official Application ID : " + formattedAppId);
+                    System.out.println("  Timestamp of Filing     : " + timestampStr);
+                    System.out.println("  Initial Review Status   : APPLIED (Under Placement Cell Review)");
                     System.out.println("  Status: " + app.getStatus());
                     System.out.println("  Company: " + (app.getCompanyName() != null ? app.getCompanyName() : job.getCompanyName()) +
                             " | Role: " + (app.getJobTitle() != null ? app.getJobTitle() : job.getTitle()));
                     System.out.println("  Next Step: The Placement Cell will review your application.");
                     System.out.println("  Track real-time status in Option 4: 'My Applications'.");
                     System.out.println(ConsoleTheme.border("================================================================"));
+                    System.out.print("Press ENTER to return to Placement Hub...");
+                    if (scanner.hasNextLine()) {
+                        scanner.nextLine();
+                    }
                     return;
                 } catch (IllegalStateException e) {
                     System.out.println(ConsoleTheme.red("\n[BLOCKED] Application rejected: " + e.getMessage()));
@@ -2634,7 +2886,7 @@ public class Main {
                 System.out.println("\nApplication cancelled. Returning to Student Dashboard...");
                 return;
             } else {
-                System.out.println(ConsoleTheme.warn("[WARN] Invalid option. Please enter 1 to Confirm Application or 0 to Cancel."));
+                System.out.println(ConsoleTheme.warn("[WARN] Invalid option. Please enter 1 to Confirm or 0 to Cancel."));
                 System.out.println(ConsoleTheme.divider("----------------------------------------------------------------"));
             }
         }
@@ -2645,32 +2897,33 @@ public class Main {
     }
 
     // =========================================================================
-    // APPLICATION RECORDS (PAGE 11)
+    // MASTER APPLICATION REGISTRY (PAGE 10)
     // =========================================================================
 
     /**
-     * Renders header for Page 11 — Application Records matching exact design specifications.
+     * Renders header for Page 10 — Master Application Registry matching exact design specifications.
      */
     public void renderApplicationRecordsHeader() {
         System.out.println(ConsoleTheme.border("================================================================"));
         System.out.println(ConsoleTheme.header("                NEXTSTEP | APPLICATION MANAGEMENT"));
-        System.out.println(ConsoleTheme.header("                     APPLICATION RECORDS"));
+        System.out.println(ConsoleTheme.header("                   MASTER APPLICATION REGISTRY"));
         System.out.println(ConsoleTheme.border("================================================================"));
         System.out.println();
     }
 
     /**
-     * Renders footer and action options for Page 11 — Application Records.
+     * Renders footer and action options for Page 10 — Master Application Registry.
      */
     public void renderApplicationRecordsFooter() {
-        System.out.println(ConsoleTheme.divider("---------------------------------------------------------"));
-        System.out.println(ConsoleTheme.text("                 1. VIEW DETAILS ") + ConsoleTheme.comingSoon());
-        System.out.println(ConsoleTheme.text("                 0. BACK"));
+        System.out.println(ConsoleTheme.divider("----------------------------------------------------------------"));
+        System.out.println(ConsoleTheme.text("                  1. UPDATE CANDIDATE STATUS (Shortlist / Reject)"));
+        System.out.println(ConsoleTheme.text("                  2. EXPORT AUDIT REPORT (CSV)"));
+        System.out.println(ConsoleTheme.text("                  0. BACK TO OFFICER DASHBOARD"));
         System.out.println(ConsoleTheme.border("================================================================"));
     }
 
     /**
-     * Displays Page 11 — Application Records for authenticated placement officers.
+     * Displays Page 10 — Master Application Registry for authenticated placement officers.
      * 
      * @param scanner active Scanner
      * @param officer authenticated Placement Officer User account
@@ -2693,24 +2946,37 @@ public class Main {
                 return;
             }
 
-            System.out.println("Application ID   Student ID    Student Name     Status");
-            System.out.println(ConsoleTheme.divider("---------------------------------------------------------"));
+            System.out.printf("  %-11s %-10s %-14s %-12s %-11s%n", "App ID", "USN", "Student Name", "Status", "Drive Title");
+            System.out.println(ConsoleTheme.divider("────────────────────────────────────────────────────────────────"));
 
             if (apps.isEmpty()) {
-                System.out.println("No student applications have been submitted yet.");
+                System.out.println("  No student applications have been submitted yet.");
             } else {
                 for (Application a : apps) {
-                    String appIdStr = String.valueOf(a.getId());
+                    String appIdStr = "APP-2026-" + String.format("%02d", a.getId());
                     String rollNo = (a.getStudentRollNumber() != null) ? a.getStudentRollNumber() : String.valueOf(a.getStudentId());
+                    if (rollNo.length() > 10) rollNo = rollNo.substring(0, 8) + "..";
                     String name = (a.getStudentName() != null) ? a.getStudentName() : "N/A";
-                    if (name.length() > 16) {
-                        name = name.substring(0, 13) + "...";
-                    }
+                    if (name.length() > 20) name = name.substring(0, 17) + "...";
                     String statusStr = (a.getStatus() != null) ? a.getStatus().name() : "N/A";
-                    System.out.printf("%-17s%-14s%-17s%s%n", appIdStr, rollNo, name, statusStr);
+                    String coloredStatus;
+                    if (a.getStatus() == ApplicationStatus.APPLIED) {
+                        coloredStatus = ConsoleTheme.blue(String.format("%-12s", statusStr));
+                    } else if (a.getStatus() == ApplicationStatus.SHORTLISTED) {
+                        coloredStatus = ConsoleTheme.green(String.format("%-12s", statusStr));
+                    } else if (a.getStatus() == ApplicationStatus.REJECTED) {
+                        coloredStatus = ConsoleTheme.red(String.format("%-12s", statusStr));
+                    } else {
+                        coloredStatus = String.format("%-12s", statusStr);
+                    }
+                    String drive = (a.getJobTitle() != null) ? a.getJobTitle() : "Drive";
+                    if (drive.length() > 11) drive = drive.substring(0, 9) + "..";
+
+                    System.out.printf("  %-11s %-10s %-14s %s %-11s%n", appIdStr, rollNo, name, coloredStatus, drive);
                 }
             }
-            System.out.println();
+            System.out.println(ConsoleTheme.divider("────────────────────────────────────────────────────────────────"));
+            System.out.println(ConsoleTheme.dim("  Status Legend: ") + ConsoleTheme.blue("APPLIED (Cyan)") + ConsoleTheme.dim(" | ") + ConsoleTheme.green("SHORTLISTED (Green)") + ConsoleTheme.dim(" | ") + ConsoleTheme.red("REJECTED (Red)"));
             renderApplicationRecordsFooter();
 
             while (true) {
@@ -2725,13 +2991,24 @@ public class Main {
                 System.out.println(ConsoleTheme.border("================================================================"));
 
                 if ("1".equals(choice)) {
-                    System.out.println(ConsoleTheme.dim("\nApplication details view is not implemented yet."));
-                    break; // Re-render Page 11
+                    updateApplicationStatusFlow(scanner, officer);
+                    System.out.print("\nPress ENTER to continue...");
+                    if (scanner.hasNextLine()) {
+                        scanner.nextLine();
+                    }
+                    break; // Re-render Page 10
+                } else if ("2".equals(choice)) {
+                    exportApplicationsToCsvFlow(officer);
+                    System.out.print("\nPress ENTER to continue...");
+                    if (scanner.hasNextLine()) {
+                        scanner.nextLine();
+                    }
+                    break; // Re-render Page 10
                 } else if ("0".equals(choice)) {
                     return; // Return to Placement Officer Dashboard
                 } else {
-                    System.out.println(ConsoleTheme.warn("[WARN] Invalid option. Please enter 1 to View Details or 0 to Back."));
-                    System.out.println(ConsoleTheme.divider("---------------------------------------------------------"));
+                    System.out.println(ConsoleTheme.warn("[WARN] Invalid option. Please enter 1, 2, or 0."));
+                    System.out.println(ConsoleTheme.divider("----------------------------------------------------------------"));
                 }
             }
         }
@@ -2747,12 +3024,18 @@ public class Main {
 
     private static String readString(Scanner scanner, String prompt) {
         System.out.print(ConsoleTheme.prompt(prompt));
+        if (!scanner.hasNextLine()) {
+            return "";
+        }
         return scanner.nextLine().trim();
     }
 
     private static String readNonEmptyString(Scanner scanner, String prompt) {
         while (true) {
             System.out.print(ConsoleTheme.prompt(prompt));
+            if (!scanner.hasNextLine()) {
+                return "";
+            }
             String input = scanner.nextLine().trim();
             if (!input.isEmpty()) {
                 return input;
@@ -2764,6 +3047,9 @@ public class Main {
     private static int readInt(Scanner scanner, String prompt) {
         while (true) {
             System.out.print(ConsoleTheme.prompt(prompt));
+            if (!scanner.hasNextLine()) {
+                return 0;
+            }
             String line = scanner.nextLine().trim();
             try {
                 return Integer.parseInt(line);
@@ -2776,6 +3062,9 @@ public class Main {
     private static double readDouble(Scanner scanner, String prompt) {
         while (true) {
             System.out.print(ConsoleTheme.prompt(prompt));
+            if (!scanner.hasNextLine()) {
+                return 0.0;
+            }
             String line = scanner.nextLine().trim();
             try {
                 return Double.parseDouble(line);

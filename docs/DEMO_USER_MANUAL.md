@@ -14,7 +14,7 @@ This manual is a practical, step-by-step guide designed for **live evaluation de
 
 Keep this document open during your demo. It contains:
 - Exact copy-ready sample data that matches database constraints.
-- Step-by-step screen navigation covering Pages 1 through 11.
+- Step-by-step screen navigation covering Pages 1 through 10.
 - Detailed explanations of all working application startup methods.
 - A scripted 5-to-10 minute presentation sequence with spoken talking points.
 - A pre-demonstration verification checklist.
@@ -25,7 +25,7 @@ Keep this document open during your demo. It contains:
 
 1. [A. Before Starting — Setup & Verification](#a-before-starting--setup--verification)
 2. [B. All Supported Ways to Start NextStep](#b-all-supported-ways-to-start-nextstep)
-3. [C. Complete Application Navigation Guide (Pages 1–11)](#c-complete-application-navigation-guide-pages-111)
+3. [C. Complete Application Navigation Guide (Pages 1–10)](#c-complete-application-navigation-guide-pages-110)
 4. [D. Ready-to-Use Demonstration Data](#d-ready-to-use-demonstration-data)
 5. [E. Placement Officer Activation Code Guide](#e-placement-officer-activation-code-guide)
 6. [F. GitHub Collaboration Guide for Teammates](#f-github-collaboration-guide-for-teammates)
@@ -137,85 +137,75 @@ java "-Dnextstep.officer.activation.code=CAMPUS_OFFICER_2026" -cp "bin;lib/*" co
 
 ---
 
-## C. Complete Application Navigation Guide (Pages 1–11)
+## C. Complete Application Navigation Guide (Pages 1–10)
 
-NextStep implements 11 designed console pages with 24-bit TrueColour ANSI borders, consistent 24-character fixed-width label columns, and input alignment at column 25.
+NextStep implements an evaluator-approved 10-page console interface featuring strict 64-character rectangular box frames, 24-bit TrueColour ANSI borders, Golden Amber field prompt labels (`#E3B341`), and inline Sky Blue autofill values (`#6FC9FF`).
 
 ```mermaid
 flowchart TD
-    P1["Page 1: Welcome Page"] -->|1. Continue| P2["Page 2: Account Portal"]
-    P1 -->|0. Exit| EXIT["Exit System"]
-    
-    P2 -->|1. Student| SM["Student Menu"]
-    P2 -->|2. Placement Officer| OM["Placement Officer Menu"]
-    P2 -->|0. Back| P1
-    
-    SM -->|1. Sign Up| P3["Page 3: Student Sign Up"]
-    SM -->|2. Sign In| P4["Page 4: Student Sign In"]
-    SM -->|0. Back| P2
-    
-    P3 -->|Success / Back| SM
-    P4 -->|Success| P6["Page 6: Student Dashboard"]
-    P4 -->|0. Back| SM
-    
-    P6 -->|3. View Drives| P6_Drives["Available Drives List"]
-    P6 -->|4. Eligibility| P9_A["Page 9 Part A: Eligibility Result"]
-    P6 -->|5. Skill Match| P9_B["Page 9 Part B: Skill Match Result"]
-    P6 -->|6. Apply| P10["Page 10: Application Confirmation"]
-    P6 -->|7. History| P6_Apps["My Applications Table"]
-    P6 -->|0. Sign Out| P2
-    
-    P9_A -->|1. Check Skills| P9_B
-    P9_A -->|0. Back| P6
-    P9_B -->|0. Back| P6
-    P10 -->|1. Confirm / 0. Cancel| P6
-    
-    OM -->|1. Sign Up| P5["Page 5: Officer Sign Up"]
-    OM -->|2. Sign In| PO_Login["Officer Login"]
-    OM -->|0. Back| P2
-    
-    P5 -->|Success / Back| OM
-    PO_Login -->|Success| P7["Page 7: Officer Dashboard"]
-    PO_Login -->|0. Back| OM
-    
-    P7 -->|3. Create Job Drive| P8["Page 8: Create Job Drive"]
-    P7 -->|4. View Applications| P11["Page 11: Application Records"]
-    P7 -->|5. Update Status| P7_Status["Status Update Workflow"]
-    P7 -->|0. Sign Out| P2
-    
-    P8 -->|1. Publish / 0. Cancel| P7
-    P11 -->|0. Back| P7
+    P1["Page 1: Welcome & Unified Gateway"] -->|1. Student Portal| SM["Student Portal Menu"]
+    P1 -->|2. Officer Portal| OM["Officer Portal Menu"]
+    P1 -->|3. View Statistics| P1_Stats["Campus Stats"]
+    P1 -->|0. Exit System| EXIT["Exit System"]
+
+    SM -->|1. Sign In| P3["Page 3: Student Sign In"]
+    SM -->|2. Sign Up| P2["Page 2: Student Sign Up"]
+    SM -->|0. Back| P1
+
+    P2 -->|Registration Complete| SM
+    P3 -->|Authenticated| P5["Page 5: Student Placement Hub"]
+
+    P5 -->|1. Browse Drives| P5_Drives["Available Drives List"]
+    P5 -->|2. Instant Evaluation| P8["Page 8: Unified Eligibility & Skill Matrix"]
+    P5 -->|3. Apply for Drive| P9["Page 9: Review & Digital Receipt"]
+    P5 -->|4. View Applications| P5_Apps["My Applications Table"]
+    P5 -->|0. Sign Out| P1
+
+    P8 -->|1. Proceed to Apply| P9
+    P8 -->|0. Return to Dashboard| P5
+
+    OM -->|1. Sign In| PO_Login["Officer Login"]
+    OM -->|2. Sign Up| P4["Page 4: Officer Sign Up"]
+    OM -->|0. Back| P1
+
+    P4 -->|Registration Complete| OM
+    PO_Login -->|Authenticated| P6["Page 6: Officer Dashboard"]
+
+    P6 -->|1. Create Drive| P7["Page 7: Create Job Drive"]
+    P6 -->|2. Manage Applications| P10["Page 10: Master Application Registry"]
+    P6 -->|3. Export CSV| P6_CSV["Audited CSV Export"]
+    P6 -->|4. Presentation Controls| P6_Pres["Presentation Flags"]
+    P6 -->|0. Sign Out| P1
+
+    P7 -->|1. Publish / 0. Cancel| P6
+    P10 -->|1. Update Status / 2. Export / 0. Back| P6
 ```
 
 ---
 
-### Page 1 — Welcome Page
+### Page 1 — Welcome & Unified Campus Gateway
 
-- **Screen Header:** `NEXTSTEP | CAMPUS RECRUITMENT SYSTEM`
-- **Purpose:** Entry portal and welcoming screen.
+- **Screen Header:** `NEXTSTEP | CAMPUS RECRUITMENT SYSTEM (2026)` / `WELCOME & UNIFIED CAMPUS GATEWAY`
+- **Purpose:** Central unified entry point with live campus recruitment statistics and direct role dispatching. Completely removes the legacy redundant splash screen.
 - **Available Options:**
-  - `1. Continue` — Opens Page 2 (Account Portal).
-  - `0. Exit` — Terminates the application with a friendly exit notice.
-- **Input:** Single numeric digit (`1` or `0`). Invalid choices produce a warning notice.
+  - `1. Student Portal` — Dispatches to the Student Portal workflow menu (Sign In / Sign Up).
+  - `2. Placement Officer Portal` — Dispatches to the Placement Officer workflow menu (Sign In / Sign Up).
+  - `3. View Campus Recruitment Statistics` — Instant on-screen display of live drive and applicant metrics.
+  - `0. Exit System` — Terminates the application cleanly.
+- **Framing & Styling:** Full 64-character outer rectangular border in Cyan (`#6FC9FF`) with live metrics and menu items in Slate (`#CAD5E5`).
 
 ---
 
-### Page 2 — Account Portal (Role Selection)
+### Page 2 — Student Sign Up
 
-- **Screen Header:** `NEXTSTEP | ACCOUNT PORTAL`
-- **Purpose:** Role dispatching screen.
-- **Available Options:**
-  - `1. Student` — Dispatches to the Student workflow menu (Sign Up / Sign In).
-  - `2. Placement Officer` — Dispatches to the Placement Officer workflow menu.
-  - `0. Back` — Returns to Page 1 (Welcome Page).
-
----
-
-### Page 3 — Student Sign Up
-
-- **Screen Header:** `NEXTSTEP | STUDENT PORTAL — STUDENT SIGN UP`
+- **Screen Header:** `NEXTSTEP | STUDENT PORTAL — STUDENT REGISTRATION`
 - **Purpose:** Self-service registration for college students.
-- **Input Fields (all aligned at column 25):**
+- **Upfront Mode Selection:**
+  - Prompts: `Choose mode (or press 0 to Cancel): [A] Quick Auto-Fill Demo Data | [ENTER] Fill Form Manually`
+  - Selecting `[A]` activates One-Click Demo Autofill with realistic college profiles (Raghav Bansal `2510990750`, Dhruv Sharma, Keshav Gupta, or Sahaj Patel).
+  - Values render inline directly beside Golden Amber prompts in Sky Blue brackets `[Value]`.
+  - Pressing `[Enter]` confirms and retains each autofilled value; typing overrides with custom data.
+- **Input Fields (12 fields, prompt labels aligned at column 25):**
   1. `Student ID:             ` (University Roll No / USN, e.g., `2510990750`)
   2. `Full Name:              ` (Student's full legal name, e.g., `Raghav Bansal`)
   3. `Email:                  ` (Valid RFC-compliant email, e.g., `raghav.2510990750@university.edu`)
@@ -228,101 +218,87 @@ flowchart TD
   10. `Username:               ` (3 to 30 alphanumeric characters, e.g., `raghav_2510`)
   11. `Password:               ` (Masked input, minimum 6 characters, e.g., `Raghav@2026`)
   12. `Confirm Password:       ` (Masked input, must match Password)
-- **One-Click Demo Autofill (`'A'` Shortcut):**
-  - Type `'A'` at any prompt to instantly populate all 12 fields with verified real student profile data (Raghav Bansal `2510990750`, Dhruv Sharma, Keshav Gupta, or Sahaj Patel).
-  - Pre-filled values render inline directly beside Golden Amber prompts in Sky Blue brackets `[Value]`.
-  - Press `[Enter]` on any prompt to accept and retain the autofilled value.
-  - Type any characters to override with custom input.
-  - **Live Collision Safety:** The system dynamically queries MySQL (`users.username`, `students.student_id`, and `users.email`) up to 1,000 attempts to guarantee uniqueness. If a database error occurs, autofill safely aborts with an error notice rather than returning unverified data.
-- **Form Navigation Shortcuts:**
-  - Type `B` or `ESC` to return to the previous field and edit typos.
-  - Type `N` or `TAB` to move forward retaining the existing entry.
-  - Press `[Enter]` on any field that already has a value to confirm and keep it.
+- **Live Collision Safety:** The system dynamically queries MySQL (`users.username`, `students.student_id`, and `users.email`) up to 1,000 attempts to guarantee uniqueness. If a database error occurs, autofill safely aborts with an error notice rather than returning unverified data.
 - **Footer Actions:**
-  - `1. CREATE ACCOUNT` — Validates inputs, encrypts password via PBKDF2 with 16-byte random salt, and persists records atomically in MySQL (`users`, `students`, and `student_skills` tables).
-  - `0. BACK` — Aborts account creation and returns safely to the Student Menu.
+  - `1. CREATE ACCOUNT (SUBMIT REGISTRATION)` — Validates inputs, encrypts password via PBKDF2 with 16-byte random salt, and persists records atomically in MySQL (`users`, `students`, and `student_skills` tables).
+  - `0. BACK (CANCEL & RETURN)` — Aborts account creation and returns safely to the Student Portal Menu.
 
 ---
 
-### Page 4 — Student Sign In
+### Page 3 — Student Sign In
 
 - **Screen Header:** `NEXTSTEP | STUDENT PORTAL — STUDENT SIGN IN`
-- **Purpose:** Authenticates students before accessing the personal dashboard.
+- **Purpose:** Dual-auth gateway supporting both Username and University Roll Number (USN).
 - **Input Fields:**
-  1. `Student ID / Username:  ` (Accepts either the student's username or USN)
-  2. `Password:               ` (Securely masked via `System.console().readPassword()`)
-- **One-Click Demo Autofill (`'A'` Shortcut):**
-  - Type `'A'` to immediately populate demo student credentials (`raghav_2510` / `Raghav@2026`).
-  - Press `[Enter]` on both fields to proceed to login. Does NOT auto-submit.
-- **Actions:**
-  - `1. SIGN IN` — Verifies PBKDF2 hash against `users` table, verifies role equals `STUDENT`, loads academic profile from `students`, and opens Page 6.
-  - `0. BACK` — Returns to Student Menu.
+  1. `Student ID / Username:  ` (Accepts either Username or USN, e.g., `raghav_2510` or `2510990750`)
+  2. `Password:               ` (Masked input via `System.console().readPassword()`)
+- **One-Click Demo Autofill:** Enter `A` at the mode prompt to immediately populate demo credentials (`raghav_2510` / `Raghav@2026`).
+- **Footer Actions:**
+  - `1. SIGN IN` — Authenticates PBKDF2 hash, verifies `STUDENT` role, loads student profile from MySQL, and opens Page 5 (Student Placement Hub).
+  - `0. BACK TO ROLE SELECT` — Returns to Student Portal Menu / Gateway.
 - **Access Control:** Placement officer credentials entered here are rejected with a clear access denial notice (`Placement officer accounts cannot sign in here`).
 
 ---
 
-### Page 5 — Placement Officer Sign Up
+### Page 4 — Placement Officer Sign Up
 
 - **Screen Header:** `NEXTSTEP | PLACEMENT OFFICER PORTAL — OFFICER SIGN UP`
-- **Purpose:** Authorized administrator onboarding.
-- **Input Fields:**
-  1. `Officer ID:             ` (Administrative employee code, e.g., `OFF-2026-101`)
+- **Purpose:** Authorized administrator onboarding with safe activation code verification.
+- **Upfront Mode Selection:** Prompts `[A] Quick Auto-Fill Demo Data | [ENTER] Fill Form Manually`.
+- **Input Fields (7 fields):**
+  1. `Officer ID:             ` (Administrative employee code, e.g., `OFF-2026-01`)
   2. `Full Name:              ` (Officer's full name, e.g., `Prof. Raghav Bansal`)
   3. `Official Email:         ` (Official campus email, e.g., `tpo.raghav@university.edu`)
   4. `Username:               ` (Unique officer username, e.g., `officer_raghav`)
   5. `Password:               ` (Masked password, min 6 characters, e.g., `Officer@Pass2026`)
   6. `Confirm Password:       ` (Masked confirmation)
   7. `Activation Code:        ` (Masked administrative secret)
-- **One-Click Demo Autofill (`'A'` Shortcut):**
-  - Type `'A'` to populate administrative profile fields.
-  - Username and email uniqueness are verified live against MySQL.
-  - The activation code is populated strictly from `-Dnextstep.officer.activation.code` or `NEXTSTEP_OFFICER_ACTIVATION_CODE`. If unconfigured, the field remains empty with an explanatory notice instead of generating a guessable default.
-- **Security Check:** The activation code must match the configured environment variable or JVM property. If unconfigured, registration is safely disabled. If incorrect, registration is rejected.
-- **Actions:**
-  - `1. CREATE ACCOUNT` — Persists officer user account with `PLACEMENT_OFFICER` role.
-  - `0. BACK` — Returns to Placement Officer Menu.
+- **Zero-Secret Autofill Safety:** Reads activation code strictly from `-Dnextstep.officer.activation.code` or `NEXTSTEP_OFFICER_ACTIVATION_CODE`. If unconfigured, the field remains empty with the notice `[NOT CONFIGURED — ENTER MANUALLY]` instead of populating a guessable hardcoded default.
+- **Footer Actions:**
+  - `1. CREATE ACCOUNT (SUBMIT REGISTRATION)` — Persists officer user account with `PLACEMENT_OFFICER` role in MySQL.
+  - `0. BACK (CANCEL & RETURN)` — Returns to Placement Officer Portal Menu.
 
 ---
 
-### Page 6 — Student Dashboard
+### Page 5 — Student Placement Hub
 
-- **Screen Header:** `NEXTSTEP | STUDENT PORTAL — STUDENT DASHBOARD`
-- **Welcome Line:** Displays student's full name and student USN from MySQL.
-- **Available Options:**
-  - `1. View Available Job Drives` — Displays open job openings sorted by CTC (highest first) and allows selecting a job to inspect eligibility and apply.
-  - `2. Check Job Eligibility & Skill Match` — Prompts for Job ID and opens Page 9 (Unified Eligibility & Skill Match Analysis).
-  - `3. Apply for an Eligible Job` — Prompts for Job ID and opens Page 10 (Application Confirmation) for eligible drives.
-  - `4. View My Applications` — Displays table of student's own submitted applications with status.
-  - `0. Sign Out` — Signs out of session and returns to Page 2 (Account Portal).
-
----
-
-### Page 7 — Placement Officer Dashboard
-
-- **Screen Header:** `NEXTSTEP | PLACEMENT OFFICER PORTAL — OFFICER DASHBOARD`
-- **Welcome Line:** Confirms administrative session status.
-- **Available Options:**
-  - `1. Manage Student Records ` `[Coming Soon]` — Future milestone placeholder.
-  - `2. Manage Companies ` `[Coming Soon]` — Future milestone placeholder.
-  - `3. Create Job Drive` — Opens Page 8 (Create Job Drive).
-  - `4. View Applications` — Opens Page 11 (Application Records).
-  - `5. Update Application Status` — Prompts for Application ID and advances candidate status (`APPLIED` → `SHORTLISTED` → `SELECTED` / `REJECTED`).
-  - `0. Sign Out` — Signs out and returns to Page 2 (Account Portal).
+- **Screen Header:** `NEXTSTEP | PLACEMENT HUB — STUDENT DASHBOARD`
+- **Profile Card:** Aligned 64-character profile block displaying Student Name, Student ID (USN), CGPA, Branch, and Backlogs directly from MySQL.
+- **Available Tools:**
+  - `1. Browse Available Placement Drives` — Displays open job openings sorted by CTC (highest first).
+  - `2. Instant Eligibility & Technical Match Evaluation` — Prompts for Job ID and opens Page 8 (Unified Eligibility & Skill Match Matrix).
+  - `3. Apply for Verified Placement Opening` — Prompts for Job ID and opens Page 9 (Application Review & Digital Receipt).
+  - `4. View Submitted Applications & Status` — Displays candidate's personal submitted application history table.
+  - `0. Sign Out / Lock Session` — Clears active session and returns to Page 1 (Gateway).
 
 ---
 
-### Page 8 — Create Job Drive
+### Page 6 — Placement Officer Administration Dashboard
+
+- **Screen Header:** `NEXTSTEP | ADMINISTRATION DASHBOARD — OFFICER DASHBOARD`
+- **Profile Card & Live Metrics:** Displays authenticated officer name and live database counts (Active Drives, Registered Candidates, Applications Filed, Average Offered CTC).
+- **Administrative Tools:**
+  - `1. Create & Publish Verified Placement Drive` — Opens Page 7 (Create Job Drive).
+  - `2. Manage Student Applications & Update Status` — Opens Page 10 (Master Application Registry) with candidate status update workflow.
+  - `3. Export Application Records (RFC-4180 CSV)` — Exports verified student application dataset to an audited CSV file.
+  - `4. Campus Placement Presentation Controls` — Toggles presentation flags for lab demonstrations.
+  - `0. Sign Out / Lock Session` — Clears session and returns to Page 1 (Gateway).
+
+---
+
+### Page 7 — Create Job Drive
 
 - **Screen Header:** `NEXTSTEP | PLACEMENT OFFICER PORTAL — CREATE JOB DRIVE`
-- **Live Company Lookup:** Queries MySQL and displays registered partner companies with their real IDs:
+- **Live Company Lookup:** Dynamically queries MySQL and displays registered partner companies:
   ```text
   Available Partner Companies (Select by ID):
     [ID 1] Nexis Cloud Technologies       | Cloud Infrastructure   | Bengaluru, KA
     [ID 2] Apex Financial Software        | Fintech & Banking      | Mumbai, MH
     [ID 3] Quantum Robotics Labs          | AI & Robotics          | Hyderabad, TS
   ```
-- **Input Fields:**
-  1. `Company ID:             ` (Select an ID from the displayed partner list, e.g., `1`)
+- **Upfront Mode Selection:** Prompts `[A] Quick Auto-Fill Demo Data | [ENTER] Fill Form Manually`.
+- **Input Fields (10 parameters):**
+  1. `Company ID:             ` (Select ID from displayed partner list, e.g., `1`)
   2. `Job Title:              ` (e.g., `Associate Cloud Engineer`)
   3. `Job Description:        ` (e.g., `Design, build, and maintain cloud infrastructure on AWS and GCP.`)
   4. `CTC (LPA):              ` (Package in LPA, e.g., `12.50`)
@@ -332,69 +308,59 @@ flowchart TD
   8. `Eligible Branches:      ` (Comma-separated, e.g., `Computer Science, Information Technology`)
   9. `Required Skills:        ` (Comma-separated, e.g., `Java, SQL, Linux, Git, Docker`)
   10. `Graduation Year:        ` (Target batch, e.g., `2026`)
-- **One-Click Demo Autofill (`'A'` Shortcut):**
-  - Type `'A'` at any prompt to automatically query available partner companies from MySQL and populate all 10 fields with valid demo drive parameters.
-  - Values render inline directly beside Golden Amber prompts in Sky Blue brackets `[Value]`.
-  - Press `[Enter]` on each field to retain the values.
-- **Actions:**
-  - `1. PUBLISH JOB` — Atomically inserts `jobs`, `job_eligible_branches`, and `job_required_skills` records into MySQL.
-  - `0. CANCEL` — Aborts publishing without creating database records.
+- **Footer Actions:**
+  - `1. PUBLISH JOB (POST TO STUDENTS)` — Atomically inserts `jobs`, `job_eligible_branches`, and `job_required_skills` records into MySQL.
+  - `0. CANCEL (DISCARD)` — Aborts drive creation and prints `Job drive creation cancelled. Returning to Placement Officer Dashboard...`.
 
 ---
 
-### Page 9 — Eligibility Result & Skill Match Result
+### Page 8 — Unified Eligibility & Skill Match Matrix
 
-#### Part A: Criteria Checklist (Eligibility Result)
-- **Displays:** Student Name, Job ID, and a 5-point criteria checklist:
-  - CGPA requirement vs Student status (`PASS` / `FAIL`)
-  - Active Backlogs cutoff vs Student backlogs (`PASS` / `FAIL`)
-  - Eligible branches list vs Student branch (`PASS` / `FAIL`)
-  - Graduation Year cutoff vs Student year (`PASS` / `FAIL`)
-  - Technical Skills requirement vs Student matched skills (`PASS` / `FAIL`)
-- **Overall Result Banner:** `OVERALL RESULT: ELIGIBLE` (green) or `OVERALL RESULT: NOT ELIGIBLE` (red) — strictly derived from `RecruitmentService.checkEligibility()`.
-- **Actions:**
-  - `1. CHECK SKILL MATCH` — Transitions smoothly to Part B (detailed per-skill breakdown).
-  - `2. APPLY FOR THIS JOB` — Offered only when overall eligible; allows immediate application without returning to dashboard.
-  - `0. BACK` — Returns to previous page.
-
-#### Part B: Skill Match Result
-- **Displays:**
-  - Table of required skills matched against student skills with `[MATCH]` (green) or `[MISSING]` (red).
-  - Summary metrics: Matched Skills count (`3 / 4`), Skill Match percentage (`75%`), and missing skills list (`OOP`).
-- **Actions:**
-  - `1. APPLY FOR THIS JOB` — Offered when eligible.
-  - `0. BACK` — Returns to Part A / caller.
+- **Screen Header:** `NEXTSTEP | ELIGIBILITY & SKILL EVALUATION ENGINE`
+- **Unified Screen Layout:** Combines academic checklist and technical skill matching into a single 64-character screen.
+  - **Part A — Academic Eligibility Checklist Table:** Evaluates CGPA cutoff, Active Backlogs, Eligible Branches, and Graduation Year against drive criteria (`PASS` / `FAIL`).
+  - **Part B — Technical Skills Breakdown Table:** Compares candidate skills with required drive skills, displaying `[MATCH]` (green) or `[MISSING]` (red), Matched Skills ratio (`3 / 4`), and Match Percentage (`75%`).
+  - **Overall Evaluation Banner:**
+    - `[ELIGIBLE FOR THIS DRIVE] (OVERALL RESULT: ELIGIBLE)` (green)
+    - `[NOT ELIGIBLE FOR THIS DRIVE] (OVERALL RESULT: NOT ELIGIBLE)` (red)
+- **Footer Actions:**
+  - `1. PROCEED TO SUBMIT APPLICATION` (or `2. APPLY FOR THIS JOB`) — Offered when candidate is eligible; transitions directly to Page 9.
+  - `0. RETURN TO DASHBOARD` (or `0. BACK`) — Returns to Page 5 (Student Placement Hub).
 
 ---
 
-### Page 10 — Application Confirmation
+### Page 9 — Application Review & Digital Receipt
 
-- **Screen Header:** `NEXTSTEP | APPLICATION PORTAL — APPLICATION CONFIRMATION`
-- **Displays:** Student ID, Job ID, Job Role, dynamically calculated Eligibility (`ELIGIBLE`), and calculated Skill Match (`75%`).
-- **Confirmation Prompt:** `Are you sure you want to apply?`
-- **Actions:**
-  - `1. CONFIRM APPLICATION` — Inserts application record with status `APPLIED` into `applications` table. Renders an official success confirmation with generated Application ID.
-  - `0. CANCEL` — Aborts application without touching database.
+- **Screen Header:** `NEXTSTEP | APPLICATION CONFIRMATION & DIGITAL RECEIPT`
+- **Dual-State Workflow:**
+  - **State A — Application Review Summary:**
+    - Displays Candidate USN, Applying For Position, Company Name, Offered CTC, and Verified Academic & Skill Eligibility.
+    - Prompts: `1. CONFIRM APPLICATION` / `0. CANCEL`.
+  - **State B — Instant Success Digital Receipt Voucher:**
+    - Rendered immediately upon atomic MySQL persistence.
+    - Formatted 64-character official digital receipt voucher displaying:
+      - Application ID: `APP-2026-XXX`
+      - Submission Timestamp: `2026-11-21 23:15:00`
+      - Position & Company: `Associate Cloud Engineer @ Nexis Cloud Technologies`
+      - Initial Review Status: `APPLIED` (Cyan pill)
 - **Safety Guards:**
-  - Rejects ineligible students automatically.
-  - Gracefully catches and rejects duplicate applications via MySQL `uq_student_job` unique constraint.
+  - Prevents ineligible applications from being filed.
+  - Enforces duplicate prevention via database constraint `uq_student_job`.
 
 ---
 
-### Page 11 — Application Records
+### Page 10 — Master Application Registry
 
-- **Screen Header:** `NEXTSTEP | APPLICATION MANAGEMENT — APPLICATION RECORDS`
+- **Screen Header:** `NEXTSTEP | MASTER APPLICATION REGISTRY — ALL CANDIDATES`
 - **Security Check:** Restricts access strictly to authenticated Placement Officers.
-- **Table Columns (57-char width):**
-  ```text
-  Application ID   Student ID    Student Name     Status
-  ---------------------------------------------------------
-  1                24BCE1001     Aarav Sharma     APPLIED
-  2                24BCE1002     Diya Patel       SHORTLISTED
-  ```
-- **Actions:**
-  - `1. VIEW DETAILS ` `[Coming Soon]` — Notifies user that detailed view is reserved for CAT-4.
-  - `0. BACK` — Returns to Officer Dashboard.
+- **Corporate 64-Column Table:** Displays Application ID, Student ID, Candidate Name (expanded to 20 characters to prevent truncation), and ANSI status pills:
+  - `APPLIED` (Cyan)
+  - `SHORTLISTED` (Green)
+  - `REJECTED` (Red)
+- **Available Actions:**
+  - `1. Update Candidate Status` — Prompts for Application ID and advances candidate status (`APPLIED` → `SHORTLISTED` → `SELECTED` / `REJECTED`).
+  - `2. Export Application Registry (RFC-4180 CSV)` — Exports complete application dataset to an audited CSV file.
+  - `0. Return to Placement Officer Dashboard` — Returns to Page 6.
 
 ---
 
@@ -487,7 +453,7 @@ Activation Code:        CAMPUS_OFFICER_2026
 
 ---
 
-### 3. Job Drive Creation Data (Page 8)
+### 3. Job Drive Creation Data (Page 7)
 
 Use real Company ID `1` (`Nexis Cloud Technologies`) from the seeded database:
 
@@ -516,7 +482,7 @@ Graduation Year:        2026
   - Graduation Year: `2026`
 - **Target Drive:** Job ID `1` (`Junior Backend Engineer` at Nexis Cloud Technologies)
   - Requires: Min CGPA `7.50`, Max Backlogs `0`, Branch `Computer Science` / `IT`, Year `2026`.
-- **Expected Result on Page 9 Part A:** All criteria display `[PASS]`, and overall banner displays `OVERALL RESULT: ELIGIBLE` in green.
+- **Expected Result on Page 8 (Unified Matrix):** All criteria display `[PASS]`, and overall banner displays `[ELIGIBLE FOR THIS DRIVE] (OVERALL RESULT: ELIGIBLE)` in green.
 
 #### Case B: Ineligible Student (FAIL)
 - **Student Profile:** Sahaj Patel (`2510990753`)
@@ -525,16 +491,16 @@ Graduation Year:        2026
   - Active Backlogs: `1`
   - Graduation Year: `2026`
 - **Target Drive:** Job ID `1` (Requires: Max Backlogs `0`, Branch `CSE, IT`)
-- **Expected Result on Page 9 Part A:**
+- **Expected Result on Page 8 (Unified Matrix):**
   - CGPA (`8.20 >= 7.50`): `[PASS]`
   - Backlogs (`1 > 0`): `[FAIL]`
   - Branch (`Electronics & Communication` not in `CSE, IT`): `[FAIL]`
   - Graduation Year (`2026 == 2026`): `[PASS]`
-  - Overall Banner displays `OVERALL RESULT: NOT ELIGIBLE` in red. Submission is blocked on Page 10.
+  - Overall Banner displays `[NOT ELIGIBLE FOR THIS DRIVE] (OVERALL RESULT: NOT ELIGIBLE)` in red. Submission is blocked on Page 9.
 
 ---
 
-### 5. Skill Match Demonstration (Page 9 Part B)
+### 5. Technical Skill Match Demonstration (Page 8)
 
 - **Job Required Skills:** `Java, SQL, OOP, Git` (Total: 4)
 - **Student Skills (Raghav Bansal):** `Java, Spring Boot, MySQL, Git, REST APIs, Microservices`
@@ -547,9 +513,9 @@ Graduation Year:        2026
 
 ### 6. Application Lifecycle & Duplicate Prevention Demonstration
 
-1. Sign in as student `raghav_2510`.
-2. Choose Option `6. Apply for a Job` and input Job ID `1`.
-3. Confirm submission on Page 10. Application ID (e.g., `85`) is generated with status `APPLIED`.
+1. Sign in as student `raghav_2510` (Page 3).
+2. Choose Option `3. Apply for Verified Placement Opening` from Page 5 (or proceed directly from Page 8) and input Job ID `1`.
+3. Confirm submission on Page 9 (Review & Digital Receipt). Instant Success Digital Receipt Voucher (e.g., `APP-2026-001`) is generated with status `APPLIED`.
 4. Immediately attempt to apply for Job ID `1` again.
 5. **Expected Result:** The system safely rejects the duplicate submission with:
    `[ERROR] You have already submitted an application for this job drive.`
@@ -559,12 +525,12 @@ Graduation Year:        2026
 
 ### 7. Status Advancement Demonstration (Placement Officer)
 
-1. Sign out of student session and sign in as Placement Officer (`officer_raghav`).
-2. Select Option `4. View Applications` to see the new application listed as `APPLIED`.
-3. Select Option `5. Update Application Status`:
+1. Sign out of student session (`0`) and sign in as Placement Officer (`officer_raghav`).
+2. On Page 6, select Option `2. Manage Student Applications & Update Status` to open Page 10 (Master Application Registry) and see the new application listed as `APPLIED` (Cyan pill).
+3. Select Option `1. Update Candidate Status`:
    - Enter Application ID: `<ID>`
    - Select New Status: `2. SHORTLISTED`
-4. Re-open Option `4. View Applications` to verify the status has transitioned to `SHORTLISTED` in real time.
+4. Notice the table on Page 10 immediately displays the candidate's updated status `SHORTLISTED` (Green pill).
 
 ---
 
@@ -693,11 +659,11 @@ Use this proven sequence when presenting NextStep to evaluators.
 +-------------------------------------------------------------------------------+
 |                      5-TO-10 MINUTE DEMO TIMELINE                             |
 |                                                                               |
-|  [0:00 - 1:00]  Architecture & Launcher (`run.bat`)                           |
-|  [1:00 - 2:30]  Student Self-Registration & Security (Page 3)                 |
-|  [2:30 - 4:00]  Automated Eligibility & Skill Analysis (Pages 6 & 9)           |
-|  [4:00 - 5:30]  Job Application & Duplicate Guard (Page 10)                   |
-|  [5:30 - 7:30]  Officer Operations & Live Status Advancement (Pages 7 & 11)   |
+|  [0:00 - 1:00]  Architecture & Startup (run.bat & Page 1 Unified Gateway)     |
+|  [1:00 - 2:30]  Student Registration & Dual-Auth Sign In (Pages 2 & 3)        |
+|  [2:30 - 4:00]  Student Placement Hub & Unified Matrix (Pages 5 & 8)           |
+|  [4:00 - 5:30]  Application Review & Instant Digital Receipt (Page 9)         |
+|  [5:30 - 7:30]  Officer Administration Dashboard & Registry (Pages 6, 7 & 10) |
 |  [7:30 - 9:00]  Summary & Code Architecture (Lambdas, Streams, JDBC)          |
 +-------------------------------------------------------------------------------+
 ```
@@ -707,34 +673,38 @@ Use this proven sequence when presenting NextStep to evaluators.
 ### Step-by-Step Presentation Script
 
 #### 1. Architecture & Startup (Minute 0:00 - 1:00)
-- **Action:** Open terminal and run `.\run.bat`.
+- **Action:** Open terminal and run `.\run.bat`. Page 1 (Welcome & Unified Campus Gateway) loads directly with live recruitment metrics and role options.
 - **Spoken Talking Point:**
-  > *"Good morning/afternoon, professors. Today I am presenting **NextStep**, a console-based Campus Recruitment System built in Java and MySQL. The system uses a clean layered architecture—separating Domain Models, Data Access Objects, and Service logic. I'm launching the application using our Windows build script, which verifies the JDK and JDBC driver before launching the JVM."*
+  > *"Good morning/afternoon, professors. Today I am presenting **NextStep**, an enterprise-grade console-based Campus Recruitment System built in Java and MySQL. The system uses a clean layered architecture—separating Domain Models, Data Access Objects, and Service logic. Notice Page 1: our Welcome & Unified Campus Gateway directly presents campus statistics and role access options without redundant splash screens, framed cleanly in a 64-character TrueColour border."*
 
-#### 2. Welcome Page & Student Sign Up (Minute 1:00 - 2:30)
-- **Action:** Select `1. Continue` → `1. Student` → `1. Student Registration`.
-- **Action:** Press `'A'` to demonstrate One-Click Demo Autofill with verified student profile (Raghav Bansal, `2510990750`). Press `[Enter]` to step through and confirm fields.
+#### 2. Student Sign Up & Dual-Auth Sign In (Minute 1:00 - 2:30)
+- **Action:** Select `1. Student Portal` → `2. Register New Student Account` (Page 2).
+- **Action:** At the upfront prompt `[A] Quick Auto-Fill Demo Data | [ENTER] Fill Form Manually`, enter `A` to demonstrate One-Click Demo Autofill with verified student profile (Raghav Bansal, `2510990750`). Press `[Enter]` to step through and confirm fields, then submit with `1`.
+- **Action:** Navigate to Page 3 (Student Sign In), enter `A` upfront or use `raghav_2510` / `Raghav@2026` with masked password, and press `1. SIGN IN`.
 - **Spoken Talking Point:**
-  > *"Here on Page 3 is the Student Sign Up screen. Notice the consistent 24-character fixed label column and aligned value input. To make live evaluation fast and effortless, our form features one-click demo autofill by entering 'A' at any prompt, which populates verified demo records with real student identities like Raghav Bansal directly inline beside our Golden Amber prompts in Sky Blue brackets. Behind the scenes, the system verifies username, student ID, and email uniqueness against live MySQL records before populating. On submission, the password is encrypted using salted PBKDF2 with HMAC-SHA256 and a 16-byte cryptographic salt."*
+  > *"Here on Page 2 is the Student Sign Up screen. Notice the 64-character frame, Golden Amber prompts, and inline Sky Blue autofill values. Selecting 'A' upfront populates verified demo records with real student identities like Raghav Bansal. The system guarantees uniqueness by checking username, student ID, and email live against MySQL up to 1,000 retry attempts before rendering. On submission, the password is encrypted using salted PBKDF2 with HMAC-SHA256 and a 16-byte cryptographic salt. Page 3 provides dual-auth support: students can sign in with either their username or University Roll Number (USN), and input is masked for confidentiality."*
 
-#### 3. Student Dashboard & Automated Eligibility (Minute 2:30 - 4:00)
-- **Action:** Sign in on Page 4 (press `'A'` for quick demo login credentials) and reach Page 6 (Student Dashboard).
-- **Action:** Select Option `4. Check Job Eligibility` and enter Job ID `1`.
+#### 3. Student Placement Hub & Unified Eligibility Matrix (Minute 2:30 - 4:00)
+- **Action:** We reach Page 5 (Student Placement Hub). Point out the profile card with live MySQL values.
+- **Action:** Select Option `2. Instant Eligibility & Technical Match Evaluation` and enter Job ID `1` to open Page 8 (Unified Eligibility & Skill Match Matrix).
 - **Spoken Talking Point:**
-  > *"On Page 6, the dashboard displays personal academic information loaded from MySQL. When we check job eligibility for Job ID 1, our automated Eligibility Engine compares student CGPA, backlogs, branch, and graduation year against the drive requirements. Next, selecting Option 1 transitions to our Skill Match analysis, which computes real-time skill alignment percentage."*
+  > *"On Page 5, the student's dashboard displays their live academic card. Selecting Option 2 opens Page 8: our Unified Eligibility & Skill Match Matrix. Unlike multi-page designs, this screen presents both Part A (Academic Checklist) and Part B (Technical Skills Breakdown) side-by-side in one clear 64-character frame, calculating percentage match and verifying all cutoffs before allowing application submission."*
 
-#### 4. Job Application & Duplicate Guard (Minute 4:00 - 5:30)
-- **Action:** Select Option `6. Apply for a Job` → enter Job ID `1` → Option `1. CONFIRM APPLICATION`.
+#### 4. Job Application & Digital Receipt Voucher (Minute 4:00 - 5:30)
+- **Action:** Select `1. PROCEED TO SUBMIT APPLICATION` (or Option `3. Apply for Verified Placement Opening` from Page 5) to open Page 9 (Review & Digital Receipt).
+- **Action:** Review State A Summary, select `1. CONFIRM APPLICATION`, and display State B: Instant Success Digital Receipt Voucher with `APP-2026-XXX`.
 - **Action:** Re-attempt applying for Job ID `1` to demonstrate duplicate prevention.
 - **Spoken Talking Point:**
-  > *"Page 10 presents a final confirmation screen. When confirmed, an application record is created with initial status 'APPLIED'. If the student tries applying again, the application catches the unique constraint violation at both the service layer and database schema level, preventing duplicate entries."*
+  > *"Page 9 provides a two-state workflow. State A summarizes the position, CTC, and verified eligibility. When confirmed, an atomic database transaction generates State B: an official Digital Receipt Voucher with a formatted APP-2026-XXX identifier and filing timestamp. If the student attempts to re-apply for the same drive, the system catches the unique constraint violation at both the service layer and database schema level, preventing duplicate entries."*
 
-#### 5. Placement Officer Operations & Status Lifecycle (Minute 5:30 - 7:30)
-- **Action:** Sign out (`0`), select `2. Placement Officer` → sign in as Officer (e.g. `officer_raghav`).
-- **Action:** Open Option `4. View Applications` (Page 11) to see the application.
-- **Action:** Select Option `5. Update Application Status` → advance to `SHORTLISTED`.
+#### 5. Placement Officer Operations & Master Application Registry (Minute 5:30 - 7:30)
+- **Action:** Sign out (`0`) to Gateway, select `2. Placement Officer Portal` → sign in as Officer (e.g. `officer_raghav`).
+- **Action:** Point out Page 6 (Placement Officer Administration Dashboard) with live statistics.
+- **Action:** Open Option `2. Manage Student Applications & Update Status` to display Page 10 (Master Application Registry). Point out the Cyan `APPLIED` badge and full candidate name.
+- **Action:** Select Option `1. Update Candidate Status` → select application and advance to `2. SHORTLISTED` (Green badge).
+- **Action:** Highlight Option `2. Export Application Registry (RFC-4180 CSV)` for auditing.
 - **Spoken Talking Point:**
-  > *"Signing into the Placement Officer portal requires role verification. On Page 11, the officer views all applicant records with their roll numbers and statuses. When the officer advances candidate Raghav to 'SHORTLISTED', the status updates in MySQL immediately and is reflected on the student's next login."*
+  > *"Signing into the Placement Officer portal requires administrative role authorization. On Page 6, live drive and applicant counts are computed dynamically. Page 10 displays the Master Application Registry in an aligned 64-column table with colored ANSI status pills. When the officer advances candidate Raghav to 'SHORTLISTED', the status updates in MySQL immediately and is reflected across the entire system. Officers can also export the entire verified registry to RFC-4180 compliant CSV files with full escaping."*
 
 #### 6. Summary & Viva Q&A Ready (Minute 7:30 - 9:00)
 - **Spoken Talking Point:**

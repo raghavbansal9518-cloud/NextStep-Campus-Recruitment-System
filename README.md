@@ -4,7 +4,7 @@
 [![Database](https://img.shields.io/badge/MySQL-8.0-4479A1?logo=mysql&logoColor=white)](https://www.mysql.com/)
 [![JDBC Driver](https://img.shields.io/badge/MySQL%20Connector%2FJ-8.4.0-blue)](https://dev.mysql.com/downloads/connector/j/)
 [![Build Tool](https://img.shields.io/badge/Build-Native%20JDK%20%2F%20run.bat-success)](run.bat)
-[![Tests](https://img.shields.io/badge/Tests-262%20Passed%20(100%25)-brightgreen)](docs/TESTING.md)
+[![Tests](https://img.shields.io/badge/Tests-269%20Passed%20(100%25)-brightgreen)](docs/TESTING.md)
 [![Course](https://img.shields.io/badge/Course-Programming%20in%20Java%20(25CSE0202)-blueviolet)](docs/VIVA_PREPARATION.md)
 
 > A console-based campus placement automation system built with pure Java SE, JDBC, and MySQL.  
@@ -35,28 +35,29 @@ The project strictly emphasizes Core Java SE principles, JDBC transaction manage
 
 ## 2. Key Implemented Features
 
+### 🏛️ Unified Campus Gateway (Page 1)
+- **Centralized Entry Point:** Eliminates redundant splash screens by consolidating live system stats (open drives, partner companies), academic year context, and direct role selection (Student Portal, Placement Officer Portal, Campus Recruitment Statistics, and Exit) into a single 64-character bounded gateway.
+
 ### 🎓 Student Portal
-- **Self-Service Registration (Page 3):** Complete 12-field registration creating user credentials, personal profiles, and academic records atomically in MySQL. Supports fast one-click demo autofill with real student profiles (e.g. Raghav Bansal `2510990750`, Dhruv Sharma, Keshav Gupta, Sahaj Patel). Passwords are encrypted using PBKDF2 with HMAC-SHA256 and a 16-byte cryptographic salt.
-- **Secure Authentication (Page 4):** Supports login using either username or University Roll Number (USN), with hidden password entry via `System.console().readPassword()`.
-- **Job Browsing (Page 6):** View active recruitment drives sorted by highest package CTC using custom Java Lambda comparators.
-- **Automated Eligibility Engine (Page 9 Part A):** Evaluates academic standing (CGPA cutoff, maximum active backlogs, degree branch, and graduation year) against live drive criteria before permitting applications.
-- **Skill Match Analysis (Page 9 Part B):** Real-time skill alignment engine calculating matched vs. missing skills and dynamic match percentages.
-- **Job Application & Confirmation (Page 10):** Interactive review screen with database-enforced duplicate prevention (`uq_student_job`).
-- **Application Tracking (Page 6):** Live tracking of submitted applications and status changes.
+- **Self-Service Registration (Page 2):** Complete 12-field registration with upfront mode selection (`[A] Quick Auto-Fill Demo Data | [ENTER] Fill Form Manually`). Golden Amber prompt labels with inline Sky Blue autofill values in brackets `[ Value ]`, eliminating detached summary tables. Pre-loads authentic demo identities (e.g. Raghav Bansal `2510990750`, Dhruv Sharma, Keshav Gupta, Sahaj Patel) verified fail-safe against MySQL. Passwords encrypted with PBKDF2 with HMAC-SHA256 and a 16-byte cryptographic salt.
+- **Secure Dual-Auth Gateway (Page 3):** Supports login using either username or University Roll Number (USN), with hidden password entry via `System.console().readPassword()`.
+- **Student Placement Hub (Page 5):** Personalized student profile card displaying CGPA, active backlogs, registered skills, and 4 streamlined workflow options (Browse Drives, Instant Evaluation, Apply for Verified Opening, View Submitted Applications).
+- **Unified Eligibility & Skill Match Matrix (Page 8):** Combines the academic checklist table and technical skills breakdown table into a single 64-column side-by-side audit screen, eliminating split clicks.
+- **Application Review & Digital Receipt (Page 9):** State A displays candidate and job details for final confirmation; State B issues an official instant Success Digital Receipt Voucher with unique `APP-2026-XXX` identifier and filing timestamp upon MySQL persistence.
 
 ### 👔 Placement Officer Portal
-- **Administrative Activation Safeguard (Page 5):** Officer onboarding is strictly guarded by a configured system property (`-Dnextstep.officer.activation.code`) or environment variable (`NEXTSTEP_OFFICER_ACTIVATION_CODE`), with zero insecure defaults, preventing unauthorized student privilege escalation. Supports safe one-click demo autofill for administrative onboarding (Prof. Raghav Bansal).
-- **Job Drive Management (Page 8):** Publish new job drives collecting all 10 critical fields (Company selection from live MySQL partner list, Job Role, Description, CTC LPA, Location, Min CGPA, Max Backlogs, Target Batch, Eligible Branches, and Required Skills) persisted atomically across 3 relational tables.
-- **Centralized Applicant Oversight (Page 11):** Inspect all student applications across partner companies with candidate roll numbers, names, and current recruitment statuses.
+- **Administrative Onboarding (Page 4):** Officer registration using safe upfront mode selection. Protected by configured system property (`-Dnextstep.officer.activation.code`) or environment variable (`NEXTSTEP_OFFICER_ACTIVATION_CODE`) with zero hardcoded default secrets. Pre-loads verified demo identity (Prof. Raghav Bansal).
+- **Administration Dashboard (Page 6):** Central administrative workstation displaying live drive and applicant tallies with 4 direct tools (Create Job Drive, Manage Applications, Export CSV, Presentation Controls).
+- **Create Job Drive (Page 7):** Publish new job drives selecting from live MySQL hiring partner companies with upfront autofill mode (`[A] / [ENTER]`), collecting all 10 critical parameters persisted atomically across relational tables.
+- **Master Application Registry (Page 10):** Aligned corporate table displaying candidate roll numbers, names, job titles, and status indicators (`APPLIED` in Cyan, `SHORTLISTED` in Green, `REJECTED` in Red) with inline status updates and RFC-4180 CSV export.
 - **Status Lifecycle Advancement:** Advance candidate applications through the hiring lifecycle (`APPLIED` → `SHORTLISTED` → `SELECTED` / `REJECTED`) with database consistency.
-- **Recruitment Analytics:** Compute real-time placement statistics using Java Streams and Collectors (`groupingBy`, `partitioningBy`, `counting`).
-- **RFC-4180 CSV Export & Audit Archiving:** Export applicant records to CSV and ingest/parse exported files into `ArrayList<Application>` for audit verification.
+- **Recruitment Analytics & Archiving:** Compute real-time placement statistics using Java Streams/Collectors and parse exported CSV reports back into `ArrayList<Application>` for audit verification.
 
 ### 🎨 Terminal Presentation & Console Usability
 - **24-bit TrueColour ANSI Theme:** Reference palette featuring Sky Blue borders (`#6FC9FF`), Gold input prompts (`#E3B341`), Slate body text (`#CAD5E5`), and Midnight Navy background (`#131B28`).
-- **One-Click Autofill (`'A'` Shortcut):** Instant one-touch demo data population across multi-field forms (Student Sign Up, Officer Sign Up, Job Drive Creation). Demo values render inline directly beside Golden Amber prompts in Sky Blue brackets `[Value]`, eliminating cumbersome detached tables. Pressing `[Enter]` confirms each value, while typing any key overrides it.
+- **Standardized 64-Column Rectangular Framing:** Every screen is bounded by complete rectangular borders (`================================================================`).
+- **One-Click Autofill (`[A]` Mode):** Upfront form mode selection populates all fields directly inside the form brackets `[ Value ]`, eliminating ugly `ID: A` glitches and screen duplication.
 - **Fail-Safe Database Collision Prevention:** Autofill candidate identities are checked live against MySQL for username, student ID / USN, and email (`users.email`) uniqueness with fail-safe error handling on `SQLException` or retry exhaustion.
-- **Fixed-Width Column Alignment:** Standardized 24-character label column across all forms with user input beginning at column 25.
 - **Form Navigation Shortcuts:** Inline typing corrections supporting `B` / `ESC` (return to previous field), `N` / `TAB` (advance retaining value), and `[Enter]` (confirm/keep existing value).
 - **Clean Plain-Text Fallback:** Automatically detects headless environments and stripped ANSI escape codes when running in automated test pipes or non-interactive terminals.
 
@@ -225,39 +226,37 @@ If neither is configured, officer registration is safely disabled with an admini
 
 ---
 
-## 9. Application Workflow (Pages 1–11)
+## 9. Application Workflow (Pages 1–10)
 
-NextStep organizes placement workflows across 11 structured console screens:
+NextStep organizes campus recruitment workflows across exactly 10 evaluator-approved console screens:
 
-```
-[Page 1: Welcome Page]
+```text
+[Page 1: Welcome & Unified Campus Gateway]
       │
-      ▼
-[Page 2: Account Portal]
       ├──► [Student Workflow]
-      │         ├──► [Page 3: Student Sign Up]
-      │         └──► [Page 4: Student Sign In]
+      │         ├──► [Page 2: Student Sign Up (Inline Autofill [A] | Manual [ENTER])]
+      │         └──► [Page 3: Student Sign In (Dual-Auth: Username / USN)]
       │                   │
       │                   ▼
-      │              [Page 6: Student Dashboard]
-      │                   ├── Option 3: Available Job Drives
-      │                   ├── Option 4: Check Eligibility ──► [Page 9: Eligibility & Skill Match]
-      │                   ├── Option 5: Analyse Skill Match ─► [Page 9 Part B]
-      │                   ├── Option 6: Apply for Job ───────► [Page 10: Application Confirmation]
-      │                   └── Option 7: View Applications
+      │              [Page 5: Student Placement Hub]
+      │                   ├── [1] Browse Active Job Openings
+      │                   ├── [2] Run Instant Eligibility & Skill-Match ──► [Page 8: Unified Matrix]
+      │                   ├── [3] Apply for Verified Opening ─────────────► [Page 9: Review & Receipt]
+      │                   ├── [4] View My Submitted Applications & Status
+      │                   └── [0] Sign Out to Campus Gateway
       │
       └──► [Placement Officer Workflow]
-                ├──► [Page 5: Officer Sign Up]
+                ├──► [Page 4: Placement Officer Sign Up (Safe Inline Autofill)]
                 └──► [Officer Sign In]
                           │
                           ▼
-                     [Page 7: Officer Dashboard]
-                          ├── Option 3: Manage Job Drives ───► [Page 8: Create Job Drive]
-                          ├── Option 4: View Applications ───► [Page 11: Application Records]
-                          └── Option 5: Update Application Status
+                     [Page 6: Placement Officer Administration Dashboard]
+                          ├── [1] Create & Publish New Job Opening ────────► [Page 7: Create Job Drive]
+                          ├── [2] Manage Student Applications ─────────────► [Page 10: Master Application Registry]
+                          ├── [3] Export Placement Audit Ledger (CSV)
+                          ├── [4] Presentation Visibility & Demo Controls
+                          └── [0] Sign Out to Campus Gateway
 ```
-
-*(Note: Dashboard options marked `[Coming Soon]` are reserved for future CAT-4 milestones and display informative notices).*
 
 ---
 
@@ -267,12 +266,12 @@ NextStep includes 5 automated regression and integration test suites in `tests/`
 
 | Test Suite | Purpose | Tests | Status |
 | :--- | :--- | :---: | :---: |
-| **`ConsoleInputEdgeCaseTestRunner`** | Pages 1–11 console UI, TrueColour ANSI, navigation shortcuts, one-click demo autofill, collision safety, Page 8 10-field job persistence | **89** | **PASS** |
+| **`ConsoleInputEdgeCaseTestRunner`** | Pages 1–10 console UI, TrueColour ANSI, navigation shortcuts, one-click demo autofill, collision safety, Page 7 10-field job persistence | **89** | **PASS** |
 | **`Phase3TestRunner`** | Registration, PBKDF2 hashing with salt, UserDAO, StudentDAO, CompanyDAO, JobDAO, email uniqueness | **41** | **PASS** |
-| **`Phase4TestRunner`** | Job browsing, 10-field persistence, eligibility rules, application states, officer access control, backward compatibility | **47** | **PASS** |
+| **`Phase4TestRunner`** | Job browsing, 10-field persistence, eligibility rules, application states, officer access control, backward compatibility | **54** | **PASS** |
 | **`Phase5TestRunner`** | Full CA-3 syllabus, Java Streams, Collectors, RFC-4180 CSV export/import, presentation visibility controls | **54** | **PASS** |
 | **`Phase6IntegrationTestRunner`** | Transaction rollback atomicity, simulated restart persistence, data sanitization, seed data idempotency | **31** | **PASS** |
-| **Grand Total** | **Verified Across All 5 Suites** | **262** | **262 / 262 Passed (100%)** |
+| **Grand Total** | **Verified Across All 5 Suites** | **269** | **269 / 269 Passed (100%)** |
 
 To compile and run tests, see the comprehensive guide: 👉 [**docs/TESTING.md**](docs/TESTING.md).
 
@@ -280,7 +279,7 @@ To compile and run tests, see the comprehensive guide: 👉 [**docs/TESTING.md**
 
 ## 11. Current Project Status & Future Scope
 
-- **Implemented CA-3 Scope:** Pages 1 through 11 fully implemented with MySQL persistence, PBKDF2 password security, TrueColour ANSI theme, navigation shortcuts, eligibility checking, skill matching, and application tracking.
+- **Implemented CA-3 Scope:** Pages 1 through 10 fully implemented with MySQL persistence, PBKDF2 password security, TrueColour ANSI theme, navigation shortcuts, unified eligibility & skill matching, and application tracking.
 - **Future Scope (CAT-4 Milestones):**
   - Graphical User Interface (JavaFX / Swing).
   - Resume upload and PDF document parsing.

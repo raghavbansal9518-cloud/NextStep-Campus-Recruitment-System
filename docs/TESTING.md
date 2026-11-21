@@ -3,7 +3,7 @@
 > **Project:** NextStep — Campus Recruitment System  
 > **Course:** Programming in Java (25CSE0202)  
 > **Testing Approach:** Standalone Java SE Regression & Integration Test Suites (Pure JDBC, No External Frameworks)  
-> **Test Status:** 262 / 262 Passed (100% Passing)
+> **Test Status:** 269 / 269 Passed (100% Passing)
 
 ---
 
@@ -24,12 +24,12 @@ The project repository includes 5 comprehensive test runners located in the `tes
 
 | Test Suite | File Path | Scope & Syllabus Focus | Tests | Status |
 | :--- | :--- | :--- | :---: | :---: |
-| **Console Verification** | `tests/ConsoleInputEdgeCaseTestRunner.java` | Pages 1–11 console UI, TrueColour ANSI, shortcuts (`B`/`ESC`, `N`/`TAB`, `Enter`), Page 8 10-field job drive persistence, one-click autofill (`'A'`), real student identities (Raghav Bansal `2510990750`), collision checks, fail-safe error handling | **89** | **PASS** |
+| **Console Verification** | `tests/ConsoleInputEdgeCaseTestRunner.java` | Pages 1–10 console UI, TrueColour ANSI, shortcuts (`B`/`ESC`, `N`/`TAB`, `Enter`), Page 7 10-field job drive persistence, one-click autofill (`[A]`), real student identities (Raghav Bansal `2510990750`), collision checks, fail-safe error handling | **89** | **PASS** |
 | **Phase 3 Test Suite** | `tests/Phase3TestRunner.java` | Student self-registration, validation rules, PBKDF2 hashing with salt, `UserDAO.existsByEmail`, `StudentDAO`, `CompanyDAO`, `JobDAO` operations | **41** | **PASS** |
-| **Phase 4 Test Suite** | `tests/Phase4TestRunner.java` | Job browsing, 10-field persistence (CTC, location, backlogs), partner company validation, eligibility rules, application lifecycle, duplicate prevention, backward compatibility | **47** | **PASS** |
+| **Phase 4 Test Suite** | `tests/Phase4TestRunner.java` | Job browsing, 10-field persistence (CTC, location, backlogs), partner company validation, eligibility rules, application lifecycle, duplicate prevention, backward compatibility | **54** | **PASS** |
 | **Phase 5 Test Suite** | `tests/Phase5TestRunner.java` | Full CA-3 syllabus, Java Streams/Lambdas, RFC-4180 CSV export and import audit archiving, presentation toggles | **54** | **PASS** |
 | **Phase 6 Test Suite** | `tests/Phase6IntegrationTestRunner.java` | Seed data idempotency, end-to-end student & officer workflows, ACID rollback verification (`conn.rollback()`), simulated restart persistence | **31** | **PASS** |
-| **Grand Total** | **All 5 Test Suites** | **Complete System Verification** | **262** | **100% PASS** |
+| **Grand Total** | **All 5 Test Suites** | **Complete System Verification** | **269** | **100% PASS** |
 
 ---
 
