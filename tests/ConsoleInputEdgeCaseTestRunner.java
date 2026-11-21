@@ -2614,6 +2614,238 @@ public class ConsoleInputEdgeCaseTestRunner {
                 }
             }
 
+            {
+                // Test FS.11: Successful generation of unique student & officer demo data verified against database
+                Main app = new Main();
+                StudentDAO studentDAO = new StudentDAO();
+                UserDAO userDAO = new UserDAO();
+
+                String[] studentDemo = app.getStudentDemoData();
+                String[] officerDemo = app.getOfficerDemoData();
+
+                boolean studentOk = studentDemo != null
+                        && !studentDAO.existsByStudentId(studentDemo[0])
+                        && !userDAO.existsByUsername(studentDemo[9])
+                        && !userDAO.existsByEmail(studentDemo[2]);
+
+                boolean officerOk = officerDemo != null
+                        && !userDAO.existsByUsername(officerDemo[3])
+                        && !userDAO.existsByEmail(officerDemo[2]);
+
+                if (studentOk && officerOk) {
+                    pass("FS.11: Successful generation of unique student and officer demo data verified against database");
+                } else {
+                    fail("FS.11", "Generated demo data failed uniqueness validation: studentOk=" + studentOk + ", officerOk=" + officerOk);
+                }
+            }
+
+            {
+                // Test FS.12: Collision on email or username followed by successful regeneration
+                Main app = new Main();
+                UserDAO userDAO = new UserDAO();
+                StudentDAO studentDAO = new StudentDAO();
+                String[] initial = app.getStudentDemoData();
+                if (initial == null) {
+                    fail("FS.12", "Initial demo data was null");
+                } else {
+                    String collUname = initial[9];
+                    String collEmail = initial[2];
+                    User tempUser = new User(collUname, "dummyHash123456789", Role.STUDENT, collEmail);
+                    try {
+                        userDAO.createUser(tempUser);
+                        String[] regen = app.getStudentDemoData();
+                        boolean regeneratedOk = regen != null
+                                && !regen[9].equals(collUname)
+                                && !regen[2].equals(collEmail)
+                                && !userDAO.existsByUsername(regen[9])
+                                && !userDAO.existsByEmail(regen[2])
+                                && !studentDAO.existsByStudentId(regen[0]);
+                        if (regeneratedOk) {
+                            pass("FS.12: Collision on username/email triggers automatic regeneration of unique candidate");
+                        } else {
+                            fail("FS.12", "Regeneration after collision failed to produce unique candidate");
+                        }
+                    } finally {
+                        if (tempUser.getId() > 0) {
+                            try (Connection conn = DatabaseConnection.getConnection();
+                                 PreparedStatement del = conn.prepareStatement("DELETE FROM users WHERE id = ?")) {
+                                del.setInt(1, tempUser.getId());
+                                del.executeUpdate();
+                            } catch (SQLException ignored) {}
+                        }
+                    }
+                }
+            }
+
+            {
+                // Test FS.13: SQLException during student collision checking stops autofill safely and returns null
+                ByteArrayOutputStream errOut = new ByteArrayOutputStream();
+                PrintStream captureOut = new PrintStream(errOut, true, StandardCharsets.UTF_8);
+                PrintStream prevOut = System.out;
+                try {
+                    System.setOut(captureOut);
+                    UserDAO failingDAO = new UserDAO() {
+                        @Override
+                        public boolean existsByUsername(String u) throws SQLException {
+                            throw new SQLException("Simulated connection timeout during verification");
+                        }
+                    };
+                    Main appFailing = new Main(new AuthService(), new com.nextstep.service.RecruitmentService(),
+                            new JobDAO(), new StudentDAO(), new com.nextstep.dao.ApplicationDAO(),
+                            new com.nextstep.dao.CompanyDAO(), failingDAO);
+
+                    String[] result = appFailing.getStudentDemoData();
+                    System.setOut(prevOut);
+
+                    String logged = errOut.toString(StandardCharsets.UTF_8);
+                    boolean returnedNull = (result == null);
+                    boolean hasErrorMessage = logged.contains("[ERROR] Demo data could not be verified due to database error: Simulated connection timeout");
+                    boolean hasSafeNotice = logged.contains("Autofill stopped safely. Please enter details manually or cancel.");
+
+                    if (returnedNull && hasErrorMessage && hasSafeNotice) {
+                        pass("FS.13: SQLException during student collision checking safely stops autofill, displays clear error, and returns null");
+                    } else {
+                        fail("FS.13", "Failing DB did not handle SQLException properly: returnedNull=" + returnedNull + ", hasErrorMessage=" + hasErrorMessage + ", hasSafeNotice=" + hasSafeNotice);
+                    }
+                } finally {
+                    System.setOut(prevOut);
+                }
+            }
+
+            {
+                // Test FS.14: Retry-limit exhaustion stops autofill without returning candidate and returns null
+                ByteArrayOutputStream errOut = new ByteArrayOutputStream();
+                PrintStream captureOut = new PrintStream(errOut, true, StandardCharsets.UTF_8);
+                PrintStream prevOut = System.out;
+                try {
+                    System.setOut(captureOut);
+                    UserDAO exhaustiveDAO = new UserDAO() {
+                        @Override
+                        public boolean existsByUsername(String u) throws SQLException {
+                            return true; // Simulate 1000 collisions
+                        }
+                    };
+                    Main appExhaustive = new Main(new AuthService(), new com.nextstep.service.RecruitmentService(),
+                            new JobDAO(), new StudentDAO(), new com.nextstep.dao.ApplicationDAO(),
+                            new com.nextstep.dao.CompanyDAO(), exhaustiveDAO);
+
+                    String[] result = appExhaustive.getStudentDemoData();
+                    System.setOut(prevOut);
+
+                    String logged = errOut.toString(StandardCharsets.UTF_8);
+                    boolean returnedNull = (result == null);
+                    boolean hasExhaustMessage = logged.contains("[ERROR] Could not generate unique demo identity: maximum attempts reached (1000 retries).");
+                    boolean hasSafeNotice = logged.contains("Autofill stopped safely. Please enter details manually or cancel.");
+
+                    if (returnedNull && hasExhaustMessage && hasSafeNotice) {
+                        pass("FS.14: Retry-limit exhaustion safely stops autofill, displays maximum retries notice, and returns null");
+                    } else {
+                        fail("FS.14", "Retry-limit exhaustion failed: returnedNull=" + returnedNull + ", hasExhaustMessage=" + hasExhaustMessage + ", hasSafeNotice=" + hasSafeNotice);
+                    }
+                } finally {
+                    System.setOut(prevOut);
+                }
+            }
+
+            {
+                // Test FS.15: Equivalent failure handling for officer demo data on SQLException and retry exhaustion
+                ByteArrayOutputStream errOut = new ByteArrayOutputStream();
+                PrintStream captureOut = new PrintStream(errOut, true, StandardCharsets.UTF_8);
+                PrintStream prevOut = System.out;
+                try {
+                    System.setOut(captureOut);
+                    UserDAO failingDAO = new UserDAO() {
+                        @Override
+                        public boolean existsByUsername(String u) throws SQLException {
+                            throw new SQLException("Simulated officer DB query exception");
+                        }
+                    };
+                    Main appFailing = new Main(new AuthService(), new com.nextstep.service.RecruitmentService(),
+                            new JobDAO(), new StudentDAO(), new com.nextstep.dao.ApplicationDAO(),
+                            new com.nextstep.dao.CompanyDAO(), failingDAO);
+
+                    String[] sqlResult = appFailing.getOfficerDemoData();
+
+                    UserDAO exhaustDAO = new UserDAO() {
+                        @Override
+                        public boolean existsByUsername(String u) throws SQLException {
+                            return true;
+                        }
+                    };
+                    Main appExhaust = new Main(new AuthService(), new com.nextstep.service.RecruitmentService(),
+                            new JobDAO(), new StudentDAO(), new com.nextstep.dao.ApplicationDAO(),
+                            new com.nextstep.dao.CompanyDAO(), exhaustDAO);
+
+                    String[] exhaustResult = appExhaust.getOfficerDemoData();
+                    System.setOut(prevOut);
+
+                    String logged = errOut.toString(StandardCharsets.UTF_8);
+                    boolean sqlSafe = (sqlResult == null) && logged.contains("Officer demo data could not be verified due to database error");
+                    boolean exhaustSafe = (exhaustResult == null) && logged.contains("Could not generate unique officer demo identity: maximum attempts reached (1000 retries)");
+
+                    if (sqlSafe && exhaustSafe) {
+                        pass("FS.15: Officer demo generation safely handles SQLException and retry exhaustion by returning null with clear errors");
+                    } else {
+                        fail("FS.15", "Officer failure handling failed: sqlSafe=" + sqlSafe + ", exhaustSafe=" + exhaustSafe);
+                    }
+                } finally {
+                    System.setOut(prevOut);
+                }
+            }
+
+            {
+                // Test FS.16: When demoData is unavailable (null), pressing 'A' alerts user without corrupting form or auto-submitting
+                UserDAO failingDAO = new UserDAO() {
+                    @Override
+                    public boolean existsByUsername(String u) throws SQLException {
+                        throw new SQLException("DB offline");
+                    }
+                };
+                Main appFailing = new Main(new AuthService(), new com.nextstep.service.RecruitmentService(),
+                        new JobDAO(), new StudentDAO(), new com.nextstep.dao.ApplicationDAO(),
+                        new com.nextstep.dao.CompanyDAO(), failingDAO);
+
+                ByteArrayOutputStream out = new ByteArrayOutputStream();
+                String inputs = String.join("\n",
+                        "1",               // Page 1 -> Page 2
+                        "1",               // Page 2 -> Student Menu
+                        "1",               // Student Menu -> Page 3 (Sign Up)
+                        "A",               // Attempt shortcut 'A' when demoData is null!
+                        "CustomUSN123",    // Enter field 1 manually after warning
+                        "Custom Name",     // Enter field 2 manually
+                        "cust@univ.edu",   // Enter field 3 manually
+                        "9876543210",      // Enter field 4 manually
+                        "CSE",             // Enter field 5 manually
+                        "9.0",             // Enter field 6 manually
+                        "Java, SQL",       // Enter field 7 manually
+                        "0",               // Enter field 8 manually
+                        "2026",            // Enter field 9 manually
+                        "custom_uname",    // Enter field 10 manually
+                        "Password@123",    // Enter field 11 manually
+                        "Password@123",    // Enter field 12 manually
+                        "0",               // At action footer: 0 to BACK / Cancel
+                        "0",               // Student Menu -> Page 2
+                        "0",               // Page 2 -> Page 1
+                        "0"                // Page 1 -> Exit
+                ) + "\n";
+                System.setIn(new ByteArrayInputStream(inputs.getBytes(StandardCharsets.UTF_8)));
+                System.setOut(new PrintStream(out, true, StandardCharsets.UTF_8));
+
+                appFailing.run(new Scanner(System.in));
+                System.setOut(originalOut);
+
+                String outStr = out.toString(StandardCharsets.UTF_8);
+                boolean hasWarning = outStr.contains("[WARN] Autofill is unavailable: verified demo data could not be generated.");
+                boolean hasManualInstruction = outStr.contains("Please enter details manually for each field");
+                boolean cancelledCleanly = outStr.contains("1. CREATE ACCOUNT") && outStr.contains("0. BACK");
+
+                if (hasWarning && hasManualInstruction && cancelledCleanly) {
+                    pass("FS.16: Pressing 'A' when demoData is null warns user safely and allows full manual form entry and cancellation");
+                } else {
+                    fail("FS.16", "Form handling when demoData is null failed: hasWarning=" + hasWarning + ", cancelledCleanly=" + cancelledCleanly);
+                }
+            }
+
         } catch (Exception e) {
             System.setOut(originalOut);
             System.err.println("  [FAIL] Test suite exception: " + e.getMessage());

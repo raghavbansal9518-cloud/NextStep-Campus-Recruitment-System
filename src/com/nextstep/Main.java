@@ -56,13 +56,20 @@ public class Main {
     private final UserDAO userDAO;
 
     public Main() {
-        this.authService = new AuthService();
-        this.recruitmentService = new RecruitmentService();
-        this.jobDAO = new JobDAO();
-        this.studentDAO = new StudentDAO();
-        this.applicationDAO = new ApplicationDAO();
-        this.companyDAO = new CompanyDAO();
-        this.userDAO = new UserDAO();
+        this(new AuthService(), new RecruitmentService(), new JobDAO(),
+             new StudentDAO(), new ApplicationDAO(), new CompanyDAO(), new UserDAO());
+    }
+
+    public Main(AuthService authService, RecruitmentService recruitmentService,
+                JobDAO jobDAO, StudentDAO studentDAO, ApplicationDAO applicationDAO,
+                CompanyDAO companyDAO, UserDAO userDAO) {
+        this.authService = authService;
+        this.recruitmentService = recruitmentService;
+        this.jobDAO = jobDAO;
+        this.studentDAO = studentDAO;
+        this.applicationDAO = applicationDAO;
+        this.companyDAO = companyDAO;
+        this.userDAO = userDAO;
     }
 
     public static void main(String[] args) {
@@ -495,7 +502,13 @@ public class Main {
             }
 
             // Shortcut 'A' / 'a' / 'AUTO': Auto-fill all fields with valid demo data
-            if (demoData != null && (input.equalsIgnoreCase("A") || input.equalsIgnoreCase("AUTO") || input.equalsIgnoreCase("AUTOFILL"))) {
+            if (input.equalsIgnoreCase("A") || input.equalsIgnoreCase("AUTO") || input.equalsIgnoreCase("AUTOFILL")) {
+                if (demoData == null) {
+                    System.out.println();
+                    System.out.println(ConsoleTheme.warn("[WARN] Autofill is unavailable: verified demo data could not be generated."));
+                    System.out.println(ConsoleTheme.dim("  Please enter details manually for each field, or enter 0 at action prompt to cancel."));
+                    continue;
+                }
                 for (int k = 0; k < n && k < demoData.length; k++) {
                     if (demoData[k] != null) {
                         values[k] = demoData[k];
@@ -611,26 +624,43 @@ public class Main {
         int seed = (int) (System.currentTimeMillis() % 900) + 100;
         String studentId = "24MCA" + seed;
         String username = "aarav_" + seed;
+        String email = "aarav." + seed + "@university.edu";
         int attempts = 0;
+        boolean verified = false;
+
         while (attempts < 1000) {
             try {
                 boolean idExists = (studentDAO != null) && studentDAO.existsByStudentId(studentId);
                 boolean userExists = (userDAO != null) && userDAO.existsByUsername(username);
-                if (!idExists && !userExists) {
+                boolean emailExists = (userDAO != null) && userDAO.existsByEmail(email);
+                if (!idExists && !userExists && !emailExists) {
+                    verified = true;
                     break;
                 }
             } catch (SQLException e) {
-                break;
+                System.out.println();
+                System.out.println(ConsoleTheme.red("[ERROR] Demo data could not be verified due to database error: " + e.getMessage()));
+                System.out.println(ConsoleTheme.dim("  Autofill stopped safely. Please enter details manually or cancel."));
+                return null;
             }
             seed = (seed + 1 > 9999) ? 100 : seed + 1;
             studentId = "24MCA" + seed;
             username = "aarav_" + seed;
+            email = "aarav." + seed + "@university.edu";
             attempts++;
         }
+
+        if (!verified) {
+            System.out.println();
+            System.out.println(ConsoleTheme.red("[ERROR] Could not generate unique demo identity: maximum attempts reached (1000 retries)."));
+            System.out.println(ConsoleTheme.dim("  Autofill stopped safely. Please enter details manually or cancel."));
+            return null;
+        }
+
         return new String[] {
                 studentId,
                 "Aarav Sharma",
-                "aarav." + seed + "@university.edu",
+                email,
                 "9876543210",
                 "Computer Science",
                 "8.75",
@@ -647,20 +677,36 @@ public class Main {
         int seed = (int) (System.currentTimeMillis() % 900) + 100;
         String officerId = "OFF-2026-" + seed;
         String username = "officer_" + seed;
+        String email = "tpo." + seed + "@university.edu";
         int attempts = 0;
+        boolean verified = false;
+
         while (attempts < 1000) {
             try {
                 boolean userExists = (userDAO != null) && userDAO.existsByUsername(username);
-                if (!userExists) {
+                boolean emailExists = (userDAO != null) && userDAO.existsByEmail(email);
+                if (!userExists && !emailExists) {
+                    verified = true;
                     break;
                 }
             } catch (SQLException e) {
-                break;
+                System.out.println();
+                System.out.println(ConsoleTheme.red("[ERROR] Officer demo data could not be verified due to database error: " + e.getMessage()));
+                System.out.println(ConsoleTheme.dim("  Autofill stopped safely. Please enter details manually or cancel."));
+                return null;
             }
             seed = (seed + 1 > 9999) ? 100 : seed + 1;
             officerId = "OFF-2026-" + seed;
             username = "officer_" + seed;
+            email = "tpo." + seed + "@university.edu";
             attempts++;
+        }
+
+        if (!verified) {
+            System.out.println();
+            System.out.println(ConsoleTheme.red("[ERROR] Could not generate unique officer demo identity: maximum attempts reached (1000 retries)."));
+            System.out.println(ConsoleTheme.dim("  Autofill stopped safely. Please enter details manually or cancel."));
+            return null;
         }
 
         String actCode = System.getProperty(AuthService.ACTIVATION_CODE_PROP);
@@ -672,7 +718,7 @@ public class Main {
         return new String[] {
                 officerId,
                 "Dr. Arvind Sharma",
-                "tpo." + seed + "@university.edu",
+                email,
                 username,
                 "Officer@123",
                 "Officer@123",

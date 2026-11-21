@@ -182,6 +182,31 @@ public class UserDAO {
     }
 
     /**
+     * Checks whether an email already exists in the database.
+     *
+     * @param email email to verify
+     * @return true if exists, false otherwise
+     * @throws SQLException if a database error occurs
+     */
+    public boolean existsByEmail(String email) throws SQLException {
+        if (email == null || email.trim().isEmpty()) {
+            return false;
+        }
+
+        String sql = "SELECT 1 FROM users WHERE email = ? LIMIT 1";
+
+        try (Connection conn = DatabaseConnection.getConnection();
+             PreparedStatement stmt = conn.prepareStatement(sql)) {
+
+            stmt.setString(1, email.trim());
+
+            try (ResultSet rs = stmt.executeQuery()) {
+                return rs.next();
+            }
+        }
+    }
+
+    /**
      * Checks if at least one user with the specified role exists in the database.
      * Useful for checking whether an administrative placement officer has been provisioned.
      * 
