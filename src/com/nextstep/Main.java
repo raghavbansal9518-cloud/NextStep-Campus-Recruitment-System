@@ -151,14 +151,16 @@ public class Main {
      */
     public void renderWelcomeScreen() {
         System.out.println(ConsoleTheme.border("================================================================"));
-        System.out.println(ConsoleTheme.header("              NEXTSTEP | CAMPUS RECRUITMENT SYSTEM"));
-        System.out.println(ConsoleTheme.header("             Automated Eligibility & Skill Matching"));
+        System.out.println(ConsoleTheme.header("           NEXTSTEP | CAMPUS RECRUITMENT SYSTEM (2026)"));
+        System.out.println(ConsoleTheme.header("          Automated Eligibility, Skill Matching & Drives"));
         System.out.println(ConsoleTheme.border("================================================================"));
         System.out.println();
-        System.out.println(ConsoleTheme.dim("  System Status:  ● ONLINE   |   Academic Year:  2025–2026"));
-        System.out.println(ConsoleTheme.dim("  Placement Hub:  Active Campus Drives & Candidate Verification"));
+        System.out.println(ConsoleTheme.dim("  System Status:  ● ONLINE    |  Partner Drives: Active Open   "));
+        System.out.println(ConsoleTheme.dim("  Academic Year:  2025–2026   |  Placement Hub:  Verified      "));
         System.out.println();
-        System.out.println(ConsoleTheme.text("                     YOUR CAREER STARTS HERE"));
+        System.out.println(ConsoleTheme.cyan("  ┌────────────────────────────────────────────────────────────┐"));
+        System.out.println(ConsoleTheme.cyan("  │") + ConsoleTheme.text("                  YOUR CAREER STARTS HERE                   ") + ConsoleTheme.cyan("│"));
+        System.out.println(ConsoleTheme.cyan("  └────────────────────────────────────────────────────────────┘"));
         System.out.println();
         System.out.println(ConsoleTheme.text("                  1. Continue"));
         System.out.println(ConsoleTheme.text("                  0. Exit"));
@@ -229,11 +231,16 @@ public class Main {
      */
     public void renderAccountPortalScreen() {
         System.out.println(ConsoleTheme.border("================================================================"));
-        System.out.println(ConsoleTheme.header("                         NEXTSTEP"));
-        System.out.println(ConsoleTheme.header("                     ACCOUNT PORTAL"));
+        System.out.println(ConsoleTheme.header("                    NEXTSTEP | ACCOUNT PORTAL"));
+        System.out.println(ConsoleTheme.header("          Automated Eligibility, Skill Matching & Drives"));
         System.out.println(ConsoleTheme.border("================================================================"));
         System.out.println();
-        System.out.println(ConsoleTheme.text("                     SELECT YOUR ROLE"));
+        System.out.println(ConsoleTheme.dim("  System Status:  ● ONLINE    |  Partner Drives: 3 Open        "));
+        System.out.println(ConsoleTheme.dim("  Academic Year:  2025–2026   |  Active Candidates: Verified   "));
+        System.out.println();
+        System.out.println(ConsoleTheme.cyan("  ┌────────────────────────────────────────────────────────────┐"));
+        System.out.println(ConsoleTheme.cyan("  │") + ConsoleTheme.text("           SELECT YOUR PORTAL — SELECT YOUR ROLE            ") + ConsoleTheme.cyan("│"));
+        System.out.println(ConsoleTheme.cyan("  └────────────────────────────────────────────────────────────┘"));
         System.out.println();
         System.out.println(ConsoleTheme.text("                  1. Student"));
         System.out.println(ConsoleTheme.text("                  2. Placement Officer"));
@@ -1338,10 +1345,14 @@ public class Main {
         System.out.println(ConsoleTheme.header("                       STUDENT DASHBOARD"));
         System.out.println(ConsoleTheme.border("================================================================"));
         System.out.println();
-        System.out.println(ConsoleTheme.text("Welcome, " + (student != null && student.getFullName() != null ? student.getFullName() : "Student")));
-        System.out.println(ConsoleTheme.text("Student ID: " + (student != null && student.getStudentId() != null ? student.getStudentId() : "N/A")));
+        String studentName = (student != null && student.getFullName() != null) ? student.getFullName() : "Student";
+        String studentId = (student != null && student.getStudentId() != null) ? student.getStudentId() : "N/A";
+        System.out.println(ConsoleTheme.text("Welcome, " + studentName));
+        System.out.println(ConsoleTheme.text("Student ID: " + studentId));
         System.out.println(ConsoleTheme.divider("----------------------------------------------------------------"));
-        System.out.println();
+        System.out.println(ConsoleTheme.cyan("  ┌────────────────────────────────────────────────────────────┐"));
+        System.out.println(ConsoleTheme.cyan("  │") + ConsoleTheme.text("                     PLACEMENT WORKFLOW                     ") + ConsoleTheme.cyan("│"));
+        System.out.println(ConsoleTheme.cyan("  └────────────────────────────────────────────────────────────┘"));
         System.out.println(ConsoleTheme.text("  1. View Available Job Drives"));
         System.out.println(ConsoleTheme.text("  2. Check Job Eligibility & Skill Match"));
         System.out.println(ConsoleTheme.text("  3. Apply for an Eligible Job"));
@@ -1426,29 +1437,36 @@ public class Main {
     }
 
     private void viewAvailableJobs() {
-        System.out.println("\n--- AVAILABLE RECRUITMENT DRIVES ---");
+        System.out.println(ConsoleTheme.header("\n--- AVAILABLE RECRUITMENT DRIVES ---"));
         try {
             // Demonstrates lambda sorting (highest CTC first)
             List<Job> jobs = recruitmentService.getJobsSortedByCtc();
             long totalDrives = recruitmentService.countOpenJobs();
             List<String> hiringCompanies = recruitmentService.getDistinctHiringCompanies();
 
-            System.out.println("Active Drives: " + totalDrives + " | Hiring Companies: " + String.join(", ", hiringCompanies));
-            System.out.println("--------------------------------------------------------------------------------------------------");
+            System.out.println(ConsoleTheme.dim("Active Drives: " + totalDrives + " | Hiring Companies: " + String.join(", ", hiringCompanies)));
+            System.out.println(ConsoleTheme.divider("----------------------------------------------------------------"));
             if (jobs.isEmpty()) {
-                System.out.println("No open job positions available at this moment.");
+                System.out.println(ConsoleTheme.warn("No open job positions available at this moment."));
                 return;
             }
 
-            System.out.printf("%-5s | %-32s | %-28s | %-10s | %-15s%n",
-                    "ID", "Job Title", "Company", "CTC (LPA)", "Location");
-            System.out.println("--------------------------------------------------------------------------------------------------");
+            System.out.printf("%-4s | %-22s | %-26s | %-7s | %-6s%n",
+                    "ID", "Job Title", "Company", "CTC", "Loc");
+            System.out.println(ConsoleTheme.divider("----------------------------------------------------------------"));
             for (Job j : jobs) {
-                System.out.printf("%-5d | %-32s | %-28s | %-10.2f | %-15s%n",
-                        j.getId(), j.getTitle(), j.getCompanyName(), j.getCtcLpa(), j.getLocation());
+                String title = j.getTitle() != null ? j.getTitle() : "N/A";
+                if (title.length() > 22) title = title.substring(0, 19) + "...";
+                String company = j.getCompanyName() != null ? j.getCompanyName() : "N/A";
+                String ctc = j.getCtcLpa() != null ? String.format("%.2f", j.getCtcLpa()) : "0.00";
+                String loc = j.getLocation() != null ? j.getLocation() : "Campus";
+                if (loc.length() > 6) loc = loc.substring(0, 5) + ".";
+                System.out.printf("%-4d | %-22s | %-26s | %-7s | %-6s%n",
+                        j.getId(), title, company, ctc, loc);
             }
+            System.out.println(ConsoleTheme.divider("----------------------------------------------------------------"));
         } catch (SQLException e) {
-            System.out.println("[ERROR] Failed to load jobs: " + e.getMessage());
+            System.out.println(ConsoleTheme.error("[ERROR] Failed to load jobs: " + e.getMessage()));
         }
     }
 
@@ -1527,24 +1545,30 @@ public class Main {
     }
 
     private void viewStudentApplications(Student student) {
-        System.out.println("\n--- MY APPLICATION HISTORY ---");
+        System.out.println(ConsoleTheme.header("\n--- MY APPLICATION HISTORY ---"));
         try {
             List<Application> apps = recruitmentService.getStudentApplications(student.getId());
             if (apps.isEmpty()) {
-                System.out.println("You have not applied for any campus jobs yet.");
+                System.out.println(ConsoleTheme.warn("You have not applied for any campus jobs yet."));
                 return;
             }
 
-            System.out.printf("%-6s | %-30s | %-25s | %-14s | %-20s%n",
-                    "App ID", "Job Title", "Company", "Status", "Applied At");
-            System.out.println("--------------------------------------------------------------------------------------------------");
+            System.out.println(ConsoleTheme.divider("----------------------------------------------------------------"));
+            System.out.printf("%-6s | %-22s | %-16s | %-11s%n",
+                    "App ID", "Job Title", "Company", "Status");
+            System.out.println(ConsoleTheme.divider("----------------------------------------------------------------"));
             for (Application a : apps) {
-                String appliedAtStr = (a.getAppliedAt() != null) ? a.getAppliedAt().toString() : "N/A";
-                System.out.printf("%-6d | %-30s | %-25s | %-14s | %-20s%n",
-                        a.getId(), a.getJobTitle(), a.getCompanyName(), a.getStatus(), appliedAtStr);
+                String title = a.getJobTitle() != null ? a.getJobTitle() : "N/A";
+                if (title.length() > 22) title = title.substring(0, 19) + "...";
+                String comp = a.getCompanyName() != null ? a.getCompanyName() : "N/A";
+                if (comp.length() > 16) comp = comp.substring(0, 13) + "...";
+                String st = a.getStatus() != null ? a.getStatus().name() : "N/A";
+                System.out.printf("%-6d | %-22s | %-16s | %-11s%n",
+                        a.getId(), title, comp, st);
             }
+            System.out.println(ConsoleTheme.divider("----------------------------------------------------------------"));
         } catch (SQLException e) {
-            System.out.println("[ERROR] Failed to load application history: " + e.getMessage());
+            System.out.println(ConsoleTheme.error("[ERROR] Failed to load application history: " + e.getMessage()));
         }
     }
 
@@ -1564,7 +1588,9 @@ public class Main {
         System.out.println(ConsoleTheme.text("Welcome, Placement Officer"));
         System.out.println(ConsoleTheme.text("Officer ID: Not available"));
         System.out.println(ConsoleTheme.divider("----------------------------------------------------------------"));
-        System.out.println();
+        System.out.println(ConsoleTheme.cyan("  ┌────────────────────────────────────────────────────────────┐"));
+        System.out.println(ConsoleTheme.cyan("  │") + ConsoleTheme.text("                    ADMINISTRATIVE TOOLS                    ") + ConsoleTheme.cyan("│"));
+        System.out.println(ConsoleTheme.cyan("  └────────────────────────────────────────────────────────────┘"));
         System.out.println(ConsoleTheme.text("  1. Manage Student Records ") + ConsoleTheme.comingSoon());
         System.out.println(ConsoleTheme.text("  2. Manage Companies ") + ConsoleTheme.comingSoon());
         System.out.println(ConsoleTheme.text("  3. Create Job Drive"));
@@ -1611,23 +1637,30 @@ public class Main {
     }
 
     private void viewAllApplicationsFlow(User officer) {
-        System.out.println("\n--- ALL CAMPUS APPLICATIONS ---");
+        System.out.println(ConsoleTheme.header("\n--- ALL CAMPUS APPLICATIONS ---"));
         try {
             List<Application> apps = recruitmentService.getAllApplications(officer);
             if (apps.isEmpty()) {
-                System.out.println("No student applications have been submitted yet.");
+                System.out.println(ConsoleTheme.warn("No student applications have been submitted yet."));
                 return;
             }
 
-            System.out.printf("%-6s | %-12s | %-20s | %-26s | %-22s | %-12s%n",
-                    "App ID", "Roll No", "Student Name", "Job Title", "Company", "Status");
-            System.out.println("---------------------------------------------------------------------------------------------------------------");
+            System.out.println(ConsoleTheme.divider("----------------------------------------------------------------"));
+            System.out.printf("%-6s | %-12s | %-16s | %-11s | %-10s%n",
+                    "App ID", "Roll No", "Student Name", "Status", "Company");
+            System.out.println(ConsoleTheme.divider("----------------------------------------------------------------"));
             for (Application a : apps) {
                 String rollNo = (a.getStudentRollNumber() != null) ? a.getStudentRollNumber() : String.valueOf(a.getStudentId());
+                if (rollNo.length() > 12) rollNo = rollNo.substring(0, 9) + "...";
                 String name = (a.getStudentName() != null) ? a.getStudentName() : "N/A";
-                System.out.printf("%-6d | %-12s | %-20s | %-26s | %-22s | %-12s%n",
-                        a.getId(), rollNo, name, a.getJobTitle(), a.getCompanyName(), a.getStatus());
+                if (name.length() > 16) name = name.substring(0, 13) + "...";
+                String st = (a.getStatus() != null) ? a.getStatus().name() : "N/A";
+                String comp = (a.getCompanyName() != null) ? a.getCompanyName() : "N/A";
+                if (comp.length() > 10) comp = comp.substring(0, 8) + "..";
+                System.out.printf("%-6d | %-12s | %-16s | %-11s | %-10s%n",
+                        a.getId(), rollNo, name, st, comp);
             }
+            System.out.println(ConsoleTheme.divider("----------------------------------------------------------------"));
         } catch (SecurityException e) {
             System.out.println("[SECURITY ERROR] " + e.getMessage());
         } catch (SQLException e) {
@@ -1683,19 +1716,19 @@ public class Main {
             List<Application> allApps = recruitmentService.getAllApplications(officer);
 
             System.out.println("Total Applications Received: " + allApps.size());
-            System.out.println("----------------------------------------------");
+            System.out.println(ConsoleTheme.divider("----------------------------------------------------------------"));
             System.out.println("Lifecycle Breakdown (groupingBy):");
             for (ApplicationStatus status : ApplicationStatus.values()) {
                 long count = summary.getOrDefault(status, 0L);
                 System.out.printf("  %-15s : %d%n", status.name(), count);
             }
-            System.out.println("----------------------------------------------");
+            System.out.println(ConsoleTheme.divider("----------------------------------------------------------------"));
             System.out.println("Placement Partition (partitioningBy):");
             long placed = placementPartition.getOrDefault(true, 0L);
             long inProcess = placementPartition.getOrDefault(false, 0L);
             System.out.printf("  Placed (SELECTED)      : %d%n", placed);
             System.out.printf("  In-Progress / Other    : %d%n", inProcess);
-            System.out.println("----------------------------------------------");
+            System.out.println(ConsoleTheme.divider("----------------------------------------------------------------"));
         } catch (SecurityException e) {
             System.out.println("[SECURITY ERROR] " + e.getMessage());
         } catch (SQLException e) {
@@ -2206,9 +2239,12 @@ public class Main {
 
             // 3. Branch
             List<String> branches = job.getEligibleBranches();
-            String branchReq = (branches != null && !branches.isEmpty()) ? String.join(", ", branches) : "All";
+            String rawBranchReq = (branches != null && !branches.isEmpty()) ? String.join(", ", branches) : "All";
+            String branchReq = rawBranchReq.length() > 18 ? rawBranchReq.substring(0, 15) + "..." : rawBranchReq;
+            String stdBranch = student.getBranch() != null ? student.getBranch() : "N/A";
+            if (stdBranch.length() > 15) stdBranch = stdBranch.substring(0, 12) + "...";
             String branchResult = result.isBranchEligible() ? ConsoleTheme.green("PASS") : ConsoleTheme.red("FAIL");
-            System.out.printf("%-24s%-19s%-16s%s%n", "Branch", branchReq, student.getBranch(), branchResult);
+            System.out.printf("%-24s%-19s%-16s%s%n", "Branch", branchReq, stdBranch, branchResult);
 
             // 4. Graduation Year
             String gradReq = (job.getGraduationYear() > 0) ? String.valueOf(job.getGraduationYear()) : "Any";
@@ -2574,10 +2610,14 @@ public class Main {
                     Application app = recruitmentService.applyForJob(student, job.getId());
                     renderApplicationConfirmationHeader();
                     System.out.println(ConsoleTheme.success("SUCCESS: Application " + app.getId() + " submitted!"));
-                    System.out.println("Status: " + app.getStatus());
-                    System.out.println("Company: " + (app.getCompanyName() != null ? app.getCompanyName() : job.getCompanyName()) +
+                    System.out.println(ConsoleTheme.header("           ✔ APPLICATION TRANSMITTED SUCCESSFULLY!"));
+                    System.out.println(ConsoleTheme.divider("----------------------------------------------------------------"));
+                    System.out.println("  Official Application ID : " + app.getId());
+                    System.out.println("  Status: " + app.getStatus());
+                    System.out.println("  Company: " + (app.getCompanyName() != null ? app.getCompanyName() : job.getCompanyName()) +
                             " | Role: " + (app.getJobTitle() != null ? app.getJobTitle() : job.getTitle()));
-                    System.out.println();
+                    System.out.println("  Next Step: The Placement Cell will review your application.");
+                    System.out.println("  Track real-time status in Option 4: 'My Applications'.");
                     System.out.println(ConsoleTheme.border("================================================================"));
                     return;
                 } catch (IllegalStateException e) {

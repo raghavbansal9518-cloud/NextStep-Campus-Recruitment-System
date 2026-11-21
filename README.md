@@ -4,7 +4,7 @@
 [![Database](https://img.shields.io/badge/MySQL-8.0-4479A1?logo=mysql&logoColor=white)](https://www.mysql.com/)
 [![JDBC Driver](https://img.shields.io/badge/MySQL%20Connector%2FJ-8.4.0-blue)](https://dev.mysql.com/downloads/connector/j/)
 [![Build Tool](https://img.shields.io/badge/Build-Native%20JDK%20%2F%20run.bat-success)](run.bat)
-[![Tests](https://img.shields.io/badge/Tests-212%20Passed%20(100%25)-brightgreen)](docs/TESTING.md)
+[![Tests](https://img.shields.io/badge/Tests-262%20Passed%20(100%25)-brightgreen)](docs/TESTING.md)
 [![Course](https://img.shields.io/badge/Course-Programming%20in%20Java%20(25CSE0202)-blueviolet)](docs/VIVA_PREPARATION.md)
 
 > A console-based campus placement automation system built with pure Java SE, JDBC, and MySQL.  
@@ -36,7 +36,7 @@ The project strictly emphasizes Core Java SE principles, JDBC transaction manage
 ## 2. Key Implemented Features
 
 ### 🎓 Student Portal
-- **Self-Service Registration (Page 3):** Creates user credentials, personal profiles, and academic records atomically in MySQL, with passwords encrypted using PBKDF2 with HMAC-SHA256 and a 16-byte cryptographic salt.
+- **Self-Service Registration (Page 3):** Complete 12-field registration creating user credentials, personal profiles, and academic records atomically in MySQL. Supports fast one-click demo autofill with real student profiles (e.g. Raghav Bansal `2510990750`, Dhruv Sharma, Keshav Gupta, Sahaj Patel). Passwords are encrypted using PBKDF2 with HMAC-SHA256 and a 16-byte cryptographic salt.
 - **Secure Authentication (Page 4):** Supports login using either username or University Roll Number (USN), with hidden password entry via `System.console().readPassword()`.
 - **Job Browsing (Page 6):** View active recruitment drives sorted by highest package CTC using custom Java Lambda comparators.
 - **Automated Eligibility Engine (Page 9 Part A):** Evaluates academic standing (CGPA cutoff, maximum active backlogs, degree branch, and graduation year) against live drive criteria before permitting applications.
@@ -45,8 +45,8 @@ The project strictly emphasizes Core Java SE principles, JDBC transaction manage
 - **Application Tracking (Page 6):** Live tracking of submitted applications and status changes.
 
 ### 👔 Placement Officer Portal
-- **Administrative Activation Safeguard (Page 5):** Officer onboarding is guarded by a locally configured environment variable (`NEXTSTEP_OFFICER_ACTIVATION_CODE`), preventing unauthorized student privilege escalation.
-- **Job Drive Management (Page 8):** Publish new job drives with dynamic partner company lookup directly from MySQL, target batch years, eligible branches, and required technical skills.
+- **Administrative Activation Safeguard (Page 5):** Officer onboarding is strictly guarded by a configured system property (`-Dnextstep.officer.activation.code`) or environment variable (`NEXTSTEP_OFFICER_ACTIVATION_CODE`), with zero insecure defaults, preventing unauthorized student privilege escalation. Supports safe one-click demo autofill for administrative onboarding (Prof. Raghav Bansal).
+- **Job Drive Management (Page 8):** Publish new job drives collecting all 10 critical fields (Company selection from live MySQL partner list, Job Role, Description, CTC LPA, Location, Min CGPA, Max Backlogs, Target Batch, Eligible Branches, and Required Skills) persisted atomically across 3 relational tables.
 - **Centralized Applicant Oversight (Page 11):** Inspect all student applications across partner companies with candidate roll numbers, names, and current recruitment statuses.
 - **Status Lifecycle Advancement:** Advance candidate applications through the hiring lifecycle (`APPLIED` → `SHORTLISTED` → `SELECTED` / `REJECTED`) with database consistency.
 - **Recruitment Analytics:** Compute real-time placement statistics using Java Streams and Collectors (`groupingBy`, `partitioningBy`, `counting`).
@@ -54,6 +54,8 @@ The project strictly emphasizes Core Java SE principles, JDBC transaction manage
 
 ### 🎨 Terminal Presentation & Console Usability
 - **24-bit TrueColour ANSI Theme:** Reference palette featuring Sky Blue borders (`#6FC9FF`), Gold input prompts (`#E3B341`), Slate body text (`#CAD5E5`), and Midnight Navy background (`#131B28`).
+- **One-Click Autofill (`'A'` Shortcut):** Instant one-touch demo data population across multi-field forms (Student Sign Up, Officer Sign Up, Job Drive Creation). Demo values render inline directly beside Golden Amber prompts in Sky Blue brackets `[Value]`, eliminating cumbersome detached tables. Pressing `[Enter]` confirms each value, while typing any key overrides it.
+- **Fail-Safe Database Collision Prevention:** Autofill candidate identities are checked live against MySQL for username, student ID / USN, and email (`users.email`) uniqueness with fail-safe error handling on `SQLException` or retry exhaustion.
 - **Fixed-Width Column Alignment:** Standardized 24-character label column across all forms with user input beginning at column 25.
 - **Form Navigation Shortcuts:** Inline typing corrections supporting `B` / `ESC` (return to previous field), `N` / `TAB` (advance retaining value), and `[Enter]` (confirm/keep existing value).
 - **Clean Plain-Text Fallback:** Automatically detects headless environments and stripped ANSI escape codes when running in automated test pipes or non-interactive terminals.
@@ -216,7 +218,7 @@ setx NEXTSTEP_OFFICER_ACTIVATION_CODE "YOUR_LOCAL_SECRET_CODE"
 ### Per-Session JVM Property Alternative:
 Pass the activation code directly to the JVM when launching:
 ```powershell
-java -Dnextstep.officer.activation.code=YOUR_LOCAL_SECRET_CODE -cp "bin;lib/*" com.nextstep.Main
+java "-Dnextstep.officer.activation.code=YOUR_LOCAL_SECRET_CODE" -cp "bin;lib/*" com.nextstep.Main
 ```
 
 If neither is configured, officer registration is safely disabled with an administrator notice.
@@ -265,12 +267,12 @@ NextStep includes 5 automated regression and integration test suites in `tests/`
 
 | Test Suite | Purpose | Tests | Status |
 | :--- | :--- | :---: | :---: |
-| **`ConsoleInputEdgeCaseTestRunner`** | Pages 1–11 console UI, TrueColour ANSI, `B`/`N`/`ESC`/`TAB` shortcuts, Page 8 company selection | **72** | **PASS** |
-| **`Phase3TestRunner`** | Registration, PBKDF2 hashing, StudentDAO, CompanyDAO, JobDAO | **28** | **PASS** |
-| **`Phase4TestRunner`** | Job browsing, eligibility rules, application states, officer access control | **27** | **PASS** |
-| **`Phase5TestRunner`** | Full CA-3 syllabus, RFC-4180 CSV export/import, presentation visibility controls | **54** | **PASS** |
-| **`Phase6IntegrationTestRunner`** | Transaction rollback atomicity, simulated restart persistence, data sanitization | **31** | **PASS** |
-| **Grand Total** | **Verified Across All 5 Suites** | **212** | **212 / 212 Passed (100%)** |
+| **`ConsoleInputEdgeCaseTestRunner`** | Pages 1–11 console UI, TrueColour ANSI, navigation shortcuts, one-click demo autofill, collision safety, Page 8 10-field job persistence | **89** | **PASS** |
+| **`Phase3TestRunner`** | Registration, PBKDF2 hashing with salt, UserDAO, StudentDAO, CompanyDAO, JobDAO, email uniqueness | **41** | **PASS** |
+| **`Phase4TestRunner`** | Job browsing, 10-field persistence, eligibility rules, application states, officer access control, backward compatibility | **47** | **PASS** |
+| **`Phase5TestRunner`** | Full CA-3 syllabus, Java Streams, Collectors, RFC-4180 CSV export/import, presentation visibility controls | **54** | **PASS** |
+| **`Phase6IntegrationTestRunner`** | Transaction rollback atomicity, simulated restart persistence, data sanitization, seed data idempotency | **31** | **PASS** |
+| **Grand Total** | **Verified Across All 5 Suites** | **262** | **262 / 262 Passed (100%)** |
 
 To compile and run tests, see the comprehensive guide: 👉 [**docs/TESTING.md**](docs/TESTING.md).
 

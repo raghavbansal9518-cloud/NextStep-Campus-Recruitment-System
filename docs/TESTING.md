@@ -3,7 +3,7 @@
 > **Project:** NextStep — Campus Recruitment System  
 > **Course:** Programming in Java (25CSE0202)  
 > **Testing Approach:** Standalone Java SE Regression & Integration Test Suites (Pure JDBC, No External Frameworks)  
-> **Test Status:** 212 / 212 Passed (100% Passing)
+> **Test Status:** 262 / 262 Passed (100% Passing)
 
 ---
 
@@ -24,12 +24,12 @@ The project repository includes 5 comprehensive test runners located in the `tes
 
 | Test Suite | File Path | Scope & Syllabus Focus | Tests | Status |
 | :--- | :--- | :--- | :---: | :---: |
-| **Console Verification** | `tests/ConsoleInputEdgeCaseTestRunner.java` | Pages 1–11 console UI, 24-bit TrueColour ANSI, navigation shortcuts (`B`/`ESC`, `N`/`TAB`, `Enter`), Page 8 company selection from MySQL, edge-case handling | **72** | **PASS** |
-| **Phase 3 Test Suite** | `tests/Phase3TestRunner.java` | Student self-registration, validation rules, PBKDF2 hashing with salt, `StudentDAO`, `CompanyDAO`, `JobDAO` operations | **28** | **PASS** |
-| **Phase 4 Test Suite** | `tests/Phase4TestRunner.java` | Job browsing, eligibility criteria evaluation, job application lifecycle, duplicate prevention, officer authorization checks | **27** | **PASS** |
+| **Console Verification** | `tests/ConsoleInputEdgeCaseTestRunner.java` | Pages 1–11 console UI, TrueColour ANSI, shortcuts (`B`/`ESC`, `N`/`TAB`, `Enter`), Page 8 10-field job drive persistence, one-click autofill (`'A'`), real student identities (Raghav Bansal `2510990750`), collision checks, fail-safe error handling | **89** | **PASS** |
+| **Phase 3 Test Suite** | `tests/Phase3TestRunner.java` | Student self-registration, validation rules, PBKDF2 hashing with salt, `UserDAO.existsByEmail`, `StudentDAO`, `CompanyDAO`, `JobDAO` operations | **41** | **PASS** |
+| **Phase 4 Test Suite** | `tests/Phase4TestRunner.java` | Job browsing, 10-field persistence (CTC, location, backlogs), partner company validation, eligibility rules, application lifecycle, duplicate prevention, backward compatibility | **47** | **PASS** |
 | **Phase 5 Test Suite** | `tests/Phase5TestRunner.java` | Full CA-3 syllabus, Java Streams/Lambdas, RFC-4180 CSV export and import audit archiving, presentation toggles | **54** | **PASS** |
 | **Phase 6 Test Suite** | `tests/Phase6IntegrationTestRunner.java` | Seed data idempotency, end-to-end student & officer workflows, ACID rollback verification (`conn.rollback()`), simulated restart persistence | **31** | **PASS** |
-| **Grand Total** | **All 5 Test Suites** | **Complete System Verification** | **212** | **100% PASS** |
+| **Grand Total** | **All 5 Test Suites** | **Complete System Verification** | **262** | **100% PASS** |
 
 ---
 
@@ -65,32 +65,40 @@ javac -d bin -cp "lib\mysql-connector-j-8.4.0.jar" src\com\nextstep\model\*.java
 
 ### Step 2: Run Individual Test Suites
 
-#### 1. Console Input & UI Verification Suite (72 tests)
-Verifies all 11 console pages, TrueColour rendering, inline shortcut navigation, and Page 8 live company selection:
+#### 1. Console Input & UI Verification Suite (89 tests)
+Verifies all 11 console pages, TrueColour rendering, inline shortcut navigation, Page 8 10-field job persistence, one-click demo autofill, and collision-safe validation:
 ```powershell
-java -Dnextstep.officer.activation.code=CAMPUS_OFFICER_2026 -cp "bin;lib/*" ConsoleInputEdgeCaseTestRunner
+java "-Dnextstep.officer.activation.code=CAMPUS_OFFICER_2026" -cp "bin;lib/*" ConsoleInputEdgeCaseTestRunner
 ```
 
-#### 2. Phase 3 Test Suite (28 tests)
-Verifies authentication, PBKDF2 encryption, and core DAOs:
+The suite includes comprehensive automated tests covering:
+- **Pages 1–11 Screen Rendering & Shortcuts (Tests 1–72):** Fixed 24-character label alignment, color codes, back/forward navigation (`B`/`ESC`, `N`/`TAB`, `Enter`), and input sanitization.
+- **Job Creation & Persistence Verification (Tests FS.1–FS.4):** Verification that Page 8 collects and persists all 10 fields (Company ID, Job Role, Description, CTC LPA, Location, Min CGPA, Max Backlogs, Batch, Branches, Skills), verifies partner company exists in MySQL, and preserves backward-compatible overloads.
+- **One-Click Autofill & Editing (Tests FS.5–FS.6):** Verifies that typing `'A'` populates all 12 student fields with real student identities (Raghav Bansal `2510990750`), displays values inline, and allows manual editing without premature form submission.
+- **Collision Checking & Live Database Safety (Tests FS.7–FS.10):** Verifies student demo generation performs live database checks against `users.username`, `students.student_id`, and `users.email` (`UserDAO.existsByEmail`); verifies placement officer autofill generates `Prof. Raghav Bansal` and safely resolves activation codes from `-Dnextstep.officer.activation.code` or environment variables without hardcoded fallbacks.
+- **Multi-Form Autofill Coverage (Tests FS.11–FS.13):** Verifies one-click autofill on Page 8 Job Drive creation, Page 4 Student Login, and Placement Officer Login.
+- **Fail-Safe Error Resilience (Tests FS.14–FS.16):** Verifies that database connectivity failures (`SQLException`) during collision checking or retry exhaustion stop autofill safely, display clear error messages, and allow manual fallback without returning unverified candidate data.
+
+#### 2. Phase 3 Test Suite (41 tests)
+Verifies student registration, PBKDF2 password derivation with 16-byte random salt, validation rules, `UserDAO.existsByEmail`, `StudentDAO`, `CompanyDAO`, and `JobDAO`:
 ```powershell
 java -cp "bin;lib/*" Phase3TestRunner
 ```
 
-#### 3. Phase 4 Test Suite (27 tests)
-Verifies recruitment workflows, eligibility checks, and application states:
+#### 3. Phase 4 Test Suite (47 tests)
+Verifies recruitment workflows, complete 10-field job persistence, partner company validation, eligibility criteria evaluation, job application states, duplicate application prevention, and backward-compatible service overloads:
 ```powershell
 java -cp "bin;lib/*" Phase4TestRunner
 ```
 
 #### 4. Phase 5 Syllabus Test Suite (54 tests)
-Verifies Java Streams, Collectors, and RFC-4180 CSV I/O:
+Verifies Java Streams, Collectors (`groupingBy`, `partitioningBy`), and RFC-4180 CSV export and import audit archiving:
 ```powershell
 java -cp "bin;lib/*" Phase5TestRunner
 ```
 
 #### 5. Phase 6 Integration & Stability Suite (31 tests)
-Verifies database idempotency, atomic rollbacks, and simulated restart persistence:
+Verifies database idempotency, atomic rollbacks (`conn.rollback()`), and simulated restart persistence:
 ```powershell
 java -cp "bin;lib/*" Phase6IntegrationTestRunner
 ```
@@ -101,7 +109,7 @@ java -cp "bin;lib/*" Phase6IntegrationTestRunner
 
 #### In Windows PowerShell:
 ```powershell
-java -cp "bin;lib/*" Phase3TestRunner; java -cp "bin;lib/*" Phase4TestRunner; java -cp "bin;lib/*" Phase5TestRunner; java -cp "bin;lib/*" Phase6IntegrationTestRunner; java -Dnextstep.officer.activation.code=CAMPUS_OFFICER_2026 -cp "bin;lib/*" ConsoleInputEdgeCaseTestRunner
+java -cp "bin;lib/*" Phase3TestRunner; java -cp "bin;lib/*" Phase4TestRunner; java -cp "bin;lib/*" Phase5TestRunner; java -cp "bin;lib/*" Phase6IntegrationTestRunner; java "-Dnextstep.officer.activation.code=CAMPUS_OFFICER_2026" -cp "bin;lib/*" ConsoleInputEdgeCaseTestRunner
 ```
 
 ---

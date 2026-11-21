@@ -81,7 +81,7 @@ NextStep follows a clean **Layered Architecture (Separation of Concerns)**:
 ## 4. Classes & Their Core Responsibilities
 
 ### 1. Presentation & Configuration
-- **`com.nextstep.Main`**: Application entry point. Houses the console menus, role-based session routing, input sanitization helpers (`readInt`, `readDouble`, `readNonEmptyString`), and first-run officer provisioning prompt.
+- **`com.nextstep.Main`**: Application entry point. Houses the console menus, role-based session routing, one-click demo autofill, input sanitization helpers (`readInt`, `readDouble`, `readNonEmptyString`), and first-run officer provisioning prompt. Supports Constructor Dependency Injection (`Main(Scanner, AuthService, RecruitmentService, UserDAO, StudentDAO, CompanyDAO, JobDAO, ApplicationDAO)`), enabling isolated testing and mock DAO injection.
 - **`com.nextstep.util.PresentationConfig`**: Central configuration flag toggle for academic presentations (enables/disables specific menu choices without code edits).
 
 ### 2. Service Layer (Business Rules)
@@ -89,10 +89,10 @@ NextStep follows a clean **Layered Architecture (Separation of Concerns)**:
 - **`com.nextstep.service.RecruitmentService`**: The core recruitment engine. Evaluates academic/skill eligibility, manages application submissions, enforces RBAC checks, executes Java Streams and Collectors, and handles CSV export/archival.
 
 ### 3. Data Access Layer (DAOs)
-- **`com.nextstep.dao.UserDAO`**: Queries and persists records in `users`.
-- **`com.nextstep.dao.StudentDAO`**: Persists records in `students` and manages normalized student skills in `student_skills`.
-- **`com.nextstep.dao.CompanyDAO`**: Read queries for partner companies in `companies`.
-- **`com.nextstep.dao.JobDAO`**: Queries job openings in `jobs`, populating eligible branches and required skills via JOINs.
+- **`com.nextstep.dao.UserDAO`**: Queries and persists records in `users`. Implements `existsByUsername(username)` and `existsByEmail(email)` querying the unique indexes in MySQL for safe duplicate checking.
+- **`com.nextstep.dao.StudentDAO`**: Persists records in `students`, verifies `existsByStudentId(studentId)`, and manages normalized student skills in `student_skills`.
+- **`com.nextstep.dao.CompanyDAO`**: Read queries for partner companies in `companies` (`findAllCompanies()`, `findCompanyById()`).
+- **`com.nextstep.dao.JobDAO`**: Queries and persists job openings in `jobs`, persisting 10 critical parameters (role, description, CTC, location, min CGPA, max backlogs, batch) and populating eligible branches and required skills via normalized relational tables and JOINs.
 - **`com.nextstep.dao.ApplicationDAO`**: Manages recruitment applications in `applications`, handles status updates, joins applicant metadata, and traps duplicate submissions.
 
 ### 4. Utilities
@@ -366,3 +366,15 @@ Produces: `{true=2, false=22}` (2 placed, 22 in-progress).
 
 ### Q12: How is Role-Based Access Control (RBAC) enforced?
 **Answer:** At login, the user's role is stored in their session. When a placement officer operation is invoked (e.g. `updateApplicationStatus` or `exportApplicationsToCsv`), the service layer verifies `actor.getRole() == Role.PLACEMENT_OFFICER`. If an unauthorized student or null user attempts the operation, a `SecurityException` is thrown.
+
+### Q13: How does the one-click demo autofill feature work, and how are database collisions prevented?
+**Answer:** Entering `'A'` on multi-field forms instantly loads pre-configured demo profiles with realistic campus identities (e.g., Raghav Bansal `2510990750`). To prevent duplicate key violations in MySQL, the generation methods (`getStudentDemoData()`, `getOfficerDemoData()`) query `userDAO.existsByUsername()`, `studentDAO.existsByStudentId()`, and `userDAO.existsByEmail()` inside a loop of up to 1,000 attempts with dynamic numeric seeds. If uniqueness cannot be confirmed due to an `SQLException` or exhausted attempts, autofill stops fail-safely and informs the user rather than populating unverified data.
+
+### Q14: How does NextStep achieve fast typing and responsive console input without lag?
+**Answer:** Form input uses standard line-buffered stream reading (`scanner.nextLine()`) without spawning OS sub-processes or redrawing the entire screen per keystroke. Validation runs after completing each field rather than continuously interrupting typing. Pre-filled values render inline directly beside Golden Amber prompts in Sky Blue brackets `[Value]`, allowing users to confirm with `[Enter]` or override with custom text instantly.
+
+### Q15: How does the job drive creation process persist all 10 fields and maintain referential integrity?
+**Answer:** On Page 8, partner companies are queried live from MySQL (`companyDAO.findAllCompanies()`). The officer specifies the Company ID along with 9 additional parameters: title, description, CTC (LPA), location, minimum CGPA, max backlogs, eligible branches, required technical skills, and target graduation batch. `JobDAO.createJob()` persists the job atomically across `jobs`, `job_eligible_branches`, and `job_required_skills` using parameterized queries and batch execution.
+
+### Q16: How is the system verified without external testing frameworks like JUnit?
+**Answer:** NextStep utilizes 5 standalone regression and integration test runners in `tests/` (`ConsoleInputEdgeCaseTestRunner`, `Phase3TestRunner`, `Phase4TestRunner`, `Phase5TestRunner`, `Phase6IntegrationTestRunner`). They execute real JDBC transactions against MySQL, verifying ACID rollbacks, unique constraints, and UI edge cases using pure Java assertions, reporting 262/262 passed tests (100% pass rate).

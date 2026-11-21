@@ -132,7 +132,7 @@ java -cp "bin;lib\mysql-connector-j-8.4.0.jar" com.nextstep.Main
 
 #### With JVM System Property for Activation Code (Per-Session Override):
 ```powershell
-java -Dnextstep.officer.activation.code=CAMPUS_OFFICER_2026 -cp "bin;lib/*" com.nextstep.Main
+java "-Dnextstep.officer.activation.code=CAMPUS_OFFICER_2026" -cp "bin;lib/*" com.nextstep.Main
 ```
 
 ---
@@ -216,24 +216,30 @@ flowchart TD
 - **Screen Header:** `NEXTSTEP | STUDENT PORTAL — STUDENT SIGN UP`
 - **Purpose:** Self-service registration for college students.
 - **Input Fields (all aligned at column 25):**
-  1. `Student ID:             ` (University Roll No / USN, e.g., `24BCE1001`)
-  2. `Full Name:              ` (Student's full legal name)
-  3. `Email:                  ` (Valid RFC-compliant email containing `@` and a domain)
-  4. `Phone Number:           ` (10-digit mobile number)
+  1. `Student ID:             ` (University Roll No / USN, e.g., `2510990750`)
+  2. `Full Name:              ` (Student's full legal name, e.g., `Raghav Bansal`)
+  3. `Email:                  ` (Valid RFC-compliant email, e.g., `raghav.2510990750@university.edu`)
+  4. `Phone Number:           ` (10-digit mobile number, e.g., `9876543210`)
   5. `Branch:                 ` (e.g., `Computer Science`, `Information Technology`)
-  6. `CGPA:                   ` (Decimal between `0.00` and `10.00`)
-  7. `Technical Skills:       ` (Comma-separated list, e.g., `Java, SQL, Git`)
-  8. `Active Backlogs:        ` (Integer greater than or equal to zero)
-  9. `Graduation Year:        ` (Integer between `2020` and `2035`)
-  10. `Username:               ` (3 to 30 alphanumeric characters)
-  11. `Password:               ` (Masked input, minimum 6 characters)
+  6. `CGPA:                   ` (Decimal between `0.00` and `10.00`, e.g., `8.75`)
+  7. `Technical Skills:       ` (Comma-separated list, e.g., `Java, Spring Boot, MySQL, Git, REST APIs, Microservices`)
+  8. `Active Backlogs:        ` (Integer greater than or equal to zero, e.g., `0`)
+  9. `Graduation Year:        ` (Target graduation year, e.g., `2026`)
+  10. `Username:               ` (3 to 30 alphanumeric characters, e.g., `raghav_2510`)
+  11. `Password:               ` (Masked input, minimum 6 characters, e.g., `Raghav@2026`)
   12. `Confirm Password:       ` (Masked input, must match Password)
+- **One-Click Demo Autofill (`'A'` Shortcut):**
+  - Type `'A'` at any prompt to instantly populate all 12 fields with verified real student profile data (Raghav Bansal `2510990750`, Dhruv Sharma, Keshav Gupta, or Sahaj Patel).
+  - Pre-filled values render inline directly beside Golden Amber prompts in Sky Blue brackets `[Value]`.
+  - Press `[Enter]` on any prompt to accept and retain the autofilled value.
+  - Type any characters to override with custom input.
+  - **Live Collision Safety:** The system dynamically queries MySQL (`users.username`, `students.student_id`, and `users.email`) up to 1,000 attempts to guarantee uniqueness. If a database error occurs, autofill safely aborts with an error notice rather than returning unverified data.
 - **Form Navigation Shortcuts:**
   - Type `B` or `ESC` to return to the previous field and edit typos.
   - Type `N` or `TAB` to move forward retaining the existing entry.
   - Press `[Enter]` on any field that already has a value to confirm and keep it.
 - **Footer Actions:**
-  - `1. CREATE ACCOUNT` — Validates inputs, encrypts password via PBKDF2 with 16-byte random salt, and persists records atomically in MySQL (`users` and `students` tables).
+  - `1. CREATE ACCOUNT` — Validates inputs, encrypts password via PBKDF2 with 16-byte random salt, and persists records atomically in MySQL (`users`, `students`, and `student_skills` tables).
   - `0. BACK` — Aborts account creation and returns safely to the Student Menu.
 
 ---
@@ -245,6 +251,9 @@ flowchart TD
 - **Input Fields:**
   1. `Student ID / Username:  ` (Accepts either the student's username or USN)
   2. `Password:               ` (Securely masked via `System.console().readPassword()`)
+- **One-Click Demo Autofill (`'A'` Shortcut):**
+  - Type `'A'` to immediately populate demo student credentials (`raghav_2510` / `Raghav@2026`).
+  - Press `[Enter]` on both fields to proceed to login. Does NOT auto-submit.
 - **Actions:**
   - `1. SIGN IN` — Verifies PBKDF2 hash against `users` table, verifies role equals `STUDENT`, loads academic profile from `students`, and opens Page 6.
   - `0. BACK` — Returns to Student Menu.
@@ -257,14 +266,18 @@ flowchart TD
 - **Screen Header:** `NEXTSTEP | PLACEMENT OFFICER PORTAL — OFFICER SIGN UP`
 - **Purpose:** Authorized administrator onboarding.
 - **Input Fields:**
-  1. `Officer ID:             ` (Administrative employee code, e.g., `OFF-2026-01`)
-  2. `Full Name:              ` (Officer's full name)
-  3. `Official Email:         ` (Official campus email)
-  4. `Username:               ` (Unique officer username)
-  5. `Password:               ` (Masked password, min 6 characters)
+  1. `Officer ID:             ` (Administrative employee code, e.g., `OFF-2026-101`)
+  2. `Full Name:              ` (Officer's full name, e.g., `Prof. Raghav Bansal`)
+  3. `Official Email:         ` (Official campus email, e.g., `tpo.raghav@university.edu`)
+  4. `Username:               ` (Unique officer username, e.g., `officer_raghav`)
+  5. `Password:               ` (Masked password, min 6 characters, e.g., `Officer@Pass2026`)
   6. `Confirm Password:       ` (Masked confirmation)
   7. `Activation Code:        ` (Masked administrative secret)
-- **Security Check:** The activation code must match `NEXTSTEP_OFFICER_ACTIVATION_CODE` or `-Dnextstep.officer.activation.code`. If unconfigured, registration is disabled. If incorrect, registration is rejected.
+- **One-Click Demo Autofill (`'A'` Shortcut):**
+  - Type `'A'` to populate administrative profile fields.
+  - Username and email uniqueness are verified live against MySQL.
+  - The activation code is populated strictly from `-Dnextstep.officer.activation.code` or `NEXTSTEP_OFFICER_ACTIVATION_CODE`. If unconfigured, the field remains empty with an explanatory notice instead of generating a guessable default.
+- **Security Check:** The activation code must match the configured environment variable or JVM property. If unconfigured, registration is safely disabled. If incorrect, registration is rejected.
 - **Actions:**
   - `1. CREATE ACCOUNT` — Persists officer user account with `PLACEMENT_OFFICER` role.
   - `0. BACK` — Returns to Placement Officer Menu.
@@ -309,7 +322,7 @@ flowchart TD
     [ID 3] Quantum Robotics Labs          | AI & Robotics          | Hyderabad, TS
   ```
 - **Input Fields:**
-  1. `Company ID:             ` (Select an ID from the displayed partner list)
+  1. `Company ID:             ` (Select an ID from the displayed partner list, e.g., `1`)
   2. `Job Title:              ` (e.g., `Associate Cloud Engineer`)
   3. `Job Description:        ` (e.g., `Design, build, and maintain cloud infrastructure on AWS and GCP.`)
   4. `CTC (LPA):              ` (Package in LPA, e.g., `12.50`)
@@ -317,8 +330,12 @@ flowchart TD
   6. `Minimum CGPA:           ` (Cutoff, e.g., `7.20`)
   7. `Max Active Backlogs:    ` (Maximum allowed active backlogs, e.g., `0`)
   8. `Eligible Branches:      ` (Comma-separated, e.g., `Computer Science, Information Technology`)
-  9. `Required Skills:        ` (Comma-separated, e.g., `Java, SQL, Linux, Git`)
+  9. `Required Skills:        ` (Comma-separated, e.g., `Java, SQL, Linux, Git, Docker`)
   10. `Graduation Year:        ` (Target batch, e.g., `2026`)
+- **One-Click Demo Autofill (`'A'` Shortcut):**
+  - Type `'A'` at any prompt to automatically query available partner companies from MySQL and populate all 10 fields with valid demo drive parameters.
+  - Values render inline directly beside Golden Amber prompts in Sky Blue brackets `[Value]`.
+  - Press `[Enter]` on each field to retain the values.
 - **Actions:**
   - `1. PUBLISH JOB` — Atomically inserts `jobs`, `job_eligible_branches`, and `job_required_skills` records into MySQL.
   - `0. CANCEL` — Aborts publishing without creating database records.
@@ -383,22 +400,74 @@ flowchart TD
 
 ## D. Ready-to-Use Demonstration Data
 
-Use these prepared, copy-ready records during live evaluation presentations. All values strictly conform to database types, constraints, and validation regexes.
+Use these prepared, copy-ready records during live evaluation presentations. All values strictly conform to database types, constraints, and validation regexes. Alternatively, simply type `'A'` on any form prompt to autofill these verified profiles instantly!
 
 ---
 
-### 1. Student Registration Data (Passes All Validations)
+### 1. Student Registration Demo Profiles (Passes All Validations)
 
+#### Profile 1: Raghav Bansal (Primary Demo Candidate — CS Stream)
 ```text
-Student ID:             24BCE1050
-Full Name:              Rohan V. Verma
-Email:                  rohan.verma@campus.edu
+Student ID:             2510990750
+Full Name:              Raghav Bansal
+Email:                  raghav.2510990750@university.edu
+Phone Number:           9876543210
 Branch:                 Computer Science
-CGPA:                   8.65
+CGPA:                   8.75
+Technical Skills:       Java, Spring Boot, MySQL, Git, REST APIs, Microservices
+Active Backlogs:        0
 Graduation Year:        2026
-Username:               rohan_verma
-Password:               Campus@2026
-Confirm Password:       Campus@2026
+Username:               raghav_2510
+Password:               Raghav@2026
+Confirm Password:       Raghav@2026
+```
+
+#### Profile 2: Dhruv Sharma (IT Stream)
+```text
+Student ID:             2510990751
+Full Name:              Dhruv Sharma
+Email:                  dhruv.2510990751@university.edu
+Phone Number:           9876543211
+Branch:                 Information Technology
+CGPA:                   8.50
+Technical Skills:       Java, Python, Docker, Kubernetes, AWS, SQL
+Active Backlogs:        0
+Graduation Year:        2026
+Username:               dhruv_2510
+Password:               Dhruv@2026
+Confirm Password:       Dhruv@2026
+```
+
+#### Profile 3: Keshav Gupta (High CGPA Candidate)
+```text
+Student ID:             2510990752
+Full Name:              Keshav Gupta
+Email:                  keshav.2510990752@university.edu
+Phone Number:           9876543212
+Branch:                 Computer Science
+CGPA:                   8.90
+Technical Skills:       Java, DSA, System Design, React, Node.js, SQL
+Active Backlogs:        0
+Graduation Year:        2026
+Username:               keshav_2510
+Password:               Keshav@2026
+Confirm Password:       Keshav@2026
+```
+
+#### Profile 4: Sahaj Patel (ECE Stream / 1 Backlog — For Ineligibility Testing)
+```text
+Student ID:             2510990753
+Full Name:              Sahaj Patel
+Email:                  sahaj.2510990753@university.edu
+Phone Number:           9876543213
+Branch:                 Electronics & Communication
+CGPA:                   8.20
+Technical Skills:       C++, Java, Embedded Systems, IoT, Linux, Git
+Active Backlogs:        1
+Graduation Year:        2026
+Username:               sahaj_2510
+Password:               Sahaj@2026
+Confirm Password:       Sahaj@2026
 ```
 
 ---
@@ -406,15 +475,15 @@ Confirm Password:       Campus@2026
 ### 2. Placement Officer Registration Data
 
 ```text
-Officer ID:             OFF-2026-08
-Full Name:              Dr. Vikram Malhotra
-Official Email:         vikram.malhotra@campus.edu
-Username:               officer_vikram
-Password:               Officer@Secure2026
-Confirm Password:       Officer@Secure2026
+Officer ID:             OFF-2026-01
+Full Name:              Prof. Raghav Bansal
+Official Email:         tpo.raghav@university.edu
+Username:               officer_raghav
+Password:               Officer@Pass2026
+Confirm Password:       Officer@Pass2026
 Activation Code:        CAMPUS_OFFICER_2026
 ```
-*(Ensure `CAMPUS_OFFICER_2026` matches your configured environment variable before presenting).*
+*(Ensure `CAMPUS_OFFICER_2026` matches your configured environment variable or `-Dnextstep.officer.activation.code` before presenting).*
 
 ---
 
@@ -431,7 +500,7 @@ Job Location:           Bengaluru, KA
 Minimum CGPA:           7.20
 Max Active Backlogs:    0
 Eligible Branches:      Computer Science, Information Technology
-Required Skills:        Java, SQL, Linux, Git
+Required Skills:        Java, SQL, Linux, Git, Docker
 Graduation Year:        2026
 ```
 
@@ -440,27 +509,27 @@ Graduation Year:        2026
 ### 4. Eligibility Demonstration: Pass vs. Fail Case
 
 #### Case A: Eligible Student (PASS)
-- **Student Profile:**
+- **Student Profile:** Raghav Bansal (`2510990750`)
   - Branch: `Computer Science`
-  - CGPA: `8.50`
+  - CGPA: `8.75`
   - Active Backlogs: `0`
   - Graduation Year: `2026`
-- **Target Drive:** Job ID `1` (`Junior Backend Engineer` at Nexis Cloud)
+- **Target Drive:** Job ID `1` (`Junior Backend Engineer` at Nexis Cloud Technologies)
   - Requires: Min CGPA `7.50`, Max Backlogs `0`, Branch `Computer Science` / `IT`, Year `2026`.
 - **Expected Result on Page 9 Part A:** All criteria display `[PASS]`, and overall banner displays `OVERALL RESULT: ELIGIBLE` in green.
 
 #### Case B: Ineligible Student (FAIL)
-- **Student Profile:**
-  - Branch: `Mechanical Engineering`
-  - CGPA: `6.40`
-  - Active Backlogs: `2`
-  - Graduation Year: `2027`
-- **Target Drive:** Job ID `1`
+- **Student Profile:** Sahaj Patel (`2510990753`)
+  - Branch: `Electronics & Communication`
+  - CGPA: `8.20`
+  - Active Backlogs: `1`
+  - Graduation Year: `2026`
+- **Target Drive:** Job ID `1` (Requires: Max Backlogs `0`, Branch `CSE, IT`)
 - **Expected Result on Page 9 Part A:**
-  - CGPA (`6.40 < 7.50`): `[FAIL]`
-  - Backlogs (`2 > 0`): `[FAIL]`
-  - Branch (`Mechanical Engineering` not in `CSE, IT`): `[FAIL]`
-  - Graduation Year (`2027 != 2026`): `[FAIL]`
+  - CGPA (`8.20 >= 7.50`): `[PASS]`
+  - Backlogs (`1 > 0`): `[FAIL]`
+  - Branch (`Electronics & Communication` not in `CSE, IT`): `[FAIL]`
+  - Graduation Year (`2026 == 2026`): `[PASS]`
   - Overall Banner displays `OVERALL RESULT: NOT ELIGIBLE` in red. Submission is blocked on Page 10.
 
 ---
@@ -468,17 +537,17 @@ Graduation Year:        2026
 ### 5. Skill Match Demonstration (Page 9 Part B)
 
 - **Job Required Skills:** `Java, SQL, OOP, Git` (Total: 4)
-- **Student Skills:** `Java, SQL, Python, DSA, Git`
+- **Student Skills (Raghav Bansal):** `Java, Spring Boot, MySQL, Git, REST APIs, Microservices`
 - **Calculated Result:**
-  - Matched: `Java` [MATCH], `SQL` [MATCH], `Git` [MATCH] (3 matched)
-  - Missing: `OOP` [MISSING] (1 missing)
-  - Match Percentage: `Math.round((3 / 4) * 100) = 75%`
+  - Matched: `Java` [MATCH], `Git` [MATCH] (2 matched)
+  - Missing: `SQL`, `OOP` [MISSING]
+  - Match Percentage: `Math.round((2 / 4) * 100) = 50%`
 
 ---
 
 ### 6. Application Lifecycle & Duplicate Prevention Demonstration
 
-1. Sign in as student `rohan_verma`.
+1. Sign in as student `raghav_2510`.
 2. Choose Option `6. Apply for a Job` and input Job ID `1`.
 3. Confirm submission on Page 10. Application ID (e.g., `85`) is generated with status `APPLIED`.
 4. Immediately attempt to apply for Job ID `1` again.
@@ -490,7 +559,7 @@ Graduation Year:        2026
 
 ### 7. Status Advancement Demonstration (Placement Officer)
 
-1. Sign out of student session and sign in as Placement Officer (`officer_vikram`).
+1. Sign out of student session and sign in as Placement Officer (`officer_raghav`).
 2. Select Option `4. View Applications` to see the new application listed as `APPLIED`.
 3. Select Option `5. Update Application Status`:
    - Enter Application ID: `<ID>`
@@ -644,12 +713,12 @@ Use this proven sequence when presenting NextStep to evaluators.
 
 #### 2. Welcome Page & Student Sign Up (Minute 1:00 - 2:30)
 - **Action:** Select `1. Continue` → `1. Student` → `1. Student Registration`.
-- **Action:** Enter demo student data (`24BCE1050`, `Rohan V. Verma`, etc.).
+- **Action:** Press `'A'` to demonstrate One-Click Demo Autofill with verified student profile (Raghav Bansal, `2510990750`). Press `[Enter]` to step through and confirm fields.
 - **Spoken Talking Point:**
-  > *"Here on Page 3 is the Student Sign Up screen. Notice the consistent 24-character fixed label column and aligned value input. If the user makes a typo, our form navigation shortcuts allow pressing 'B' or 'ESC' to return to previous fields without losing data. On submission, the password is encrypted using PBKDF2 with HMAC-SHA256 and a 16-byte cryptographic salt."*
+  > *"Here on Page 3 is the Student Sign Up screen. Notice the consistent 24-character fixed label column and aligned value input. To make live evaluation fast and effortless, our form features one-click demo autofill by entering 'A' at any prompt, which populates verified demo records with real student identities like Raghav Bansal directly inline beside our Golden Amber prompts in Sky Blue brackets. Behind the scenes, the system verifies username, student ID, and email uniqueness against live MySQL records before populating. On submission, the password is encrypted using salted PBKDF2 with HMAC-SHA256 and a 16-byte cryptographic salt."*
 
 #### 3. Student Dashboard & Automated Eligibility (Minute 2:30 - 4:00)
-- **Action:** Sign in on Page 4 and reach Page 6 (Student Dashboard).
+- **Action:** Sign in on Page 4 (press `'A'` for quick demo login credentials) and reach Page 6 (Student Dashboard).
 - **Action:** Select Option `4. Check Job Eligibility` and enter Job ID `1`.
 - **Spoken Talking Point:**
   > *"On Page 6, the dashboard displays personal academic information loaded from MySQL. When we check job eligibility for Job ID 1, our automated Eligibility Engine compares student CGPA, backlogs, branch, and graduation year against the drive requirements. Next, selecting Option 1 transitions to our Skill Match analysis, which computes real-time skill alignment percentage."*
@@ -661,11 +730,11 @@ Use this proven sequence when presenting NextStep to evaluators.
   > *"Page 10 presents a final confirmation screen. When confirmed, an application record is created with initial status 'APPLIED'. If the student tries applying again, the application catches the unique constraint violation at both the service layer and database schema level, preventing duplicate entries."*
 
 #### 5. Placement Officer Operations & Status Lifecycle (Minute 5:30 - 7:30)
-- **Action:** Sign out (`0`), select `2. Placement Officer` → sign in as Officer.
+- **Action:** Sign out (`0`), select `2. Placement Officer` → sign in as Officer (e.g. `officer_raghav`).
 - **Action:** Open Option `4. View Applications` (Page 11) to see the application.
 - **Action:** Select Option `5. Update Application Status` → advance to `SHORTLISTED`.
 - **Spoken Talking Point:**
-  > *"Signing into the Placement Officer portal requires role verification. On Page 11, the officer views all applicant records with their roll numbers and statuses. When the officer advances candidate Rohan to 'SHORTLISTED', the status updates in MySQL immediately and is reflected on the student's next login."*
+  > *"Signing into the Placement Officer portal requires role verification. On Page 11, the officer views all applicant records with their roll numbers and statuses. When the officer advances candidate Raghav to 'SHORTLISTED', the status updates in MySQL immediately and is reflected on the student's next login."*
 
 #### 6. Summary & Viva Q&A Ready (Minute 7:30 - 9:00)
 - **Spoken Talking Point:**
