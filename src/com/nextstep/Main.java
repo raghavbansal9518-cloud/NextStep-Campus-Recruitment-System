@@ -4,6 +4,7 @@ import com.nextstep.dao.ApplicationDAO;
 import com.nextstep.dao.CompanyDAO;
 import com.nextstep.dao.JobDAO;
 import com.nextstep.dao.StudentDAO;
+import com.nextstep.dao.UserDAO;
 import com.nextstep.model.Application;
 import com.nextstep.model.ApplicationStatus;
 import com.nextstep.model.Company;
@@ -52,6 +53,7 @@ public class Main {
     private final StudentDAO studentDAO;
     private final ApplicationDAO applicationDAO;
     private final CompanyDAO companyDAO;
+    private final UserDAO userDAO;
 
     public Main() {
         this.authService = new AuthService();
@@ -60,6 +62,7 @@ public class Main {
         this.studentDAO = new StudentDAO();
         this.applicationDAO = new ApplicationDAO();
         this.companyDAO = new CompanyDAO();
+        this.userDAO = new UserDAO();
     }
 
     public static void main(String[] args) {
@@ -500,10 +503,23 @@ public class Main {
                 }
                 System.out.println();
                 System.out.println(ConsoleTheme.success("[AUTO-FILL] Form populated with valid demo data:"));
+                boolean hasUnsetActivation = false;
                 for (int k = 0; k < n; k++) {
                     boolean maskedField = isPassword != null && k < isPassword.length && isPassword[k];
-                    String displayVal = maskedField ? "********" : values[k];
+                    String displayVal;
+                    if (prompts[k].contains("Activation Code") && (values[k] == null || values[k].trim().isEmpty())) {
+                        displayVal = ConsoleTheme.warn("[NOT CONFIGURED — ENTER MANUALLY]");
+                        hasUnsetActivation = true;
+                    } else {
+                        displayVal = maskedField ? "********" : values[k];
+                    }
                     System.out.printf("  %-24s%s%n", prompts[k].trim(), displayVal);
+                }
+                if (hasUnsetActivation) {
+                    System.out.println();
+                    System.out.println(ConsoleTheme.warn("  [NOTICE] Officer activation code is not configured in system environment."));
+                    System.out.println(ConsoleTheme.dim("  (Set property '" + AuthService.ACTIVATION_CODE_PROP + "' or env '" + AuthService.ACTIVATION_CODE_ENV + "')."));
+                    System.out.println(ConsoleTheme.dim("  Activation code was NOT auto-filled with any default secret; enter it manually to proceed."));
                 }
                 System.out.println();
                 System.out.println(ConsoleTheme.dim("  All fields auto-filled! Press Enter to accept, or enter field number (1-" + n + ") to edit:"));
@@ -591,10 +607,28 @@ public class Main {
         return true;
     }
 
-    private String[] getStudentDemoData() {
+    public String[] getStudentDemoData() {
         int seed = (int) (System.currentTimeMillis() % 900) + 100;
+        String studentId = "24MCA" + seed;
+        String username = "aarav_" + seed;
+        int attempts = 0;
+        while (attempts < 1000) {
+            try {
+                boolean idExists = (studentDAO != null) && studentDAO.existsByStudentId(studentId);
+                boolean userExists = (userDAO != null) && userDAO.existsByUsername(username);
+                if (!idExists && !userExists) {
+                    break;
+                }
+            } catch (SQLException e) {
+                break;
+            }
+            seed = (seed + 1 > 9999) ? 100 : seed + 1;
+            studentId = "24MCA" + seed;
+            username = "aarav_" + seed;
+            attempts++;
+        }
         return new String[] {
-                "24MCA" + seed,
+                studentId,
                 "Aarav Sharma",
                 "aarav." + seed + "@university.edu",
                 "9876543210",
@@ -603,29 +637,46 @@ public class Main {
                 "Java, Spring Boot, SQL, Git, Docker",
                 "0",
                 "2026",
-                "aarav_" + seed,
+                username,
                 "Password@123",
                 "Password@123"
         };
     }
 
-    private String[] getOfficerDemoData() {
+    public String[] getOfficerDemoData() {
         int seed = (int) (System.currentTimeMillis() % 900) + 100;
+        String officerId = "OFF-2026-" + seed;
+        String username = "officer_" + seed;
+        int attempts = 0;
+        while (attempts < 1000) {
+            try {
+                boolean userExists = (userDAO != null) && userDAO.existsByUsername(username);
+                if (!userExists) {
+                    break;
+                }
+            } catch (SQLException e) {
+                break;
+            }
+            seed = (seed + 1 > 9999) ? 100 : seed + 1;
+            officerId = "OFF-2026-" + seed;
+            username = "officer_" + seed;
+            attempts++;
+        }
+
         String actCode = System.getProperty(AuthService.ACTIVATION_CODE_PROP);
         if (actCode == null || actCode.trim().isEmpty()) {
             actCode = System.getenv(AuthService.ACTIVATION_CODE_ENV);
         }
-        if (actCode == null || actCode.trim().isEmpty()) {
-            actCode = "CAMPUS_OFFICER_2026";
-        }
+        String resolvedCode = (actCode != null && !actCode.trim().isEmpty()) ? actCode.trim() : "";
+
         return new String[] {
-                "OFF-2026-" + seed,
+                officerId,
                 "Dr. Arvind Sharma",
                 "tpo." + seed + "@university.edu",
-                "officer_" + seed,
+                username,
                 "Officer@123",
                 "Officer@123",
-                actCode.trim()
+                resolvedCode
         };
     }
 

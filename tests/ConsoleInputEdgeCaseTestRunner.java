@@ -2501,6 +2501,119 @@ public class ConsoleInputEdgeCaseTestRunner {
                 }
             }
 
+            {
+                // Test FS.8: Officer autofill with unconfigured activation code leaves secret empty, displays warning & notice
+                System.clearProperty(AuthService.ACTIVATION_CODE_PROP);
+                ByteArrayOutputStream out = new ByteArrayOutputStream();
+                String inputs = String.join("\n",
+                        "1",               // Page 1 -> Page 2
+                        "2",               // Page 2 -> Placement Officer Menu
+                        "1",               // Officer Menu -> Page 5 (Sign Up)
+                        "A",               // Shortcut 'A': Auto-Fill Demo Data
+                        "",                // Enter to accept auto-filled fields
+                        "0",               // Option 0: Cancel / Back at action menu
+                        "0",               // Officer Menu -> Page 2
+                        "0",               // Page 2 -> Page 1
+                        "0"                // Page 1 -> Exit
+                ) + "\n";
+                System.setIn(new ByteArrayInputStream(inputs.getBytes(StandardCharsets.UTF_8)));
+                System.setOut(new PrintStream(out, true, StandardCharsets.UTF_8));
+
+                Main app = new Main();
+                app.run(new Scanner(System.in));
+                System.setOut(originalOut);
+
+                String outStr = out.toString(StandardCharsets.UTF_8);
+                boolean hasAutoFill = outStr.contains("[AUTO-FILL] Form populated with valid demo data:");
+                boolean hasWarningNotice = outStr.contains("[NOT CONFIGURED — ENTER MANUALLY]");
+                boolean hasNotice = outStr.contains("Officer activation code is not configured in system environment");
+                boolean noDefaultSecret = !outStr.contains("CAMPUS_OFFICER_2026");
+                boolean notSubmitted = outStr.contains("1. CREATE ACCOUNT") && outStr.contains("0. BACK");
+
+                if (hasAutoFill && hasWarningNotice && hasNotice && noDefaultSecret && notSubmitted) {
+                    pass("FS.8: Officer autofill without configured activation code displays clear warning and omits default secret");
+                } else {
+                    fail("FS.8", "Officer autofill leaked default secret or failed to warn about unconfigured code");
+                }
+            }
+
+            {
+                // Test FS.9: Student demo identifier generation checks database and prevents collisions for student ID and username
+                Main app = new Main();
+                StudentDAO studentDAO = new StudentDAO();
+                UserDAO userDAO = new UserDAO();
+
+                String[] demo1 = app.getStudentDemoData();
+                String studentId1 = demo1[0];
+                String username1 = demo1[9];
+
+                // Ensure demo1 does not collide with database
+                boolean noInitialCollision = !studentDAO.existsByStudentId(studentId1) && !userDAO.existsByUsername(username1);
+
+                // Insert a temporary user matching username1 to simulate an existing collision
+                User tempUser = new User(username1, "dummyHashPlaceHolder1234567890", Role.STUDENT, "collision.test@university.edu");
+                boolean inserted = userDAO.createUser(tempUser);
+
+                // Calling getStudentDemoData() now must detect the collision and advance to a non-colliding identifier
+                String[] demo2 = app.getStudentDemoData();
+                String studentId2 = demo2[0];
+                String username2 = demo2[9];
+
+                boolean avoidedCollision = !username2.equals(username1) && !userDAO.existsByUsername(username2) && !studentDAO.existsByStudentId(studentId2);
+
+                // Cleanup temporary collision record
+                try (Connection conn = DatabaseConnection.getConnection();
+                     PreparedStatement delStmt = conn.prepareStatement("DELETE FROM users WHERE id = ?")) {
+                    delStmt.setInt(1, tempUser.getId());
+                    delStmt.executeUpdate();
+                }
+
+                if (noInitialCollision && inserted && avoidedCollision) {
+                    pass("FS.9: Student demo identifier generation detects existing database records and prevents ID & username collisions");
+                } else {
+                    fail("FS.9", "Student demo identifier generation collided with existing records: noInitialCollision=" + noInitialCollision + ", inserted=" + inserted + ", avoidedCollision=" + avoidedCollision);
+                }
+            }
+
+            {
+                // Test FS.10: Officer autofill populates configured activation code when present in system property
+                String testSecret = "AUTH_CORRECT_SECRET_" + System.currentTimeMillis();
+                System.setProperty(AuthService.ACTIVATION_CODE_PROP, testSecret);
+                try {
+                    ByteArrayOutputStream out = new ByteArrayOutputStream();
+                    String inputs = String.join("\n",
+                            "1",               // Page 1 -> Page 2
+                            "2",               // Page 2 -> Placement Officer Menu
+                            "1",               // Officer Menu -> Page 5 (Sign Up)
+                            "A",               // Shortcut 'A': Auto-Fill Demo Data
+                            "",                // Enter to accept auto-filled fields
+                            "0",               // Option 0: Cancel / Back at action menu
+                            "0",               // Officer Menu -> Page 2
+                            "0",               // Page 2 -> Page 1
+                            "0"                // Page 1 -> Exit
+                    ) + "\n";
+                    System.setIn(new ByteArrayInputStream(inputs.getBytes(StandardCharsets.UTF_8)));
+                    System.setOut(new PrintStream(out, true, StandardCharsets.UTF_8));
+
+                    Main app = new Main();
+                    app.run(new Scanner(System.in));
+                    System.setOut(originalOut);
+
+                    String outStr = out.toString(StandardCharsets.UTF_8);
+                    boolean hasAutoFill = outStr.contains("[AUTO-FILL] Form populated with valid demo data:");
+                    boolean noWarningNotice = !outStr.contains("[NOT CONFIGURED — ENTER MANUALLY]");
+                    boolean noDefaultSecret = !outStr.contains("CAMPUS_OFFICER_2026");
+
+                    if (hasAutoFill && noWarningNotice && noDefaultSecret) {
+                        pass("FS.10: Officer autofill safely populates configured activation code without default fallback");
+                    } else {
+                        fail("FS.10", "Officer autofill failed with configured activation code");
+                    }
+                } finally {
+                    System.clearProperty(AuthService.ACTIVATION_CODE_PROP);
+                }
+            }
+
         } catch (Exception e) {
             System.setOut(originalOut);
             System.err.println("  [FAIL] Test suite exception: " + e.getMessage());
