@@ -95,8 +95,8 @@ public class Main {
      */
     public static String formatFormFieldRow(String label, String value, boolean isPassword, boolean isWarning) {
         String cleanLabel = label.contains(":") ? label.substring(0, label.indexOf(":")).trim() : label.trim();
-        String labelPart = String.format("%-21s : ", cleanLabel);
-        String rawVal = isPassword ? "••••••••••••" : (value != null ? value.trim() : "");
+        String labelPart = String.format("%-22s: ", cleanLabel);
+        String rawVal = isPassword ? "************" : (value != null ? value.trim() : "");
         if (rawVal.length() > 33) {
             rawVal = rawVal.substring(0, 30) + "...";
         }
@@ -225,7 +225,7 @@ public class Main {
         System.out.println(ConsoleTheme.dim(String.format(Locale.US,
                 "  Active Drives: %-3d | Candidates: %-3d | Apps: %-3d | Avg: %.1f LPA",
                 openJobs, registeredStudents, totalApplications, avgCtc)));
-        System.out.println(ConsoleTheme.dim("  System Status:  ● ONLINE   |   Academic Year:     2025–2026"));
+        System.out.println(ConsoleTheme.dim("  System Status:  [ONLINE]   |   Academic Year:     2025-2026"));
         System.out.println(ConsoleTheme.cyan("  ┌──────────────────────────────────────────────────────────┐"));
         System.out.println(ConsoleTheme.cyan("  │") + ConsoleTheme.text("                    SELECT YOUR PORTAL                    ") + ConsoleTheme.cyan("│"));
         System.out.println(ConsoleTheme.cyan("  └──────────────────────────────────────────────────────────┘"));
@@ -444,18 +444,18 @@ public class Main {
             }
 
             String[] prompts = {
-                    "Student ID (USN)     : ",
-                    "Full Name            : ",
-                    "Email Address        : ",
-                    "Phone Number         : ",
-                    "Degree Branch        : ",
-                    "Academic CGPA        : ",
-                    "Technical Skills     : ",
-                    "Active Backlogs      : ",
-                    "Graduation Year      : ",
-                    "Account Username     : ",
-                    "Account Password     : ",
-                    "Confirm Password     : "
+                    "Student ID (USN)      : ",
+                    "Full Name             : ",
+                    "Email Address         : ",
+                    "Phone Number          : ",
+                    "Degree Branch         : ",
+                    "Academic CGPA         : ",
+                    "Technical Skills      : ",
+                    "Active Backlogs       : ",
+                    "Graduation Year       : ",
+                    "Account Username      : ",
+                    "Account Password      : ",
+                    "Confirm Password      : "
             };
             boolean[] isPassword = {
                     false, false, false, false, false, false, false, false, false, false, true, true
@@ -470,7 +470,7 @@ public class Main {
                     System.out.println(ConsoleTheme.dim(" Switching to manual form entry mode..."));
                 } else {
                     System.arraycopy(demoData, 0, values, 0, Math.min(demoData.length, values.length));
-                    System.out.println(ConsoleTheme.cyan(" ✦ [AUTO-FILL] Populating form with verified, unique demo candidate..."));
+                    System.out.println(ConsoleTheme.cyan(" * [AUTO-FILL] Populating form with verified, unique demo candidate..."));
                     System.out.println(ConsoleTheme.divider(" ----------------------------------------------------------------"));
                     while (true) {
                         for (int k = 0; k < prompts.length; k++) {
@@ -508,7 +508,7 @@ public class Main {
                                     }
                                 }
                                 System.out.println(ConsoleTheme.divider(" ----------------------------------------------------------------"));
-                                System.out.println(ConsoleTheme.cyan(" ✦ Updated field " + fNum + " (" + fieldLabel + "). Form re-rendered:"));
+                                System.out.println(ConsoleTheme.cyan(" * Updated field " + fNum + " (" + fieldLabel + "). Form re-rendered:"));
                                 System.out.println(ConsoleTheme.divider(" ----------------------------------------------------------------"));
                             } else {
                                 break;
@@ -524,14 +524,23 @@ public class Main {
                 // Manual entry mode
                 int[] blankLines = { 8 };
                 int startIdx = 0;
-                if (!modeChoice.isEmpty() && !isAutoFill && !"0".equals(modeChoice)) {
+                boolean isManualChoice = modeChoice.isEmpty() || "M".equalsIgnoreCase(modeChoice) || "MANUAL".equalsIgnoreCase(modeChoice);
+                if (isManualChoice) {
+                    startIdx = 0;
+                } else if (!isAutoFill && !"0".equals(modeChoice)) {
                     values[0] = modeChoice;
-                    System.out.println("Student ID (USN)     : " + modeChoice);
+                    System.out.println("Student ID (USN)      : " + modeChoice);
                     startIdx = 1;
                 }
                 boolean completed = fillMultiFieldFormFromIndex(scanner, prompts, isPassword, blankLines, values, startIdx);
                 if (!completed) {
                     return false;
+                }
+                System.out.println(ConsoleTheme.divider(" ----------------------------------------------------------------"));
+                System.out.println(ConsoleTheme.cyan(" * Registration Summary:"));
+                System.out.println(ConsoleTheme.divider(" ----------------------------------------------------------------"));
+                for (int k = 0; k < prompts.length; k++) {
+                    System.out.println(formatFormFieldRow(prompts[k], values[k], isPassword[k]));
                 }
             }
 
@@ -1252,13 +1261,13 @@ public class Main {
             }
 
             String[] prompts = {
-                    "Officer ID           : ",
-                    "Full Name            : ",
-                    "Official Email       : ",
-                    "Account Username     : ",
-                    "Account Password     : ",
-                    "Confirm Password     : ",
-                    "Activation Code      : "
+                    "Officer ID            : ",
+                    "Full Name             : ",
+                    "Official Email        : ",
+                    "Account Username      : ",
+                    "Account Password      : ",
+                    "Confirm Password      : ",
+                    "Activation Code       : "
             };
             boolean[] isPassword = {
                     false, false, false, false, true, true, true
@@ -1272,7 +1281,7 @@ public class Main {
                     System.out.println(ConsoleTheme.dim(" Switching to manual form entry mode..."));
                 } else {
                     System.arraycopy(demoData, 0, values, 0, Math.min(demoData.length, values.length));
-                    System.out.println(ConsoleTheme.cyan(" ✦ [AUTO-FILL] Populating form with verified demo data..."));
+                    System.out.println(ConsoleTheme.cyan(" * [AUTO-FILL] Populating form with verified demo data..."));
                     System.out.println(ConsoleTheme.divider(" ----------------------------------------------------------------"));
                     while (true) {
                         boolean hasUnsetActivation = false;
@@ -1290,7 +1299,7 @@ public class Main {
                         if (hasUnsetActivation) {
                             System.out.println(ConsoleTheme.warn("  [NOT CONFIGURED — ENTER MANUALLY]"));
                             System.out.println(ConsoleTheme.warn("  Officer activation code is not configured in system environment."));
-                            System.out.println(ConsoleTheme.warn("  ⚠ NOTICE: Activation code must be configured via environment or entered manually."));
+                            System.out.println(ConsoleTheme.warn("  ! NOTICE: Activation code must be configured via environment or entered manually."));
                         }
                         System.out.println(ConsoleTheme.dim("  (Labels in Golden Amber  |  Values in Sky Blue  |  Warning in Amber)"));
                         System.out.print(ConsoleTheme.prompt("  Action: Press ENTER to accept all, or type field number (1-7) to edit: "));
@@ -1323,7 +1332,7 @@ public class Main {
                                     }
                                 }
                                 System.out.println(ConsoleTheme.divider(" ----------------------------------------------------------------"));
-                                System.out.println(ConsoleTheme.cyan(" ✦ Updated field " + fNum + " (" + fieldLabel + "). Form re-rendered:"));
+                                System.out.println(ConsoleTheme.cyan(" * Updated field " + fNum + " (" + fieldLabel + "). Form re-rendered:"));
                                 System.out.println(ConsoleTheme.divider(" ----------------------------------------------------------------"));
                             } else {
                                 break;
@@ -1339,14 +1348,24 @@ public class Main {
                 // Manual entry mode
                 int[] blankLines = { 2 };
                 int startIdx = 0;
-                if (!modeChoice.isEmpty() && !isAutoFill && !"0".equals(modeChoice)) {
+                boolean isManualChoice = modeChoice.isEmpty() || "M".equalsIgnoreCase(modeChoice) || "MANUAL".equalsIgnoreCase(modeChoice);
+                if (isManualChoice) {
+                    startIdx = 0;
+                } else if (!isAutoFill && !"0".equals(modeChoice)) {
                     values[0] = modeChoice;
-                    System.out.println("Officer ID           : " + modeChoice);
+                    System.out.println("Officer ID            : " + modeChoice);
                     startIdx = 1;
                 }
                 boolean completed = fillMultiFieldFormFromIndex(scanner, prompts, isPassword, blankLines, values, startIdx);
                 if (!completed) {
                     return false;
+                }
+                System.out.println(ConsoleTheme.divider(" ----------------------------------------------------------------"));
+                System.out.println(ConsoleTheme.cyan(" * Registration Summary:"));
+                System.out.println(ConsoleTheme.divider(" ----------------------------------------------------------------"));
+                for (int k = 0; k < prompts.length; k++) {
+                    boolean warnField = (k == 6 && (values[k] == null || values[k].trim().isEmpty()));
+                    System.out.println(formatFormFieldRow(prompts[k], values[k], isPassword[k] && !warnField, warnField));
                 }
             }
 
@@ -1779,7 +1798,7 @@ public class Main {
             } else {
                 System.out.println("[RESULT] NOT ELIGIBLE. The following criteria were not met:");
                 for (String reason : result.getReasons()) {
-                    System.out.println("  • " + reason);
+                    System.out.println("  - " + reason);
                 }
                 if (!result.getMissingSkills().isEmpty()) {
                     System.out.println("Missing Required Skills: " + result.getMissingSkills());
@@ -2171,16 +2190,16 @@ public class Main {
             }
 
             String[] prompts = {
-                    "Partner Company ID   : ",
-                    "Job Title            : ",
-                    "Job Description      : ",
-                    "Package CTC (LPA)    : ",
-                    "Job Location         : ",
-                    "Minimum CGPA Cutoff  : ",
-                    "Max Allowed Backlogs : ",
-                    "Eligible Branches    : ",
-                    "Required Skills      : ",
-                    "Target Passing Year  : "
+                    "Partner Company ID    : ",
+                    "Job Title             : ",
+                    "Job Description       : ",
+                    "Package CTC (LPA)     : ",
+                    "Job Location          : ",
+                    "Minimum CGPA Cutoff   : ",
+                    "Max Allowed Backlogs  : ",
+                    "Eligible Branches     : ",
+                    "Required Skills       : ",
+                    "Target Passing Year   : "
             };
 
             boolean isAutoFill = "A".equalsIgnoreCase(modeChoice) || "AUTO".equalsIgnoreCase(modeChoice) || "AUTOFILL".equalsIgnoreCase(modeChoice);
@@ -2191,7 +2210,7 @@ public class Main {
                     System.out.println(ConsoleTheme.dim(" Switching to manual job entry mode..."));
                 } else {
                     System.arraycopy(demoData, 0, values, 0, Math.min(demoData.length, values.length));
-                    System.out.println(ConsoleTheme.cyan(" ✦ [AUTO-FILL] Populating job drive with sample corporate requirements..."));
+                    System.out.println(ConsoleTheme.cyan(" * [AUTO-FILL] Populating job drive with sample corporate requirements..."));
                     System.out.println(ConsoleTheme.divider(" ----------------------------------------------------------------"));
                     while (true) {
                         for (int k = 0; k < prompts.length; k++) {
@@ -2226,7 +2245,7 @@ public class Main {
                                     }
                                 }
                                 System.out.println(ConsoleTheme.divider(" ----------------------------------------------------------------"));
-                                System.out.println(ConsoleTheme.cyan(" ✦ Updated field " + fNum + " (" + fieldLabel + "). Form re-rendered:"));
+                                System.out.println(ConsoleTheme.cyan(" * Updated field " + fNum + " (" + fieldLabel + "). Form re-rendered:"));
                                 System.out.println(ConsoleTheme.divider(" ----------------------------------------------------------------"));
                             } else {
                                 break;
@@ -2243,14 +2262,23 @@ public class Main {
                 boolean[] isPassword = new boolean[10];
                 int[] blankLines = { 4 };
                 int startIdx = 0;
-                if (!modeChoice.isEmpty() && !isAutoFill && !"0".equals(modeChoice)) {
+                boolean isManualChoice = modeChoice.isEmpty() || "M".equalsIgnoreCase(modeChoice) || "MANUAL".equalsIgnoreCase(modeChoice);
+                if (isManualChoice) {
+                    startIdx = 0;
+                } else if (!isAutoFill && !"0".equals(modeChoice)) {
                     values[0] = modeChoice;
-                    System.out.println("Partner Company ID   : " + modeChoice);
+                    System.out.println("Partner Company ID    : " + modeChoice);
                     startIdx = 1;
                 }
                 boolean completed = fillMultiFieldFormFromIndex(scanner, prompts, isPassword, blankLines, values, startIdx);
                 if (!completed) {
                     return false;
+                }
+                System.out.println(ConsoleTheme.divider(" ----------------------------------------------------------------"));
+                System.out.println(ConsoleTheme.cyan(" * Job Drive Specifications Summary:"));
+                System.out.println(ConsoleTheme.divider(" ----------------------------------------------------------------"));
+                for (int k = 0; k < prompts.length; k++) {
+                    System.out.println(formatFormFieldRow(prompts[k], values[k], false));
                 }
             }
 
