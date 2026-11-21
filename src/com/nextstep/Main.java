@@ -664,25 +664,12 @@ public class Main {
             System.out.print(ConsoleTheme.prompt(prompt));
 
             String input;
-            if (masked) {
-                if (System.console() != null) {
-                    char[] pass = System.console().readPassword();
-                    input = (pass != null) ? new String(pass).trim() : "";
-                } else {
-                    if (!scanner.hasNextLine()) {
-                        return false;
-                    }
-                    input = scanner.nextLine().trim();
-                    System.out.println(); // newline only; never echo plaintext password
-                }
-            } else {
-                if (!scanner.hasNextLine()) {
-                    return false;
-                }
-                input = scanner.nextLine().trim();
-                if (System.console() == null) {
-                    System.out.println(input);
-                }
+            if (!scanner.hasNextLine()) {
+                return false;
+            }
+            input = scanner.nextLine().trim();
+            if (System.console() == null) {
+                System.out.println(input);
             }
 
             // Shortcut 'A' / 'a' / 'AUTO': Auto-fill all fields with valid demo data
@@ -980,22 +967,20 @@ public class Main {
     }
 
     /**
-     * Reads a password without displaying characters when console is present,
-     * suppressing plaintext echo in non-interactive test environments.
+     * Reads a password field with interactive user feedback.
+     * Echoes input in non-interactive test environments and allows standard visible typing
+     * in interactive terminals, ensuring responsive user feedback before hashing.
      */
     private String readPasswordField(Scanner scanner, String prompt) {
         System.out.print(ConsoleTheme.prompt(prompt));
-        if (System.console() != null) {
-            char[] pass = System.console().readPassword();
-            return (pass != null) ? new String(pass).trim() : "";
-        } else {
-            if (!scanner.hasNextLine()) {
-                return "";
-            }
-            String input = scanner.nextLine().trim();
-            System.out.println(); // newline only; never echo plaintext password
-            return input;
+        if (!scanner.hasNextLine()) {
+            return "";
         }
+        String input = scanner.nextLine().trim();
+        if (System.console() == null) {
+            System.out.println(input);
+        }
+        return input;
     }
 
     /**
