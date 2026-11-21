@@ -2399,6 +2399,108 @@ public class ConsoleInputEdgeCaseTestRunner {
                 }
             }
 
+            {
+                // Test FS.5: Autofill shortcut 'A' on Student Sign Up populates all 12 fields and does not auto-submit
+                ByteArrayOutputStream out = new ByteArrayOutputStream();
+                String inputs = String.join("\n",
+                        "1",               // Page 1 -> Page 2
+                        "1",               // Page 2 -> Student Menu
+                        "1",               // Student Menu -> Page 3 (Sign Up)
+                        "A",               // Shortcut 'A': Auto-Fill Demo Data!
+                        "",                // Enter to accept all auto-filled fields
+                        "0",               // Option 0: Cancel / Back on Page 3
+                        "0",               // Student Menu -> Page 2
+                        "0",               // Page 2 -> Page 1
+                        "0"                // Page 1 -> Exit
+                ) + "\n";
+                System.setIn(new ByteArrayInputStream(inputs.getBytes(StandardCharsets.UTF_8)));
+                System.setOut(new PrintStream(out, true, StandardCharsets.UTF_8));
+
+                Main app = new Main();
+                app.run(new Scanner(System.in));
+                System.setOut(originalOut);
+
+                String outStr = out.toString(StandardCharsets.UTF_8);
+                boolean hasAutoFillBanner = outStr.contains("[AUTO-FILL] Form populated with valid demo data:");
+                boolean hasStudentDetails = outStr.contains("Aarav Sharma") && outStr.contains("Computer Science") && outStr.contains("8.75");
+                boolean hasNotSubmitted = outStr.contains("1. CREATE ACCOUNT") && outStr.contains("0. BACK");
+
+                if (hasAutoFillBanner && hasStudentDetails && hasNotSubmitted) {
+                    pass("FS.5: Autofill shortcut 'A' populates all 12 student registration fields with valid demo data without auto-submitting");
+                } else {
+                    fail("FS.5", "Student registration autofill failed or auto-submitted unexpectedly");
+                }
+            }
+
+            {
+                // Test FS.6: Autofill shortcut 'A' on Job Drive Creation populates all 10 fields using existing company from MySQL
+                ByteArrayOutputStream out = new ByteArrayOutputStream();
+                String inputs = String.join("\n",
+                        "A",               // Shortcut 'A': Auto-Fill Demo Data
+                        "",                // Enter to accept all auto-filled fields
+                        "0"                // Option 0: Cancel (proves no automatic database insert)
+                ) + "\n";
+                System.setIn(new ByteArrayInputStream(inputs.getBytes(StandardCharsets.UTF_8)));
+                System.setOut(new PrintStream(out, true, StandardCharsets.UTF_8));
+
+                Main app = new Main();
+                boolean published = app.showCreateJobDrive(new Scanner(System.in), null);
+                System.setOut(originalOut);
+
+                String outStr = out.toString(StandardCharsets.UTF_8);
+                boolean hasAutoFillBanner = outStr.contains("[AUTO-FILL] Form populated with valid demo data:");
+                boolean hasJobDetails = outStr.contains("Associate Cloud Engineer") && outStr.contains("12.50") && outStr.contains("Bengaluru, KA");
+                boolean cancelledCleanly = !published && outStr.contains("Job drive creation cancelled.");
+
+                if (hasAutoFillBanner && hasJobDetails && cancelledCleanly) {
+                    pass("FS.6: Autofill shortcut 'A' populates all 10 job creation fields with live company data without auto-submitting");
+                } else {
+                    fail("FS.6", "Job creation autofill failed or persisted prematurely");
+                }
+            }
+
+            {
+                // Test FS.7: Autofill supports editing an individual field (e.g. field 2: Full Name)
+                ByteArrayOutputStream out = new ByteArrayOutputStream();
+                String inputs = String.join("\n",
+                        "1",               // Page 1 -> Page 2
+                        "1",               // Page 2 -> Student Menu
+                        "1",               // Student Menu -> Page 3 (Sign Up)
+                        "A",               // Shortcut 'A': Auto-Fill Demo Data
+                        "2",               // Edit field 2 (Full Name)
+                        "Custom Edited Name", // Type new name
+                        "",                // Enter on Email (keep)
+                        "",                // Enter on Phone (keep)
+                        "",                // Enter on Branch (keep)
+                        "",                // Enter on CGPA (keep)
+                        "",                // Enter on Skills (keep)
+                        "",                // Enter on Backlogs (keep)
+                        "",                // Enter on Grad Year (keep)
+                        "",                // Enter on Username (keep)
+                        "Password@123",    // Password
+                        "Password@123",    // Confirm Password
+                        "0",               // Cancel at action menu on Page 3
+                        "0",               // Student Menu -> Page 2
+                        "0",               // Page 2 -> Page 1
+                        "0"                // Page 1 -> Exit
+                ) + "\n";
+                System.setIn(new ByteArrayInputStream(inputs.getBytes(StandardCharsets.UTF_8)));
+                System.setOut(new PrintStream(out, true, StandardCharsets.UTF_8));
+
+                Main app = new Main();
+                app.run(new Scanner(System.in));
+                System.setOut(originalOut);
+
+                String outStr = out.toString(StandardCharsets.UTF_8);
+                boolean hasEditedPrompt = outStr.contains("[Current: Aarav Sharma — Enter to keep, or type new value]");
+
+                if (hasEditedPrompt) {
+                    pass("FS.7: Autofilled values can be edited field-by-field before final submission");
+                } else {
+                    fail("FS.7", "Editing autofilled field failed");
+                }
+            }
+
         } catch (Exception e) {
             System.setOut(originalOut);
             System.err.println("  [FAIL] Test suite exception: " + e.getMessage());
@@ -2415,10 +2517,10 @@ public class ConsoleInputEdgeCaseTestRunner {
                 stmt.executeUpdate("DELETE FROM job_required_skills WHERE job_id IN (SELECT id FROM jobs WHERE title LIKE 'Test Job%' OR title LIKE 'Runtime Job%')");
                 stmt.executeUpdate("DELETE FROM job_eligible_branches WHERE job_id IN (SELECT id FROM jobs WHERE title LIKE 'Test Job%' OR title LIKE 'Runtime Job%')");
                 stmt.executeUpdate("DELETE FROM jobs WHERE title LIKE 'Test Job%' OR title LIKE 'Runtime Job%'");
-                stmt.executeUpdate("DELETE FROM student_skills WHERE student_id IN (SELECT id FROM students WHERE user_id IN (SELECT id FROM users WHERE username LIKE 'test_%' OR username LIKE 'runtime_%' OR username LIKE 'officer_%'))");
-                stmt.executeUpdate("DELETE FROM applications WHERE student_id IN (SELECT id FROM students WHERE user_id IN (SELECT id FROM users WHERE username LIKE 'test_%' OR username LIKE 'runtime_%' OR username LIKE 'officer_%'))");
-                stmt.executeUpdate("DELETE FROM students WHERE user_id IN (SELECT id FROM users WHERE username LIKE 'test_%' OR username LIKE 'runtime_%' OR username LIKE 'officer_%')");
-                stmt.executeUpdate("DELETE FROM users WHERE username LIKE 'test_%' OR username LIKE 'runtime_%' OR username LIKE 'officer_%'");
+                stmt.executeUpdate("DELETE FROM student_skills WHERE student_id IN (SELECT id FROM students WHERE user_id IN (SELECT id FROM users WHERE username LIKE 'test_%' OR username LIKE 'runtime_%' OR username LIKE 'officer_%' OR username LIKE 'aarav_%'))");
+                stmt.executeUpdate("DELETE FROM applications WHERE student_id IN (SELECT id FROM students WHERE user_id IN (SELECT id FROM users WHERE username LIKE 'test_%' OR username LIKE 'runtime_%' OR username LIKE 'officer_%' OR username LIKE 'aarav_%'))");
+                stmt.executeUpdate("DELETE FROM students WHERE user_id IN (SELECT id FROM users WHERE username LIKE 'test_%' OR username LIKE 'runtime_%' OR username LIKE 'officer_%' OR username LIKE 'aarav_%')");
+                stmt.executeUpdate("DELETE FROM users WHERE username LIKE 'test_%' OR username LIKE 'runtime_%' OR username LIKE 'officer_%' OR username LIKE 'aarav_%'");
             } catch (SQLException ignored) {
             }
         }

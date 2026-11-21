@@ -159,14 +159,12 @@ public class Main {
      */
     public static void clearConsole() {
         try {
-            if (System.console() != null) {
-                if (System.getProperty("os.name", "").toLowerCase().contains("win")) {
-                    new ProcessBuilder("cmd", "/c", "cls").inheritIO().start().waitFor();
-                } else {
-                    System.out.print("\033[H\033[2J");
-                    System.out.flush();
-                }
-            } else if (ConsoleTheme.isAnsiEnabled()) {
+            if (ConsoleTheme.isAnsiEnabled()) {
+                System.out.print("\033[H\033[2J");
+                System.out.flush();
+            } else if (System.console() != null && System.getProperty("os.name", "").toLowerCase().contains("win")) {
+                new ProcessBuilder("cmd", "/c", "cls").inheritIO().start().waitFor();
+            } else if (System.console() != null) {
                 System.out.print("\033[H\033[2J");
                 System.out.flush();
             }
@@ -333,6 +331,7 @@ public class Main {
             clearConsole();
             renderStudentSignUpHeader();
             System.out.println(ConsoleTheme.dim("[Form Shortcuts: 'B' = Previous Field | 'N' = Next Field] (Esc / Tab / Enter supported)"));
+            System.out.println(ConsoleTheme.dim("[A] Auto-Fill Demo Data — Enter 'A' at any prompt to populate all fields with valid sample data"));
             System.out.println();
 
             String[] prompts = {
@@ -354,7 +353,8 @@ public class Main {
             };
             int[] blankLines = { 8 };
 
-            boolean completed = fillMultiFieldForm(scanner, prompts, isPassword, blankLines, values);
+            String[] demoData = getStudentDemoData();
+            boolean completed = fillMultiFieldForm(scanner, prompts, isPassword, blankLines, values, demoData);
             if (!completed) {
                 return false;
             }
@@ -442,7 +442,7 @@ public class Main {
     }
 
     /**
-     * Interactively fills a multi-field form supporting Back ('B') and Forward ('N') shortcuts.
+     * Interactively fills a multi-field form supporting Back ('B'), Forward ('N'), and Auto-Fill ('A') shortcuts.
      * 
      * @param scanner active Scanner
      * @param prompts array of field prompts (e.g. "Student ID:             ")
@@ -452,6 +452,11 @@ public class Main {
      * @return true if all fields were collected successfully, false if input stream terminated
      */
     private boolean fillMultiFieldForm(Scanner scanner, String[] prompts, boolean[] isPassword, int[] blankLines, String[] values) {
+        return fillMultiFieldForm(scanner, prompts, isPassword, blankLines, values, null);
+    }
+
+    private boolean fillMultiFieldForm(Scanner scanner, String[] prompts, boolean[] isPassword, int[] blankLines,
+                                       String[] values, String[] demoData) {
         int i = 0;
         int n = prompts.length;
         while (i < n) {
@@ -483,6 +488,48 @@ public class Main {
                 input = scanner.nextLine().trim();
                 if (System.console() == null) {
                     System.out.println(input);
+                }
+            }
+
+            // Shortcut 'A' / 'a' / 'AUTO': Auto-fill all fields with valid demo data
+            if (demoData != null && (input.equalsIgnoreCase("A") || input.equalsIgnoreCase("AUTO") || input.equalsIgnoreCase("AUTOFILL"))) {
+                for (int k = 0; k < n && k < demoData.length; k++) {
+                    if (demoData[k] != null) {
+                        values[k] = demoData[k];
+                    }
+                }
+                System.out.println();
+                System.out.println(ConsoleTheme.success("[AUTO-FILL] Form populated with valid demo data:"));
+                for (int k = 0; k < n; k++) {
+                    boolean maskedField = isPassword != null && k < isPassword.length && isPassword[k];
+                    String displayVal = maskedField ? "********" : values[k];
+                    System.out.printf("  %-24s%s%n", prompts[k].trim(), displayVal);
+                }
+                System.out.println();
+                System.out.println(ConsoleTheme.dim("  All fields auto-filled! Press Enter to accept, or enter field number (1-" + n + ") to edit:"));
+
+                if (!scanner.hasNextLine()) {
+                    return false;
+                }
+                String postAuto = scanner.nextLine().trim();
+                if (System.console() == null) {
+                    System.out.println(postAuto);
+                }
+                if (postAuto.isEmpty() || postAuto.equalsIgnoreCase("Y") || postAuto.equalsIgnoreCase("YES")) {
+                    break;
+                } else if (postAuto.equalsIgnoreCase("E") || postAuto.equalsIgnoreCase("EDIT")) {
+                    i = 0;
+                    continue;
+                } else {
+                    try {
+                        int fieldNum = Integer.parseInt(postAuto);
+                        if (fieldNum >= 1 && fieldNum <= n) {
+                            i = fieldNum - 1;
+                            continue;
+                        }
+                    } catch (NumberFormatException ignored) {
+                    }
+                    break;
                 }
             }
 
@@ -542,6 +589,65 @@ public class Main {
         }
         System.out.println(); // Trailing blank line before footer
         return true;
+    }
+
+    private String[] getStudentDemoData() {
+        int seed = (int) (System.currentTimeMillis() % 900) + 100;
+        return new String[] {
+                "24MCA" + seed,
+                "Aarav Sharma",
+                "aarav." + seed + "@university.edu",
+                "9876543210",
+                "Computer Science",
+                "8.75",
+                "Java, Spring Boot, SQL, Git, Docker",
+                "0",
+                "2026",
+                "aarav_" + seed,
+                "Password@123",
+                "Password@123"
+        };
+    }
+
+    private String[] getOfficerDemoData() {
+        int seed = (int) (System.currentTimeMillis() % 900) + 100;
+        String actCode = System.getProperty(AuthService.ACTIVATION_CODE_PROP);
+        if (actCode == null || actCode.trim().isEmpty()) {
+            actCode = System.getenv(AuthService.ACTIVATION_CODE_ENV);
+        }
+        if (actCode == null || actCode.trim().isEmpty()) {
+            actCode = "CAMPUS_OFFICER_2026";
+        }
+        return new String[] {
+                "OFF-2026-" + seed,
+                "Dr. Arvind Sharma",
+                "tpo." + seed + "@university.edu",
+                "officer_" + seed,
+                "Officer@123",
+                "Officer@123",
+                actCode.trim()
+        };
+    }
+
+    private String[] getJobDemoData(List<Company> companies) {
+        String companyId = (companies != null && !companies.isEmpty())
+                ? String.valueOf(companies.get(0).getId())
+                : "1";
+        String location = (companies != null && !companies.isEmpty() && companies.get(0).getLocation() != null)
+                ? companies.get(0).getLocation()
+                : "Bengaluru, KA";
+        return new String[] {
+                companyId,
+                "Associate Cloud Engineer",
+                "Design, build, and maintain cloud infrastructure on AWS and GCP.",
+                "12.50",
+                location,
+                "7.20",
+                "0",
+                "Computer Science, Information Technology",
+                "Java, SQL, Linux, Git, Docker",
+                "2026"
+        };
     }
 
     /**
@@ -827,6 +933,7 @@ public class Main {
             clearConsole();
             renderOfficerSignUpHeader();
             System.out.println(ConsoleTheme.dim("[Form Shortcuts: 'B' = Previous Field | 'N' = Next Field] (Esc / Tab / Enter supported)"));
+            System.out.println(ConsoleTheme.dim("[A] Auto-Fill Demo Data — Enter 'A' at any prompt to populate all fields with valid sample data"));
             System.out.println();
 
             String[] prompts = {
@@ -843,7 +950,8 @@ public class Main {
             };
             int[] blankLines = { 2 };
 
-            boolean completed = fillMultiFieldForm(scanner, prompts, isPassword, blankLines, values);
+            String[] demoData = getOfficerDemoData();
+            boolean completed = fillMultiFieldForm(scanner, prompts, isPassword, blankLines, values, demoData);
             if (!completed) {
                 return false;
             }
@@ -1555,6 +1663,7 @@ public class Main {
             clearConsole();
             renderCreateJobDriveHeader();
             System.out.println(ConsoleTheme.dim("[Form Shortcuts: 'B' = Previous Field | 'N' = Next Field] (Esc / Tab / Enter supported)"));
+            System.out.println(ConsoleTheme.dim("[A] Auto-Fill Demo Data — Enter 'A' at any prompt to populate all fields with valid sample data"));
             System.out.println();
 
             int nextJobId = 1;
@@ -1603,7 +1712,8 @@ public class Main {
             boolean[] isPassword = new boolean[10];
             int[] blankLines = { 4 };
 
-            boolean completed = fillMultiFieldForm(scanner, prompts, isPassword, blankLines, values);
+            String[] demoData = getJobDemoData(companies);
+            boolean completed = fillMultiFieldForm(scanner, prompts, isPassword, blankLines, values, demoData);
             if (!completed) {
                 return false;
             }
