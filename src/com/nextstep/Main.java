@@ -151,9 +151,12 @@ public class Main {
      */
     public void renderWelcomeScreen() {
         System.out.println(ConsoleTheme.border("================================================================"));
-        System.out.println(ConsoleTheme.header("                         NEXTSTEP"));
-        System.out.println(ConsoleTheme.header("                  CAMPUS RECRUITMENT SYSTEM"));
+        System.out.println(ConsoleTheme.header("              NEXTSTEP | CAMPUS RECRUITMENT SYSTEM"));
+        System.out.println(ConsoleTheme.header("             Automated Eligibility & Skill Matching"));
         System.out.println(ConsoleTheme.border("================================================================"));
+        System.out.println();
+        System.out.println(ConsoleTheme.dim("  System Status:  ● ONLINE   |   Academic Year:  2025–2026"));
+        System.out.println(ConsoleTheme.dim("  Placement Hub:  Active Campus Drives & Candidate Verification"));
         System.out.println();
         System.out.println(ConsoleTheme.text("                     YOUR CAREER STARTS HERE"));
         System.out.println();
@@ -516,18 +519,24 @@ public class Main {
                 }
                 System.out.println();
                 System.out.println(ConsoleTheme.success("[AUTO-FILL] Form populated with valid demo data:"));
+                System.out.println(ConsoleTheme.divider("----------------------------------------------------------------"));
                 boolean hasUnsetActivation = false;
                 for (int k = 0; k < n; k++) {
                     boolean maskedField = isPassword != null && k < isPassword.length && isPassword[k];
-                    String displayVal;
+                    String rawVal;
+                    String styledVal;
                     if (prompts[k].contains("Activation Code") && (values[k] == null || values[k].trim().isEmpty())) {
-                        displayVal = ConsoleTheme.warn("[NOT CONFIGURED — ENTER MANUALLY]");
+                        rawVal = "[NOT CONFIGURED — ENTER MANUALLY]";
+                        styledVal = ConsoleTheme.warn(rawVal);
                         hasUnsetActivation = true;
                     } else {
-                        displayVal = maskedField ? "********" : values[k];
+                        rawVal = maskedField ? "********" : values[k];
+                        styledVal = ConsoleTheme.cyan("[ " + rawVal + " ]");
                     }
-                    System.out.printf("  %-24s%s%n", prompts[k].trim(), displayVal);
+                    String fieldLabel = prompts[k].trim().replaceAll(":$", "");
+                    System.out.printf("  %s %s%n", ConsoleTheme.prompt(String.format("%-23s:", fieldLabel)), styledVal);
                 }
+                System.out.println(ConsoleTheme.divider("----------------------------------------------------------------"));
                 if (hasUnsetActivation) {
                     System.out.println();
                     System.out.println(ConsoleTheme.warn("  [NOTICE] Officer activation code is not configured in system environment."));
@@ -621,10 +630,22 @@ public class Main {
     }
 
     public String[] getStudentDemoData() {
-        int seed = (int) (System.currentTimeMillis() % 900) + 100;
-        String studentId = "24MCA" + seed;
-        String username = "aarav_" + seed;
-        String email = "aarav." + seed + "@university.edu";
+        String[][] candidates = {
+                { "Raghav Bansal", "2510990750", "raghav", "Computer Science", "8.75", "Java, Spring Boot, SQL, Git, Docker" },
+                { "Dhruv Sharma",  "2510990751", "dhruv",  "Information Technology", "8.50", "Java, Python, SQL, Git, Linux" },
+                { "Keshav Gupta",  "2510990752", "keshav", "Computer Science", "8.90", "Java, SQL, React, Node.js, Git" },
+                { "Sahaj Patel",   "2510990753", "sahaj",  "Electronics & Communication", "8.20", "Python, C++, Embedded Systems, Linux" }
+        };
+
+        int candIndex = 0;
+        String name = candidates[0][0];
+        String studentId = candidates[0][1];
+        String username = candidates[0][2] + "_2510";
+        String email = candidates[0][2] + "." + studentId + "@university.edu";
+        String branch = candidates[0][3];
+        String cgpa = candidates[0][4];
+        String skills = candidates[0][5];
+
         int attempts = 0;
         boolean verified = false;
 
@@ -643,10 +664,25 @@ public class Main {
                 System.out.println(ConsoleTheme.dim("  Autofill stopped safely. Please enter details manually or cancel."));
                 return null;
             }
-            seed = (seed + 1 > 9999) ? 100 : seed + 1;
-            studentId = "24MCA" + seed;
-            username = "aarav_" + seed;
-            email = "aarav." + seed + "@university.edu";
+            candIndex++;
+            if (candIndex < candidates.length) {
+                name = candidates[candIndex][0];
+                studentId = candidates[candIndex][1];
+                username = candidates[candIndex][2] + "_2510";
+                email = candidates[candIndex][2] + "." + studentId + "@university.edu";
+                branch = candidates[candIndex][3];
+                cgpa = candidates[candIndex][4];
+                skills = candidates[candIndex][5];
+            } else {
+                long nextId = 2510990750L + candIndex;
+                studentId = String.valueOf(nextId);
+                username = "raghav_" + (2510 + (candIndex % 9000));
+                email = "raghav." + studentId + "@university.edu";
+                name = "Raghav Bansal";
+                branch = "Computer Science";
+                cgpa = "8.75";
+                skills = "Java, Spring Boot, SQL, Git, Docker";
+            }
             attempts++;
         }
 
@@ -659,12 +695,12 @@ public class Main {
 
         return new String[] {
                 studentId,
-                "Aarav Sharma",
+                name,
                 email,
                 "9876543210",
-                "Computer Science",
-                "8.75",
-                "Java, Spring Boot, SQL, Git, Docker",
+                branch,
+                cgpa,
+                skills,
                 "0",
                 "2026",
                 username,
@@ -676,8 +712,8 @@ public class Main {
     public String[] getOfficerDemoData() {
         int seed = (int) (System.currentTimeMillis() % 900) + 100;
         String officerId = "OFF-2026-" + seed;
-        String username = "officer_" + seed;
-        String email = "tpo." + seed + "@university.edu";
+        String username = "officer_raghav";
+        String email = "tpo.raghav@university.edu";
         int attempts = 0;
         boolean verified = false;
 
@@ -697,8 +733,8 @@ public class Main {
             }
             seed = (seed + 1 > 9999) ? 100 : seed + 1;
             officerId = "OFF-2026-" + seed;
-            username = "officer_" + seed;
-            email = "tpo." + seed + "@university.edu";
+            username = "officer_raghav_" + seed;
+            email = "tpo.raghav." + seed + "@university.edu";
             attempts++;
         }
 
@@ -717,7 +753,7 @@ public class Main {
 
         return new String[] {
                 officerId,
-                "Dr. Arvind Sharma",
+                "Prof. Raghav Bansal",
                 email,
                 username,
                 "Officer@123",

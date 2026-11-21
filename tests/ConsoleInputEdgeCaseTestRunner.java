@@ -2422,7 +2422,7 @@ public class ConsoleInputEdgeCaseTestRunner {
 
                 String outStr = out.toString(StandardCharsets.UTF_8);
                 boolean hasAutoFillBanner = outStr.contains("[AUTO-FILL] Form populated with valid demo data:");
-                boolean hasStudentDetails = outStr.contains("Aarav Sharma") && outStr.contains("Computer Science") && outStr.contains("8.75");
+                boolean hasStudentDetails = outStr.contains("Raghav Bansal") && outStr.contains("Computer Science") && outStr.contains("8.75");
                 boolean hasNotSubmitted = outStr.contains("1. CREATE ACCOUNT") && outStr.contains("0. BACK");
 
                 if (hasAutoFillBanner && hasStudentDetails && hasNotSubmitted) {
@@ -2492,7 +2492,7 @@ public class ConsoleInputEdgeCaseTestRunner {
                 System.setOut(originalOut);
 
                 String outStr = out.toString(StandardCharsets.UTF_8);
-                boolean hasEditedPrompt = outStr.contains("[Current: Aarav Sharma — Enter to keep, or type new value]");
+                boolean hasEditedPrompt = outStr.contains("[Current: Raghav Bansal — Enter to keep, or type new value]");
 
                 if (hasEditedPrompt) {
                     pass("FS.7: Autofilled values can be edited field-by-field before final submission");
@@ -2862,10 +2862,10 @@ public class ConsoleInputEdgeCaseTestRunner {
                 stmt.executeUpdate("DELETE FROM job_required_skills WHERE job_id IN (SELECT id FROM jobs WHERE title LIKE 'Test Job%' OR title LIKE 'Runtime Job%')");
                 stmt.executeUpdate("DELETE FROM job_eligible_branches WHERE job_id IN (SELECT id FROM jobs WHERE title LIKE 'Test Job%' OR title LIKE 'Runtime Job%')");
                 stmt.executeUpdate("DELETE FROM jobs WHERE title LIKE 'Test Job%' OR title LIKE 'Runtime Job%'");
-                stmt.executeUpdate("DELETE FROM student_skills WHERE student_id IN (SELECT id FROM students WHERE user_id IN (SELECT id FROM users WHERE username LIKE 'test_%' OR username LIKE 'runtime_%' OR username LIKE 'officer_%' OR username LIKE 'aarav_%'))");
-                stmt.executeUpdate("DELETE FROM applications WHERE student_id IN (SELECT id FROM students WHERE user_id IN (SELECT id FROM users WHERE username LIKE 'test_%' OR username LIKE 'runtime_%' OR username LIKE 'officer_%' OR username LIKE 'aarav_%'))");
-                stmt.executeUpdate("DELETE FROM students WHERE user_id IN (SELECT id FROM users WHERE username LIKE 'test_%' OR username LIKE 'runtime_%' OR username LIKE 'officer_%' OR username LIKE 'aarav_%')");
-                stmt.executeUpdate("DELETE FROM users WHERE username LIKE 'test_%' OR username LIKE 'runtime_%' OR username LIKE 'officer_%' OR username LIKE 'aarav_%'");
+                stmt.executeUpdate("DELETE FROM student_skills WHERE student_id IN (SELECT id FROM students WHERE user_id IN (SELECT id FROM users WHERE username LIKE 'test_%' OR username LIKE 'runtime_%' OR username LIKE 'officer_%' OR username LIKE 'raghav_%' OR username LIKE 'dhruv_%' OR username LIKE 'keshav_%' OR username LIKE 'sahaj_%' OR username LIKE 'aarav_%'))");
+                stmt.executeUpdate("DELETE FROM applications WHERE student_id IN (SELECT id FROM students WHERE user_id IN (SELECT id FROM users WHERE username LIKE 'test_%' OR username LIKE 'runtime_%' OR username LIKE 'officer_%' OR username LIKE 'raghav_%' OR username LIKE 'dhruv_%' OR username LIKE 'keshav_%' OR username LIKE 'sahaj_%' OR username LIKE 'aarav_%'))");
+                stmt.executeUpdate("DELETE FROM students WHERE user_id IN (SELECT id FROM users WHERE username LIKE 'test_%' OR username LIKE 'runtime_%' OR username LIKE 'officer_%' OR username LIKE 'raghav_%' OR username LIKE 'dhruv_%' OR username LIKE 'keshav_%' OR username LIKE 'sahaj_%' OR username LIKE 'aarav_%')");
+                stmt.executeUpdate("DELETE FROM users WHERE username LIKE 'test_%' OR username LIKE 'runtime_%' OR username LIKE 'officer_%' OR username LIKE 'raghav_%' OR username LIKE 'dhruv_%' OR username LIKE 'keshav_%' OR username LIKE 'sahaj_%' OR username LIKE 'aarav_%'");
             } catch (SQLException ignored) {
             }
         }
