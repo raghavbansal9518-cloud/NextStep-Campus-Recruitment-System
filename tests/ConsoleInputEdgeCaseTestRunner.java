@@ -1209,7 +1209,7 @@ public class ConsoleInputEdgeCaseTestRunner {
                 // Test SD.1: Exact header, runtime student name & ID, and 7 menu labels
                 ByteArrayOutputStream capture = new ByteArrayOutputStream();
                 System.setOut(new PrintStream(capture, true, StandardCharsets.UTF_8));
-                Student sampleStudent = new Student(888, "25CSE0204", "Raghav Bansal", "9876543210", "CSE", 9.1, 0, 2026);
+                Student sampleStudent = new Student(888, "25CSE0204", "Vihaan Mehta", "9876543210", "CSE", 9.1, 0, 2026);
                 Main app = new Main();
                 app.renderStudentDashboardHeader(sampleStudent);
                 System.setOut(originalOut);
@@ -1217,7 +1217,7 @@ public class ConsoleInputEdgeCaseTestRunner {
                 String rendered = capture.toString(StandardCharsets.UTF_8);
                 boolean headerOk = rendered.contains("NEXTSTEP | STUDENT PORTAL") &&
                                    rendered.contains("STUDENT DASHBOARD");
-                boolean studentInfoOk = rendered.contains("Welcome, Raghav Bansal") &&
+                boolean studentInfoOk = rendered.contains("Welcome, Vihaan Mehta") &&
                                         rendered.contains("Student ID: 25CSE0204");
                 boolean optionsOk = rendered.contains("1. View Available Job Drives") &&
                                     rendered.contains("2. Check Job Eligibility & Skill Match") &&
@@ -2221,7 +2221,7 @@ public class ConsoleInputEdgeCaseTestRunner {
 
                 String outStr = out.toString(StandardCharsets.UTF_8);
                 boolean hasReturnedNotice = outStr.contains("[Returned to previous field]");
-                boolean hasPrompt = outStr.contains("Full Name:");
+                boolean hasPrompt = outStr.contains("Full Name");
                 if (hasReturnedNotice && hasPrompt) {
                     pass("FS.1: Shortcut 'B' successfully navigates back to previous field for inline corrections");
                 } else {
@@ -2365,7 +2365,7 @@ public class ConsoleInputEdgeCaseTestRunner {
 
                 String outStr = out.toString(StandardCharsets.UTF_8);
                 boolean hasAutoFillBanner = outStr.contains("Populating form with verified, unique demo candidate") || outStr.contains("[AUTO-FILL]");
-                boolean hasStudentDetails = outStr.contains("Raghav Bansal") && outStr.contains("Computer Science") && outStr.contains("8.75");
+                boolean hasStudentDetails = outStr.contains("Vihaan Mehta") && outStr.contains("Computer Science") && outStr.contains("8.75");
                 boolean hasNotSubmitted = outStr.contains("1. CREATE ACCOUNT") && outStr.contains("0. BACK");
 
                 if (hasAutoFillBanner && hasStudentDetails && hasNotSubmitted) {
@@ -2411,16 +2411,7 @@ public class ConsoleInputEdgeCaseTestRunner {
                         "A",               // Shortcut 'A': Auto-Fill Demo Data
                         "2",               // Edit field 2 (Full Name)
                         "Custom Edited Name", // Type new name
-                        "",                // Enter on Email (keep)
-                        "",                // Enter on Phone (keep)
-                        "",                // Enter on Branch (keep)
-                        "",                // Enter on CGPA (keep)
-                        "",                // Enter on Skills (keep)
-                        "",                // Enter on Backlogs (keep)
-                        "",                // Enter on Grad Year (keep)
-                        "",                // Enter on Username (keep)
-                        "Password@123",    // Password
-                        "Password@123",    // Confirm Password
+                        "",                // Enter to accept re-rendered form
                         "0",               // Cancel at action menu on Page 3
                         "0",               // Return to Gateway
                         "0"                // Gateway -> Exit
@@ -2433,7 +2424,7 @@ public class ConsoleInputEdgeCaseTestRunner {
                 System.setOut(originalOut);
 
                 String outStr = out.toString(StandardCharsets.UTF_8);
-                boolean hasEditedPrompt = outStr.contains("Enter new Full Name") || outStr.contains("Custom Edited Name") || outStr.contains("[Current: Raghav Bansal");
+                boolean hasEditedPrompt = outStr.contains("Enter new Full Name") || outStr.contains("Custom Edited Name") || outStr.contains("[Current: Vihaan Mehta");
 
                 if (hasEditedPrompt) {
                     pass("FS.7: Autofilled values can be edited field-by-field before final submission");
@@ -2757,8 +2748,8 @@ public class ConsoleInputEdgeCaseTestRunner {
                         "0",               // Enter field 8 manually
                         "2026",            // Enter field 9 manually
                         "custom_uname",    // Enter field 10 manually
-                        "Password@123",    // Enter field 11 manually
-                        "Password@123",    // Enter field 12 manually
+                        "ManualDemo@2026", // Enter field 11 manually
+                        "ManualDemo@2026", // Enter field 12 manually
                         "0",               // At action footer: 0 to BACK / Cancel
                         "0",               // Return to Gateway
                         "0"                // Gateway -> Exit
@@ -2797,10 +2788,10 @@ public class ConsoleInputEdgeCaseTestRunner {
                 stmt.executeUpdate("DELETE FROM job_required_skills WHERE job_id IN (SELECT id FROM jobs WHERE title LIKE 'Test Job%' OR title LIKE 'Runtime Job%')");
                 stmt.executeUpdate("DELETE FROM job_eligible_branches WHERE job_id IN (SELECT id FROM jobs WHERE title LIKE 'Test Job%' OR title LIKE 'Runtime Job%')");
                 stmt.executeUpdate("DELETE FROM jobs WHERE title LIKE 'Test Job%' OR title LIKE 'Runtime Job%'");
-                stmt.executeUpdate("DELETE FROM student_skills WHERE student_id IN (SELECT id FROM students WHERE user_id IN (SELECT id FROM users WHERE username LIKE 'test_%' OR username LIKE 'runtime_%' OR username LIKE 'officer_%' OR username LIKE 'raghav_%' OR username LIKE 'dhruv_%' OR username LIKE 'keshav_%' OR username LIKE 'sahaj_%' OR username LIKE 'aarav_%'))");
-                stmt.executeUpdate("DELETE FROM applications WHERE student_id IN (SELECT id FROM students WHERE user_id IN (SELECT id FROM users WHERE username LIKE 'test_%' OR username LIKE 'runtime_%' OR username LIKE 'officer_%' OR username LIKE 'raghav_%' OR username LIKE 'dhruv_%' OR username LIKE 'keshav_%' OR username LIKE 'sahaj_%' OR username LIKE 'aarav_%'))");
-                stmt.executeUpdate("DELETE FROM students WHERE user_id IN (SELECT id FROM users WHERE username LIKE 'test_%' OR username LIKE 'runtime_%' OR username LIKE 'officer_%' OR username LIKE 'raghav_%' OR username LIKE 'dhruv_%' OR username LIKE 'keshav_%' OR username LIKE 'sahaj_%' OR username LIKE 'aarav_%')");
-                stmt.executeUpdate("DELETE FROM users WHERE username LIKE 'test_%' OR username LIKE 'runtime_%' OR username LIKE 'officer_%' OR username LIKE 'raghav_%' OR username LIKE 'dhruv_%' OR username LIKE 'keshav_%' OR username LIKE 'sahaj_%' OR username LIKE 'aarav_%'");
+                stmt.executeUpdate("DELETE FROM student_skills WHERE student_id IN (SELECT id FROM students WHERE user_id IN (SELECT id FROM users WHERE username LIKE 'test_%' OR username LIKE 'runtime_%' OR username LIKE 'officer_%' OR username LIKE 'vihaan_%' OR username LIKE 'kabir_%' OR username LIKE 'ishaan_%' OR username LIKE 'arjun_%' OR username LIKE 'raghav_%' OR username LIKE 'dhruv_%' OR username LIKE 'keshav_%' OR username LIKE 'sahaj_%' OR username LIKE 'aarav_%'))");
+                stmt.executeUpdate("DELETE FROM applications WHERE student_id IN (SELECT id FROM students WHERE user_id IN (SELECT id FROM users WHERE username LIKE 'test_%' OR username LIKE 'runtime_%' OR username LIKE 'officer_%' OR username LIKE 'vihaan_%' OR username LIKE 'kabir_%' OR username LIKE 'ishaan_%' OR username LIKE 'arjun_%' OR username LIKE 'raghav_%' OR username LIKE 'dhruv_%' OR username LIKE 'keshav_%' OR username LIKE 'sahaj_%' OR username LIKE 'aarav_%'))");
+                stmt.executeUpdate("DELETE FROM students WHERE user_id IN (SELECT id FROM users WHERE username LIKE 'test_%' OR username LIKE 'runtime_%' OR username LIKE 'officer_%' OR username LIKE 'vihaan_%' OR username LIKE 'kabir_%' OR username LIKE 'ishaan_%' OR username LIKE 'arjun_%' OR username LIKE 'raghav_%' OR username LIKE 'dhruv_%' OR username LIKE 'keshav_%' OR username LIKE 'sahaj_%' OR username LIKE 'aarav_%')");
+                stmt.executeUpdate("DELETE FROM users WHERE username LIKE 'test_%' OR username LIKE 'runtime_%' OR username LIKE 'officer_%' OR username LIKE 'vihaan_%' OR username LIKE 'kabir_%' OR username LIKE 'ishaan_%' OR username LIKE 'arjun_%' OR username LIKE 'raghav_%' OR username LIKE 'dhruv_%' OR username LIKE 'keshav_%' OR username LIKE 'sahaj_%' OR username LIKE 'aarav_%'");
             } catch (SQLException ignored) {
             }
         }

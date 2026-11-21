@@ -66,7 +66,7 @@ public class Phase3TestRunner {
             // 1. Valid registration
             Student registeredStudent = authService.registerStudent(
                     testUsername, testPassword, testEmail, testUsn,
-                    "Raghav Bansal", "9876543210", "Computer Science",
+                    "Vihaan Mehta", "9876543210", "Computer Science",
                     8.85, 0, 2026, Arrays.asList("Java", "SQL", "Git")
             );
             assertTrue("A1: Valid student registration succeeds", registeredStudent != null && registeredStudent.getId() > 0);
@@ -227,7 +227,7 @@ public class Phase3TestRunner {
             System.out.println("\n--- TEST SUITE C: StudentDAO Operations ---");
 
             Student studentById = studentDAO.findById(registeredStudent.getId());
-            assertTrue("C1: Find student by ID", studentById != null && studentById.getFullName().equals("Raghav Bansal"));
+            assertTrue("C1: Find student by ID", studentById != null && studentById.getFullName().equals("Vihaan Mehta"));
 
             Student studentByUserId = studentDAO.findByUserId(registeredStudent.getUserId());
             assertTrue("C2: Find student by User ID", studentByUserId != null && studentByUserId.getStudentId().equals(testUsn));

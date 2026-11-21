@@ -21,6 +21,7 @@ import com.nextstep.util.ValidationUtil;
 
 import java.io.File;
 import java.math.BigDecimal;
+import java.security.SecureRandom;
 import java.sql.SQLException;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
@@ -60,6 +61,49 @@ public class Main {
     private final ApplicationDAO applicationDAO;
     private final CompanyDAO companyDAO;
     private final UserDAO userDAO;
+
+    private static final SecureRandom SECURE_RANDOM = new SecureRandom();
+    private static final String PASSWORD_CHARS = "ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz23456789!@#$%";
+
+    /**
+     * Generates a strong, unpredictable temporary demo password at runtime using SecureRandom.
+     * Never stores hardcoded passwords in source code, configuration, or documentation.
+     */
+    public static String generateTemporaryDemoPassword() {
+        StringBuilder sb = new StringBuilder(12);
+        for (int i = 0; i < 12; i++) {
+            sb.append(PASSWORD_CHARS.charAt(SECURE_RANDOM.nextInt(PASSWORD_CHARS.length())));
+        }
+        return sb.toString();
+    }
+
+    /**
+     * Formats a form field row with fixed-width label, colon, opening bracket, value slot, and closing bracket.
+     * Ensures strict 64-character frame alignment across all form pages.
+     *
+     * @param label form field label (e.g. "Full Name" or "Full Name            : ")
+     * @param value field value to display inside brackets
+     * @param isPassword whether to mask the value with bullet characters
+     * @return fully formatted and colorized form row string
+     */
+    public static String formatFormFieldRow(String label, String value, boolean isPassword) {
+        return formatFormFieldRow(label, value, isPassword, false);
+    }
+
+    /**
+     * Formats a form field row with optional warning styling for unconfigured values.
+     */
+    public static String formatFormFieldRow(String label, String value, boolean isPassword, boolean isWarning) {
+        String cleanLabel = label.contains(":") ? label.substring(0, label.indexOf(":")).trim() : label.trim();
+        String labelPart = String.format("%-21s : ", cleanLabel);
+        String rawVal = isPassword ? "••••••••••••" : (value != null ? value.trim() : "");
+        if (rawVal.length() > 33) {
+            rawVal = rawVal.substring(0, 30) + "...";
+        }
+        String bracketedPart = String.format("[ %-33s ]", rawVal);
+        String coloredBracketed = isWarning ? ConsoleTheme.warn(bracketedPart) : ConsoleTheme.cyan(bracketedPart);
+        return "  " + ConsoleTheme.label(labelPart) + coloredBracketed;
+    }
 
     public Main() {
         this(new AuthService(), new RecruitmentService(), new JobDAO(),
@@ -401,7 +445,7 @@ public class Main {
 
             String[] prompts = {
                     "Student ID (USN)     : ",
-                    "Full Name:           ",
+                    "Full Name            : ",
                     "Email Address        : ",
                     "Phone Number         : ",
                     "Degree Branch        : ",
@@ -428,34 +472,50 @@ public class Main {
                     System.arraycopy(demoData, 0, values, 0, Math.min(demoData.length, values.length));
                     System.out.println(ConsoleTheme.cyan(" ✦ [AUTO-FILL] Populating form with verified, unique demo candidate..."));
                     System.out.println(ConsoleTheme.divider(" ----------------------------------------------------------------"));
-                    for (int k = 0; k < prompts.length; k++) {
-                        String rawVal = isPassword[k] ? "••••••••••••" : (values[k] != null ? values[k] : "");
-                        if (rawVal.length() > 35) rawVal = rawVal.substring(0, 32) + "...";
-                        System.out.printf("  %s[ %-35s ]%n",
-                                ConsoleTheme.label(prompts[k]),
-                                ConsoleTheme.cyan(rawVal));
-                    }
-                    System.out.println(ConsoleTheme.divider(" ----------------------------------------------------------------"));
-                    System.out.println(ConsoleTheme.dim("  (Labels in Golden Amber  |  Auto-filled values in Sky Blue)"));
-                    System.out.print(ConsoleTheme.prompt("  Action: Press ENTER to accept all, or type field number (1-12) to edit: "));
-                    if (!scanner.hasNextLine()) {
-                        return false;
-                    }
-                    String editInput = scanner.nextLine().trim();
-                    if (System.console() == null) {
-                        System.out.println(editInput);
-                    }
-                    if (!editInput.isEmpty()) {
+                    while (true) {
+                        for (int k = 0; k < prompts.length; k++) {
+                            System.out.println(formatFormFieldRow(prompts[k], values[k], isPassword[k]));
+                        }
+                        System.out.println(ConsoleTheme.divider(" ----------------------------------------------------------------"));
+                        System.out.println(ConsoleTheme.dim("  (Labels in Golden Amber  |  Auto-filled values in Sky Blue)"));
+                        System.out.print(ConsoleTheme.prompt("  Action: Press ENTER to accept all, or type field number (1-12) to edit: "));
+                        if (!scanner.hasNextLine()) {
+                            return false;
+                        }
+                        String editInput = scanner.nextLine().trim();
+                        if (System.console() == null) {
+                            System.out.println(editInput);
+                        }
+                        if (editInput.isEmpty()) {
+                            break;
+                        }
                         try {
                             int fNum = Integer.parseInt(editInput);
-                            if (fNum >= 1 && fNum <= 12) {
+                            if (fNum >= 1 && fNum <= prompts.length) {
                                 int editIdx = fNum - 1;
-                                System.out.print(ConsoleTheme.prompt("  Enter new " + prompts[editIdx].trim().replace(":", "") + ": "));
+                                String fieldLabel = prompts[editIdx].replace(":", "").trim();
+                                System.out.print(ConsoleTheme.prompt("  Enter new " + fieldLabel + ": "));
                                 if (scanner.hasNextLine()) {
-                                    values[editIdx] = scanner.nextLine().trim();
+                                    String newVal = scanner.nextLine().trim();
+                                    if (System.console() == null) {
+                                        System.out.println(newVal);
+                                    }
+                                    if (!newVal.isEmpty()) {
+                                        values[editIdx] = newVal;
+                                        if (editIdx == 10) {
+                                            values[11] = newVal;
+                                        }
+                                    }
                                 }
+                                System.out.println(ConsoleTheme.divider(" ----------------------------------------------------------------"));
+                                System.out.println(ConsoleTheme.cyan(" ✦ Updated field " + fNum + " (" + fieldLabel + "). Form re-rendered:"));
+                                System.out.println(ConsoleTheme.divider(" ----------------------------------------------------------------"));
+                            } else {
+                                break;
                             }
-                        } catch (NumberFormatException ignored) {}
+                        } catch (NumberFormatException ignored) {
+                            break;
+                        }
                     }
                 }
             }
@@ -635,18 +695,14 @@ public class Main {
                 boolean hasUnsetActivation = false;
                 for (int k = 0; k < n; k++) {
                     boolean maskedField = isPassword != null && k < isPassword.length && isPassword[k];
-                    String rawVal;
-                    String styledVal;
-                    if (prompts[k].contains("Activation Code") && (values[k] == null || values[k].trim().isEmpty())) {
-                        rawVal = "[NOT CONFIGURED — ENTER MANUALLY]";
-                        styledVal = ConsoleTheme.warn(rawVal);
+                    boolean isWarn = false;
+                    String val = values[k];
+                    if (prompts[k].contains("Activation Code") && (val == null || val.trim().isEmpty())) {
+                        val = "[NOT CONFIGURED — ENTER MANUALLY]";
+                        isWarn = true;
                         hasUnsetActivation = true;
-                    } else {
-                        rawVal = maskedField ? "********" : values[k];
-                        styledVal = ConsoleTheme.cyan("[ " + rawVal + " ]");
                     }
-                    String fieldLabel = prompts[k].trim().replaceAll(":$", "");
-                    System.out.printf("  %s %s%n", ConsoleTheme.prompt(String.format("%-23s:", fieldLabel)), styledVal);
+                    System.out.println(formatFormFieldRow(prompts[k], val, maskedField && !isWarn, isWarn));
                 }
                 System.out.println(ConsoleTheme.divider("----------------------------------------------------------------"));
                 if (hasUnsetActivation) {
@@ -743,10 +799,10 @@ public class Main {
 
     public String[] getStudentDemoData() {
         String[][] candidates = {
-                { "Raghav Bansal", "2510990750", "raghav", "Computer Science", "8.75", "Java, Spring Boot, SQL, Git, Docker" },
-                { "Dhruv Sharma",  "2510990751", "dhruv",  "Information Technology", "8.50", "Java, Python, SQL, Git, Linux" },
-                { "Keshav Gupta",  "2510990752", "keshav", "Computer Science", "8.90", "Java, SQL, React, Node.js, Git" },
-                { "Sahaj Patel",   "2510990753", "sahaj",  "Electronics & Communication", "8.20", "Python, C++, Embedded Systems, Linux" }
+                { "Vihaan Mehta",    "2510990750", "vihaan", "Computer Science",             "8.75", "Java, Spring Boot, SQL, Git, Docker" },
+                { "Kabir Malhotra",  "2510990751", "kabir",  "Information Technology",       "8.50", "Java, Python, SQL, Git, Linux" },
+                { "Ishaan Verma",    "2510990752", "ishaan", "Computer Science",             "8.90", "Java, SQL, React, Node.js, Git" },
+                { "Arjun Khanna",    "2510990753", "arjun",  "Electronics & Communication",  "8.20", "Python, C++, Embedded Systems, Linux" }
         };
 
         int candIndex = 0;
@@ -788,9 +844,9 @@ public class Main {
             } else {
                 long nextId = 2510990750L + candIndex;
                 studentId = String.valueOf(nextId);
-                username = "raghav_" + (2510 + (candIndex % 9000));
-                email = "raghav." + studentId + "@university.edu";
-                name = "Raghav Bansal";
+                username = "vihaan_" + (2510 + (candIndex % 9000));
+                email = "vihaan." + studentId + "@university.edu";
+                name = "Vihaan Mehta";
                 branch = "Computer Science";
                 cgpa = "8.75";
                 skills = "Java, Spring Boot, SQL, Git, Docker";
@@ -805,6 +861,7 @@ public class Main {
             return null;
         }
 
+        String tempPass = generateTemporaryDemoPassword();
         return new String[] {
                 studentId,
                 name,
@@ -816,16 +873,16 @@ public class Main {
                 "0",
                 "2026",
                 username,
-                "Password@123",
-                "Password@123"
+                tempPass,
+                tempPass
         };
     }
 
     public String[] getOfficerDemoData() {
         int seed = (int) (System.currentTimeMillis() % 900) + 100;
         String officerId = "OFF-2026-" + seed;
-        String username = "officer_raghav";
-        String email = "tpo.raghav@university.edu";
+        String username = "officer_vihaan";
+        String email = "tpo.vihaan@university.edu";
         int attempts = 0;
         boolean verified = false;
 
@@ -845,8 +902,8 @@ public class Main {
             }
             seed = (seed + 1 > 9999) ? 100 : seed + 1;
             officerId = "OFF-2026-" + seed;
-            username = "officer_raghav_" + seed;
-            email = "tpo.raghav." + seed + "@university.edu";
+            username = "officer_vihaan_" + seed;
+            email = "tpo.vihaan." + seed + "@university.edu";
             attempts++;
         }
 
@@ -863,13 +920,14 @@ public class Main {
         }
         String resolvedCode = (actCode != null && !actCode.trim().isEmpty()) ? actCode.trim() : "";
 
+        String tempPass = generateTemporaryDemoPassword();
         return new String[] {
                 officerId,
-                "Prof. Raghav Bansal",
+                "Prof. Vihaan Mehta",
                 email,
                 username,
-                "Officer@123",
-                "Officer@123",
+                tempPass,
+                tempPass,
                 resolvedCode
         };
     }
@@ -1216,43 +1274,62 @@ public class Main {
                     System.arraycopy(demoData, 0, values, 0, Math.min(demoData.length, values.length));
                     System.out.println(ConsoleTheme.cyan(" ✦ [AUTO-FILL] Populating form with verified demo data..."));
                     System.out.println(ConsoleTheme.divider(" ----------------------------------------------------------------"));
-                    boolean hasUnsetActivation = false;
-                    for (int k = 0; k < prompts.length; k++) {
-                        String rawVal;
-                        if (k == 6 && (values[k] == null || values[k].trim().isEmpty())) {
-                            rawVal = "[NOT CONFIGURED — ENTER MANUALLY]";
-                            hasUnsetActivation = true;
-                            System.out.printf("  %s[ %-35s ]%n",
-                                    ConsoleTheme.label(prompts[k]),
-                                    ConsoleTheme.warn(rawVal));
-                            continue;
-                        } else {
-                            rawVal = isPassword[k] ? "••••••••••••" : (values[k] != null ? values[k] : "");
+                    while (true) {
+                        boolean hasUnsetActivation = false;
+                        for (int k = 0; k < prompts.length; k++) {
+                            boolean warnField = false;
+                            String val = values[k];
+                            if (k == 6 && (val == null || val.trim().isEmpty())) {
+                                val = "[NOT CONFIGURED — ENTER MANUALLY]";
+                                warnField = true;
+                                hasUnsetActivation = true;
+                            }
+                            System.out.println(formatFormFieldRow(prompts[k], val, isPassword[k] && !warnField, warnField));
                         }
-                        if (rawVal.length() > 35) rawVal = rawVal.substring(0, 32) + "...";
-                        System.out.printf("  %s[ %-35s ]%n",
-                                ConsoleTheme.label(prompts[k]),
-                                ConsoleTheme.cyan(rawVal));
-                    }
-                    System.out.println(ConsoleTheme.divider(" ----------------------------------------------------------------"));
-                    if (hasUnsetActivation) {
-                        System.out.println(ConsoleTheme.warn("  [NOT CONFIGURED — ENTER MANUALLY]"));
-                        System.out.println(ConsoleTheme.warn("  Officer activation code is not configured in system environment."));
-                        System.out.println(ConsoleTheme.warn("  ⚠ NOTICE: Activation code must be configured via environment or entered manually."));
-                    }
-                    System.out.println(ConsoleTheme.dim("  (Labels in Golden Amber  |  Values in Sky Blue  |  Warning in Amber)"));
-                    System.out.print(ConsoleTheme.prompt("  Action: Press ENTER to accept, or enter 7 to type Activation Code: "));
-                    if (!scanner.hasNextLine()) {
-                        return false;
-                    }
-                    String editInput = scanner.nextLine().trim();
-                    if (System.console() == null) {
-                        System.out.println(editInput);
-                    }
-                    if ("7".equals(editInput)) {
-                        System.out.print(ConsoleTheme.prompt("  Enter Activation Code: "));
-                        if (scanner.hasNextLine()) {
-                            values[6] = scanner.nextLine().trim();
+                        System.out.println(ConsoleTheme.divider(" ----------------------------------------------------------------"));
+                        if (hasUnsetActivation) {
+                            System.out.println(ConsoleTheme.warn("  [NOT CONFIGURED — ENTER MANUALLY]"));
+                            System.out.println(ConsoleTheme.warn("  Officer activation code is not configured in system environment."));
+                            System.out.println(ConsoleTheme.warn("  ⚠ NOTICE: Activation code must be configured via environment or entered manually."));
+                        }
+                        System.out.println(ConsoleTheme.dim("  (Labels in Golden Amber  |  Values in Sky Blue  |  Warning in Amber)"));
+                        System.out.print(ConsoleTheme.prompt("  Action: Press ENTER to accept all, or type field number (1-7) to edit: "));
+                        if (!scanner.hasNextLine()) {
+                            return false;
+                        }
+                        String editInput = scanner.nextLine().trim();
+                        if (System.console() == null) {
+                            System.out.println(editInput);
+                        }
+                        if (editInput.isEmpty()) {
+                            break;
+                        }
+                        try {
+                            int fNum = Integer.parseInt(editInput);
+                            if (fNum >= 1 && fNum <= prompts.length) {
+                                int editIdx = fNum - 1;
+                                String fieldLabel = prompts[editIdx].replace(":", "").trim();
+                                System.out.print(ConsoleTheme.prompt("  Enter new " + fieldLabel + ": "));
+                                if (scanner.hasNextLine()) {
+                                    String newVal = scanner.nextLine().trim();
+                                    if (System.console() == null) {
+                                        System.out.println(newVal);
+                                    }
+                                    if (!newVal.isEmpty()) {
+                                        values[editIdx] = newVal;
+                                        if (editIdx == 4) {
+                                            values[5] = newVal;
+                                        }
+                                    }
+                                }
+                                System.out.println(ConsoleTheme.divider(" ----------------------------------------------------------------"));
+                                System.out.println(ConsoleTheme.cyan(" ✦ Updated field " + fNum + " (" + fieldLabel + "). Form re-rendered:"));
+                                System.out.println(ConsoleTheme.divider(" ----------------------------------------------------------------"));
+                            } else {
+                                break;
+                            }
+                        } catch (NumberFormatException ignored) {
+                            break;
                         }
                     }
                 }
@@ -2116,34 +2193,47 @@ public class Main {
                     System.arraycopy(demoData, 0, values, 0, Math.min(demoData.length, values.length));
                     System.out.println(ConsoleTheme.cyan(" ✦ [AUTO-FILL] Populating job drive with sample corporate requirements..."));
                     System.out.println(ConsoleTheme.divider(" ----------------------------------------------------------------"));
-                    for (int k = 0; k < prompts.length; k++) {
-                        String rawVal = (values[k] != null) ? values[k] : "";
-                        if (rawVal.length() > 35) rawVal = rawVal.substring(0, 32) + "...";
-                        System.out.printf("  %s[ %-35s ]%n",
-                                ConsoleTheme.label(prompts[k]),
-                                ConsoleTheme.cyan(rawVal));
-                    }
-                    System.out.println(ConsoleTheme.divider(" ----------------------------------------------------------------"));
-                    System.out.println(ConsoleTheme.dim("  (Labels in Golden Amber  |  Pre-filled criteria in Sky Blue)"));
-                    System.out.print(ConsoleTheme.prompt("  Action: Press ENTER to accept all, or type field number (1-10) to edit: "));
-                    if (!scanner.hasNextLine()) {
-                        return false;
-                    }
-                    String editInput = scanner.nextLine().trim();
-                    if (System.console() == null) {
-                        System.out.println(editInput);
-                    }
-                    if (!editInput.isEmpty()) {
+                    while (true) {
+                        for (int k = 0; k < prompts.length; k++) {
+                            System.out.println(formatFormFieldRow(prompts[k], values[k], false));
+                        }
+                        System.out.println(ConsoleTheme.divider(" ----------------------------------------------------------------"));
+                        System.out.println(ConsoleTheme.dim("  (Labels in Golden Amber  |  Pre-filled criteria in Sky Blue)"));
+                        System.out.print(ConsoleTheme.prompt("  Action: Press ENTER to accept all, or type field number (1-10) to edit: "));
+                        if (!scanner.hasNextLine()) {
+                            return false;
+                        }
+                        String editInput = scanner.nextLine().trim();
+                        if (System.console() == null) {
+                            System.out.println(editInput);
+                        }
+                        if (editInput.isEmpty()) {
+                            break;
+                        }
                         try {
                             int fNum = Integer.parseInt(editInput);
-                            if (fNum >= 1 && fNum <= 10) {
+                            if (fNum >= 1 && fNum <= prompts.length) {
                                 int editIdx = fNum - 1;
-                                System.out.print(ConsoleTheme.prompt("  Enter new " + prompts[editIdx].trim().replace(":", "") + ": "));
+                                String fieldLabel = prompts[editIdx].replace(":", "").trim();
+                                System.out.print(ConsoleTheme.prompt("  Enter new " + fieldLabel + ": "));
                                 if (scanner.hasNextLine()) {
-                                    values[editIdx] = scanner.nextLine().trim();
+                                    String newVal = scanner.nextLine().trim();
+                                    if (System.console() == null) {
+                                        System.out.println(newVal);
+                                    }
+                                    if (!newVal.isEmpty()) {
+                                        values[editIdx] = newVal;
+                                    }
                                 }
+                                System.out.println(ConsoleTheme.divider(" ----------------------------------------------------------------"));
+                                System.out.println(ConsoleTheme.cyan(" ✦ Updated field " + fNum + " (" + fieldLabel + "). Form re-rendered:"));
+                                System.out.println(ConsoleTheme.divider(" ----------------------------------------------------------------"));
+                            } else {
+                                break;
                             }
-                        } catch (NumberFormatException ignored) {}
+                        } catch (NumberFormatException ignored) {
+                            break;
+                        }
                     }
                 }
             }

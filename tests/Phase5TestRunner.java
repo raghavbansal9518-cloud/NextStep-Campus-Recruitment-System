@@ -312,10 +312,10 @@ public class Phase5TestRunner {
             assertTrue("Test F3: Student blocked from exporting CSV report", studentExportBlocked);
 
             // C. RFC-4180 Commas and Quotes handling
-            String complexCsvLine = "99,USN99,\"Bansal, Raghav\",Backend Engineer,\"Apex, Inc.\",SELECTED,2026-11-09T20:00:00";
+            String complexCsvLine = "99,USN99,\"Mehta, Vihaan\",Backend Engineer,\"Apex, Inc.\",SELECTED,2026-11-09T20:00:00";
             List<String> tokens = RecruitmentService.parseCsvLine(complexCsvLine);
             assertTrue("Test F4a: parseCsvLine handles commas inside double quotes",
-                    tokens.size() == 7 && "Bansal, Raghav".equals(tokens.get(2)) && "Apex, Inc.".equals(tokens.get(4)));
+                    tokens.size() == 7 && "Mehta, Vihaan".equals(tokens.get(2)) && "Apex, Inc.".equals(tokens.get(4)));
 
             String escaped = RecruitmentService.escapeCsvField("Nexis, Corp.");
             assertTrue("Test F4b: escapeCsvField encloses fields with commas in quotes",
