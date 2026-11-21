@@ -387,6 +387,22 @@ public class RecruitmentService {
     }
 
     /**
+     * Calculates the average package CTC (LPA) across all open recruitment drives.
+     * Demonstrates Stream mapToDouble() and average() (Lectures 45–46).
+     *
+     * @return double average CTC in LPA, or 0.0 if no open jobs exist
+     * @throws SQLException on database error
+     */
+    public double getAverageCtcLpa() throws SQLException {
+        return jobDAO.findAllJobs().stream()
+                     .filter(j -> "OPEN".equalsIgnoreCase(j.getStatus()))
+                     .filter(j -> j.getCtcLpa() != null)
+                     .mapToDouble(j -> j.getCtcLpa().doubleValue())
+                     .average()
+                     .orElse(0.0);
+    }
+
+    /**
      * Checks if any active drive is available in a given city/location.
      * Demonstrates Stream terminal operation anyMatch() (Lectures 45–46).
      */

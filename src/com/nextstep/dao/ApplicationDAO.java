@@ -190,6 +190,24 @@ public class ApplicationDAO {
         return list;
     }
 
+    /**
+     * Counts the total number of applications filed across all recruitment drives.
+     *
+     * @return int total count of application records
+     * @throws SQLException on database error
+     */
+    public int countApplications() throws SQLException {
+        String sql = "SELECT COUNT(*) FROM applications";
+        try (Connection conn = DatabaseConnection.getConnection();
+             PreparedStatement stmt = conn.prepareStatement(sql);
+             ResultSet rs = stmt.executeQuery()) {
+            if (rs.next()) {
+                return rs.getInt(1);
+            }
+            return 0;
+        }
+    }
+
     private Application mapRowToApplication(ResultSet rs) throws SQLException {
         int id = rs.getInt("id");
         int studentId = rs.getInt("student_id");

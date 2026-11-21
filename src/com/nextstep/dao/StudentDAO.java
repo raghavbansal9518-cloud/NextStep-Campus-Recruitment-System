@@ -201,6 +201,24 @@ public class StudentDAO {
     }
 
     /**
+     * Counts the total number of registered students in the system.
+     *
+     * @return int total count of student records
+     * @throws SQLException on database error
+     */
+    public int countStudents() throws SQLException {
+        String sql = "SELECT COUNT(*) FROM students";
+        try (Connection conn = DatabaseConnection.getConnection();
+             PreparedStatement stmt = conn.prepareStatement(sql);
+             ResultSet rs = stmt.executeQuery()) {
+            if (rs.next()) {
+                return rs.getInt(1);
+            }
+            return 0;
+        }
+    }
+
+    /**
      * Updates an existing student's academic and profile details.
      */
     public boolean updateStudent(Student student) throws SQLException {

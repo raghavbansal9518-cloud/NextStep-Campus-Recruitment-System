@@ -163,11 +163,25 @@ public class Main {
         System.out.println(ConsoleTheme.header("          Automated Eligibility, Skill Matching & Drives"));
         System.out.println(ConsoleTheme.border("================================================================"));
         long openJobs = 0;
+        int registeredStudents = 0;
+        int totalApplications = 0;
+        double avgCtc = 0.0;
         try {
-            openJobs = recruitmentService.countOpenJobs();
+            if (recruitmentService != null) {
+                openJobs = recruitmentService.countOpenJobs();
+                avgCtc = recruitmentService.getAverageCtcLpa();
+            }
+            if (studentDAO != null) {
+                registeredStudents = studentDAO.countStudents();
+            }
+            if (applicationDAO != null) {
+                totalApplications = applicationDAO.countApplications();
+            }
         } catch (Exception ignored) {}
-        System.out.println(ConsoleTheme.dim("  System Status:  ● ONLINE   |   Partner Companies: " + openJobs + " Active Drives"));
-        System.out.println(ConsoleTheme.dim("  Academic Year:  2025–2026  |   Active Students:   Registered"));
+        System.out.println(ConsoleTheme.dim(String.format(Locale.US,
+                "  Active Drives: %-3d | Candidates: %-3d | Apps: %-3d | Avg: %.1f LPA",
+                openJobs, registeredStudents, totalApplications, avgCtc)));
+        System.out.println(ConsoleTheme.dim("  System Status:  ● ONLINE   |   Academic Year:     2025–2026"));
         System.out.println(ConsoleTheme.cyan("  ┌──────────────────────────────────────────────────────────┐"));
         System.out.println(ConsoleTheme.cyan("  │") + ConsoleTheme.text("                    SELECT YOUR PORTAL                    ") + ConsoleTheme.cyan("│"));
         System.out.println(ConsoleTheme.cyan("  └──────────────────────────────────────────────────────────┘"));
@@ -861,11 +875,13 @@ public class Main {
     }
 
     private String[] getJobDemoData(List<Company> companies) {
-        String companyId = (companies != null && !companies.isEmpty())
-                ? String.valueOf(companies.get(0).getId())
-                : "1";
-        String location = (companies != null && !companies.isEmpty() && companies.get(0).getLocation() != null)
-                ? companies.get(0).getLocation()
+        if (companies == null || companies.isEmpty()) {
+            return null;
+        }
+        Company comp = companies.get(0);
+        String companyId = String.valueOf(comp.getId());
+        String location = (comp.getLocation() != null && !comp.getLocation().trim().isEmpty())
+                ? comp.getLocation().trim()
                 : "Bengaluru, KA";
         return new String[] {
                 companyId,
@@ -1755,17 +1771,19 @@ public class Main {
         System.out.println(ConsoleTheme.header("              NEXTSTEP | PLACEMENT OFFICER PORTAL"));
         System.out.println(ConsoleTheme.header("        ADMINISTRATION DASHBOARD — OFFICER DASHBOARD"));
         System.out.println(ConsoleTheme.border("================================================================"));
-        String officerName = (officer != null && officer.getUsername() != null) ? officer.getUsername() : "Dr. Arvind Sharma";
-        String officerId = (officer != null) ? ("OFF-2026-" + String.format("%03d", officer.getId() % 1000)) : "OFF-2026-365";
+        String officerName = (officer != null && officer.getUsername() != null) ? officer.getUsername() : "Officer";
+        String officerId = (officer != null && officer.getId() > 0) ? ("OFF-2026-" + String.format("%03d", officer.getId() % 1000)) : "OFF-2026-001";
         long totalDrives = 0;
         long totalApplicants = 0;
         long shortlistedCount = 0;
         try {
-            totalDrives = recruitmentService.countOpenJobs();
-            if (officer != null) {
-                List<Application> apps = recruitmentService.getAllApplications(officer);
-                totalApplicants = apps.size();
-                shortlistedCount = apps.stream().filter(a -> a.getStatus() == ApplicationStatus.SHORTLISTED).count();
+            if (recruitmentService != null) {
+                totalDrives = recruitmentService.countOpenJobs();
+                if (officer != null) {
+                    List<Application> apps = recruitmentService.getAllApplications(officer);
+                    totalApplicants = apps.size();
+                    shortlistedCount = apps.stream().filter(a -> a.getStatus() == ApplicationStatus.SHORTLISTED).count();
+                }
             }
         } catch (Exception ignored) {}
         System.out.printf("  Officer: %s  |  ID: %s  |  Role: TPO Admin%n", officerName, officerId);
