@@ -1933,42 +1933,60 @@ public class Main {
             System.out.println(ConsoleTheme.cyan("   [ A ] Fetch Saved Demo Data   |   [ ENTER ] Manual Entry"));
             System.out.println(ConsoleTheme.dim("   (Shortcut: A / A1 = Vihaan  |  A2 = Kabir  |  A3 = Arjun)"));
             System.out.println(ConsoleTheme.divider("----------------------------------------------------------------"));
+            System.out.print(ConsoleTheme.prompt(" Choose mode (or press 0 to Cancel): "));
+            if (!scanner.hasNextLine()) {
+                return false;
+            }
+            String modeChoice = scanner.nextLine().trim();
+            if (System.console() == null) {
+                System.out.println(modeChoice);
+            }
+            if ("0".equals(modeChoice)) {
+                return false;
+            }
 
-            String identifier = readField(scanner, "Student ID / Username:  ");
+            String identifier = "";
             String password = "";
 
-            if ("A".equalsIgnoreCase(identifier) || "A1".equalsIgnoreCase(identifier) ||
-                    "AUTO".equalsIgnoreCase(identifier) || "DEMO".equalsIgnoreCase(identifier)) {
+            if ("A".equalsIgnoreCase(modeChoice) || "A1".equalsIgnoreCase(modeChoice) ||
+                    "AUTO".equalsIgnoreCase(modeChoice) || "DEMO".equalsIgnoreCase(modeChoice)) {
                 DemoService.DemoStudentProfile prof = (demoService != null) ? demoService.getDemoStudentProfile(0) : null;
                 identifier = (prof != null) ? prof.getUsername() : DemoService.DEMO_STUDENT_USERNAME;
                 password = (prof != null) ? prof.getPassword() : DemoService.DEMO_PASSWORD;
                 String cName = (prof != null) ? prof.getFullName() : DemoService.DEMO_STUDENT_NAME;
                 statusMessage = "Loaded demo profile: " + cName + ". Press 1 to Sign In.";
+                System.out.println(ConsoleTheme.divider("----------------------------------------------------------------"));
+                System.out.printf("  Student ID / Username : [ %-29s ]%n", identifier);
+                System.out.printf("  Password              : [ %-29s ]%n", "********");
                 System.out.println(ConsoleTheme.cyan("  * [AUTO-FILL] Profile A: " + cName + " (" + identifier + ")"));
-                System.out.println("  Password:               [ ******** ]");
                 System.out.println(ConsoleTheme.dim("    (Hint: Enter A1 for Vihaan, A2 for Kabir, A3 for Arjun)"));
-            } else if ("A2".equalsIgnoreCase(identifier)) {
+            } else if ("A2".equalsIgnoreCase(modeChoice)) {
                 DemoService.DemoStudentProfile prof = (demoService != null) ? demoService.getDemoStudentProfile(1) : null;
                 identifier = (prof != null) ? prof.getUsername() : DemoService.DEMO_STUDENT2_USERNAME;
                 password = (prof != null) ? prof.getPassword() : DemoService.DEMO_PASSWORD;
                 String cName = (prof != null) ? prof.getFullName() : DemoService.DEMO_STUDENT2_NAME;
                 statusMessage = "Loaded demo profile: " + cName + ". Press 1 to Sign In.";
+                System.out.println(ConsoleTheme.divider("----------------------------------------------------------------"));
+                System.out.printf("  Student ID / Username : [ %-29s ]%n", identifier);
+                System.out.printf("  Password              : [ %-29s ]%n", "********");
                 System.out.println(ConsoleTheme.cyan("  * [AUTO-FILL] Profile B: " + cName + " (" + identifier + ")"));
-                System.out.println("  Password:               [ ******** ]");
-            } else if ("A3".equalsIgnoreCase(identifier)) {
+            } else if ("A3".equalsIgnoreCase(modeChoice)) {
                 DemoService.DemoStudentProfile prof = (demoService != null) ? demoService.getDemoStudentProfile(2) : null;
                 identifier = (prof != null) ? prof.getUsername() : DemoService.DEMO_STUDENT3_USERNAME;
                 password = (prof != null) ? prof.getPassword() : DemoService.DEMO_PASSWORD;
                 String cName = (prof != null) ? prof.getFullName() : DemoService.DEMO_STUDENT3_NAME;
                 statusMessage = "Loaded demo profile: " + cName + ". Press 1 to Sign In.";
+                System.out.println(ConsoleTheme.divider("----------------------------------------------------------------"));
+                System.out.printf("  Student ID / Username : [ %-29s ]%n", identifier);
+                System.out.printf("  Password              : [ %-29s ]%n", "********");
                 System.out.println(ConsoleTheme.cyan("  * [AUTO-FILL] Profile C: " + cName + " (" + identifier + ")"));
-                System.out.println("  Password:               [ ******** ]");
-            } else {
+            } else if (modeChoice.isEmpty()) {
+                identifier = readField(scanner, "Student ID / Username:  ");
                 password = readPasswordField(scanner, "Password:               ");
-                if ("A".equalsIgnoreCase(password) || "AUTO".equalsIgnoreCase(password)) {
-                    password = DemoService.DEMO_PASSWORD;
-                    System.out.println(ConsoleTheme.cyan("  * [AUTO-FILL] Loaded demo password."));
-                }
+            } else {
+                identifier = modeChoice;
+                System.out.println("Student ID / Username:  " + identifier);
+                password = readPasswordField(scanner, "Password:               ");
             }
             System.out.println();
 
@@ -2090,6 +2108,7 @@ public class Main {
             clearConsole();
             renderOfficerSignUpHeader();
             System.out.println(ConsoleTheme.cyan("   [ A ] Fetch Saved Demo Data   |   [ ENTER ] Manual Entry"));
+            System.out.println(ConsoleTheme.dim("   (Shortcut: A = officer_vihaan  |  TPO Administrator)"));
             System.out.println(ConsoleTheme.divider("----------------------------------------------------------------"));
             System.out.print(ConsoleTheme.prompt(" Choose mode (or press 0 to Cancel): "));
             if (!scanner.hasNextLine()) {
@@ -2399,23 +2418,38 @@ public class Main {
         System.out.println(ConsoleTheme.header("              NEXTSTEP | PLACEMENT OFFICER PORTAL"));
         System.out.println(ConsoleTheme.header("                    PLACEMENT OFFICER LOGIN"));
         System.out.println(ConsoleTheme.border("================================================================"));
-        System.out.println(ConsoleTheme.dim("  Authorized Access: Placement Officer Credentials Only"));
         System.out.println(ConsoleTheme.cyan("   [ A ] Fetch Saved Demo Data   |   [ ENTER ] Manual Entry"));
+        System.out.println(ConsoleTheme.dim("   (Shortcut: A = officer_vihaan  |  TPO Administrator)"));
         System.out.println(ConsoleTheme.divider("----------------------------------------------------------------"));
-        String username = readField(scanner, "Username:               ");
+        System.out.print(ConsoleTheme.prompt(" Choose mode (or press 0 to Cancel): "));
+        if (!scanner.hasNextLine()) {
+            return false;
+        }
+        String modeChoice = scanner.nextLine().trim();
+        if (System.console() == null) {
+            System.out.println(modeChoice);
+        }
+        if ("0".equals(modeChoice)) {
+            return false;
+        }
+
+        String username;
         String password;
-        if ("A".equalsIgnoreCase(username) || "AUTO".equalsIgnoreCase(username) || "DEMO".equalsIgnoreCase(username)) {
+        if ("A".equalsIgnoreCase(modeChoice) || "AUTO".equalsIgnoreCase(modeChoice) || "DEMO".equalsIgnoreCase(modeChoice)) {
             DemoService.DemoOfficerProfile off = (demoService != null) ? demoService.getDemoOfficerProfile() : null;
             username = (off != null) ? off.getUsername() : DemoService.DEMO_OFFICER_USERNAME;
             password = (off != null) ? off.getPassword() : DemoService.DEMO_PASSWORD;
+            System.out.println(ConsoleTheme.divider("----------------------------------------------------------------"));
+            System.out.printf("  Username              : [ %-29s ]%n", username);
+            System.out.printf("  Password              : [ %-29s ]%n", "********");
             System.out.println(ConsoleTheme.cyan("  * [AUTO-FILL] Loaded Demo Officer: " + username));
-            System.out.println("  Password:               [ ******** ]");
-        } else {
+        } else if (modeChoice.isEmpty()) {
+            username = readField(scanner, "Username:               ");
             password = readPasswordField(scanner, "Password:               ");
-            if ("A".equalsIgnoreCase(password) || "AUTO".equalsIgnoreCase(password)) {
-                password = DemoService.DEMO_PASSWORD;
-                System.out.println(ConsoleTheme.cyan("  * [AUTO-FILL] Loaded saved demo password."));
-            }
+        } else {
+            username = modeChoice;
+            System.out.println("Username:               " + username);
+            password = readPasswordField(scanner, "Password:               ");
         }
 
         try {
@@ -3112,6 +3146,7 @@ public class Main {
 
             System.out.println(ConsoleTheme.divider("----------------------------------------------------------------"));
             System.out.println(ConsoleTheme.cyan("   [ A ] Fetch Saved Demo Job    |   [ ENTER ] Manual Entry"));
+            System.out.println(ConsoleTheme.dim("   (Shortcut: A = Junior Backend Engineer  |  Nexis Cloud)"));
             System.out.println(ConsoleTheme.divider("----------------------------------------------------------------"));
             System.out.print(ConsoleTheme.prompt(" Choose mode (or press 0 to Cancel): "));
             if (!scanner.hasNextLine()) {
@@ -3495,17 +3530,21 @@ public class Main {
             return;
         }
 
-        System.out.print(ConsoleTheme.prompt("Enter Job ID [A for Demo Job #1, 0 to Back]: "));
+        clearConsole();
+        System.out.println(ConsoleTheme.border("================================================================"));
+        System.out.println(ConsoleTheme.header("                    NEXTSTEP | STUDENT PORTAL"));
+        System.out.println(ConsoleTheme.header("               CHECK JOB ELIGIBILITY & SKILL MATCH"));
+        System.out.println(ConsoleTheme.border("================================================================"));
+        System.out.println(ConsoleTheme.cyan("   [ A ] Select Demo Job Drive   |   [ ENTER ] Enter Job ID"));
+        System.out.println(ConsoleTheme.dim("   (Shortcut: A = Job #1 Junior Backend Engineer — Nexis)"));
+        System.out.println(ConsoleTheme.divider("----------------------------------------------------------------"));
+        System.out.print(ConsoleTheme.prompt(" Choose mode (or press 0 to Cancel): "));
         if (!scanner.hasNextLine()) {
             return;
         }
         String input = scanner.nextLine().trim();
         if (System.console() == null) {
             System.out.println(input);
-        }
-        if (input.isEmpty()) {
-            System.out.println("[ERROR] Job ID cannot be empty.");
-            return;
         }
         if ("0".equals(input)) {
             return;
@@ -3515,11 +3554,22 @@ public class Main {
         if ("A".equalsIgnoreCase(input) || "AUTO".equalsIgnoreCase(input) || "DEMO".equalsIgnoreCase(input)) {
             jobId = 1;
             System.out.println(ConsoleTheme.cyan("  * [AUTO-SELECT] Selected Demo Job Drive #1."));
+        } else if (input.isEmpty()) {
+            System.out.print(ConsoleTheme.prompt(" Enter Job ID [1-3]: "));
+            if (!scanner.hasNextLine()) return;
+            String line = scanner.nextLine().trim();
+            if (System.console() == null) System.out.println(line);
+            try {
+                jobId = Integer.parseInt(line);
+            } catch (NumberFormatException e) {
+                System.out.println(ConsoleTheme.warn("[WARN] Invalid Job ID. Must be numeric."));
+                return;
+            }
         } else {
             try {
                 jobId = Integer.parseInt(input);
             } catch (NumberFormatException e) {
-                System.out.println("[ERROR] Invalid Job ID. Must be numeric.");
+                System.out.println(ConsoleTheme.warn("[WARN] Invalid Job ID. Must be numeric."));
                 return;
             }
         }
@@ -3714,7 +3764,15 @@ public class Main {
      * Direct flow for Option 5 on Student Dashboard (Analyse Skill Match).
      */
     private void showSkillAnalysisFlow(Scanner scanner, Student student) {
-        System.out.print(ConsoleTheme.prompt("Enter Job ID [A for Demo Job #1, 0 to Back]: "));
+        clearConsole();
+        System.out.println(ConsoleTheme.border("================================================================"));
+        System.out.println(ConsoleTheme.header("                    NEXTSTEP | STUDENT PORTAL"));
+        System.out.println(ConsoleTheme.header("               CHECK JOB ELIGIBILITY & SKILL MATCH"));
+        System.out.println(ConsoleTheme.border("================================================================"));
+        System.out.println(ConsoleTheme.cyan("   [ A ] Select Demo Job Drive   |   [ ENTER ] Enter Job ID"));
+        System.out.println(ConsoleTheme.dim("   (Shortcut: A = Job #1 Junior Backend Engineer — Nexis)"));
+        System.out.println(ConsoleTheme.divider("----------------------------------------------------------------"));
+        System.out.print(ConsoleTheme.prompt(" Choose mode (or press 0 to Cancel): "));
         if (!scanner.hasNextLine()) {
             return;
         }
@@ -3722,8 +3780,7 @@ public class Main {
         if (System.console() == null) {
             System.out.println(input);
         }
-        if (input.isEmpty()) {
-            System.out.println("[ERROR] Job ID cannot be empty.");
+        if ("0".equals(input)) {
             return;
         }
 
@@ -3731,11 +3788,22 @@ public class Main {
         if ("A".equalsIgnoreCase(input) || "AUTO".equalsIgnoreCase(input) || "DEMO".equalsIgnoreCase(input)) {
             jobId = 1;
             System.out.println(ConsoleTheme.cyan("  * [AUTO-SELECT] Selected Demo Job Drive #1."));
+        } else if (input.isEmpty()) {
+            System.out.print(ConsoleTheme.prompt(" Enter Job ID [1-3]: "));
+            if (!scanner.hasNextLine()) return;
+            String line = scanner.nextLine().trim();
+            if (System.console() == null) System.out.println(line);
+            try {
+                jobId = Integer.parseInt(line);
+            } catch (NumberFormatException e) {
+                System.out.println(ConsoleTheme.warn("[WARN] Invalid Job ID. Must be numeric."));
+                return;
+            }
         } else {
             try {
                 jobId = Integer.parseInt(input);
             } catch (NumberFormatException e) {
-                System.out.println("[ERROR] Invalid Job ID. Must be numeric.");
+                System.out.println(ConsoleTheme.warn("[WARN] Invalid Job ID. Must be numeric."));
                 return;
             }
         }
@@ -3781,17 +3849,21 @@ public class Main {
             return;
         }
 
-        System.out.print(ConsoleTheme.prompt("Enter Job ID to apply [A for Demo Job #1, 0 to Back]: "));
+        clearConsole();
+        System.out.println(ConsoleTheme.border("================================================================"));
+        System.out.println(ConsoleTheme.header("                    NEXTSTEP | STUDENT PORTAL"));
+        System.out.println(ConsoleTheme.header("                 APPLY FOR RECRUITMENT OPENING"));
+        System.out.println(ConsoleTheme.border("================================================================"));
+        System.out.println(ConsoleTheme.cyan("   [ A ] Select Demo Job Drive   |   [ ENTER ] Enter Job ID"));
+        System.out.println(ConsoleTheme.dim("   (Shortcut: A = Job #1 Junior Backend Engineer — Nexis)"));
+        System.out.println(ConsoleTheme.divider("----------------------------------------------------------------"));
+        System.out.print(ConsoleTheme.prompt(" Choose mode (or press 0 to Cancel): "));
         if (!scanner.hasNextLine()) {
             return;
         }
         String input = scanner.nextLine().trim();
         if (System.console() == null) {
             System.out.println(input);
-        }
-        if (input.isEmpty()) {
-            System.out.println("[ERROR] Job ID cannot be empty.");
-            return;
         }
         if ("0".equals(input)) {
             return;
@@ -3801,11 +3873,22 @@ public class Main {
         if ("A".equalsIgnoreCase(input) || "AUTO".equalsIgnoreCase(input) || "DEMO".equalsIgnoreCase(input)) {
             jobId = 1;
             System.out.println(ConsoleTheme.cyan("  * [AUTO-SELECT] Selected Demo Job Drive #1."));
+        } else if (input.isEmpty()) {
+            System.out.print(ConsoleTheme.prompt(" Enter Job ID to apply [1-3]: "));
+            if (!scanner.hasNextLine()) return;
+            String line = scanner.nextLine().trim();
+            if (System.console() == null) System.out.println(line);
+            try {
+                jobId = Integer.parseInt(line);
+            } catch (NumberFormatException e) {
+                System.out.println(ConsoleTheme.warn("[WARN] Invalid Job ID. Must be numeric."));
+                return;
+            }
         } else {
             try {
                 jobId = Integer.parseInt(input);
             } catch (NumberFormatException e) {
-                System.out.println("[ERROR] Invalid Job ID. Must be numeric.");
+                System.out.println(ConsoleTheme.warn("[WARN] Invalid Job ID. Must be numeric."));
                 return;
             }
         }
