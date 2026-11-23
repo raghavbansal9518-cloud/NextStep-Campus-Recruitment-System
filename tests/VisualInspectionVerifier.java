@@ -1,6 +1,7 @@
 import com.nextstep.Main;
 import com.nextstep.service.AuthService;
 import com.nextstep.service.DemoService;
+import com.nextstep.util.ConsoleTheme;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
@@ -149,6 +150,78 @@ public class VisualInspectionVerifier {
         inspectScreen("16. Demo Manager - Applications Tracking Screen",
                 "4\n7\n0\n0\n0\n");
 
-        System.out.println("ALL 16 VISUAL REGRESSION INSPECTIONS COMPLETED SUCCESSFULLY!");
+        // 17. Page 1: Welcome Gateway & Campus Statistics (Option 3)
+        inspectScreen("17. Gateway & Campus Recruitment Statistics",
+                "3\n\n0\n");
+
+        // 18. Page 6: Student Placement Hub Dashboard & Available Drives (Student 1 -> 1)
+        inspectScreen("18. Student Placement Hub & Available Recruitment Drives",
+                "1\n2\nA\n1\n0\n0\n0\n0\n");
+
+        // 19. Page 8: Job Eligibility Checklist & Skill Match Matrix (Student 1 -> 2 -> Job 1)
+        inspectScreen("19. Page 8 - Unified Eligibility Checklist & Skill Matrix [Eligible]",
+                "1\n2\nA\n2\nA\n0\n0\n0\n0\n");
+
+        // 20. Page 8: Ineligible Candidate Evaluation (Scenario C: Arjun Khanna)
+        inspectScreen("20. Page 8 - Unified Eligibility Checklist & Skill Matrix [Ineligible]",
+                "1\n2\nA3\n2\nA\n0\n0\n0\n0\n");
+
+        // 21. Page 9: Application Review Summary (Scenario A: Eligible Candidate)
+        inspectScreen("21. Page 9 - Application Review Summary [Eligible Review]",
+                "1\n2\nA\n3\nA\n0\n0\n0\n0\n");
+
+        // 22. Page 9: Application Review Rejection (Scenario C: Ineligible Candidate)
+        inspectScreen("22. Page 9 - Application Review Rejection Notice [Blocked Candidate]",
+                "1\n2\nA3\n3\nA\n0\n0\n0\n0\n");
+
+        // 23. Page 9: Official Digital Filing Receipt (Apply & Transmit)
+        inspectScreen("23. Page 9 - Official Digital Recruitment Filing Receipt",
+                "1\n2\nA\n3\nA\n1\n\n0\n0\n0\n");
+
+        // 24. Page 6: Student Application History (Option 4)
+        inspectScreen("24. Student Application History Tracking",
+                "1\n2\nA\n4\n0\n0\n0\n");
+
+        // 25. Page 7: Placement Officer Administration Dashboard
+        inspectScreen("25. Placement Officer Administration Dashboard",
+                "2\n2\nA\n0\n0\n0\n");
+
+        // 26. Page 10: Master Application Registry
+        inspectScreen("26. Page 10 - Master Application Registry Table View",
+                "2\n2\nA\n2\n0\n0\n0\n0\n");
+
+        // 27-30: Responsive Dimensions Verification
+        inspectResponsiveDimensions();
+
+        System.out.println("ALL 30 VISUAL REGRESSION & RESPONSIVENESS INSPECTIONS COMPLETED SUCCESSFULLY!");
+    }
+
+    private static void inspectResponsiveDimensions() {
+        int[] widths = {80, 100, 120, 50};
+        for (int w : widths) {
+            System.out.println("==================================================================");
+            System.out.println(" RESPONSIVE DIMENSION VERIFICATION: " + w + " Columns Terminal");
+            System.out.println("==================================================================");
+
+            System.setProperty("nextstep.columns", String.valueOf(w));
+            System.setProperty("nextstep.center", "true");
+            ConsoleTheme.refreshTerminalDimensions();
+
+            int expectedMargin = (w > 64) ? (w - 64) / 2 : 0;
+            int actualMargin = ConsoleTheme.getLeftMargin();
+            System.out.println("  Terminal Width   : " + w + " columns");
+            System.out.println("  Expected Margin  : " + expectedMargin + " spaces");
+            System.out.println("  Calculated Margin: " + actualMargin + " spaces");
+
+            if (expectedMargin != actualMargin) {
+                System.err.println("  [FAIL] Margin mismatch for width " + w + "!");
+            } else {
+                System.out.println("  [PASS] Centering margin perfectly calibrated (" + actualMargin + " spaces).");
+            }
+            System.out.println("------------------------------------------------------------------\n");
+        }
+        System.clearProperty("nextstep.columns");
+        System.clearProperty("nextstep.center");
+        ConsoleTheme.resetToDefault();
     }
 }

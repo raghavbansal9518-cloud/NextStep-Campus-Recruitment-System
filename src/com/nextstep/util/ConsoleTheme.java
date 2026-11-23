@@ -21,6 +21,13 @@ public final class ConsoleTheme {
 
     private static boolean ansiEnabled = detectAnsiSupport();
 
+    public static final int FRAME_WIDTH = 64;
+
+    private static int terminalColumns = detectTerminalColumns();
+    private static boolean centeringEnabled = detectCenteringSupport();
+    private static AutoMarginOutputStream installedMarginStream = null;
+    private static java.io.PrintStream originalSystemOut = null;
+
     public static final String RESET = "\u001B[0m";
 
     // 24-bit TrueColour Foreground Codes (38;2;R;G;B)
@@ -63,6 +70,173 @@ public final class ConsoleTheme {
         return System.console() != null;
     }
 
+    private static int detectTerminalColumns() {
+        String prop = System.getProperty("nextstep.columns");
+        if (prop != null) {
+            try {
+                return Integer.parseInt(prop.trim());
+            } catch (NumberFormatException ignored) {}
+        }
+        String env = System.getenv("COLUMNS");
+        if (env != null) {
+            try {
+                return Integer.parseInt(env.trim());
+            } catch (NumberFormatException ignored) {}
+        }
+        if (System.console() != null) {
+            if (System.getProperty("os.name", "").toLowerCase().contains("win")) {
+                int winCols = detectWindowsColumns();
+                if (winCols > 0) return winCols;
+            }
+            return 80;
+        }
+        return FRAME_WIDTH;
+    }
+
+    private static int detectWindowsColumns() {
+        try {
+            Process p = new ProcessBuilder("cmd", "/c", "mode con").start();
+            try (java.io.BufferedReader reader = new java.io.BufferedReader(new java.io.InputStreamReader(p.getInputStream()))) {
+                String line;
+                while ((line = reader.readLine()) != null) {
+                    line = line.trim();
+                    if (line.startsWith("Columns:")) {
+                        String[] parts = line.split(":");
+                        if (parts.length > 1) {
+                            return Integer.parseInt(parts[1].trim());
+                        }
+                    }
+                }
+            }
+        } catch (Exception ignored) {}
+        return 80;
+    }
+
+    private static boolean detectCenteringSupport() {
+        String prop = System.getProperty("nextstep.center");
+        if (prop != null) {
+            return Boolean.parseBoolean(prop);
+        }
+        String env = System.getenv("NEXTSTEP_CENTER");
+        if (env != null) {
+            return Boolean.parseBoolean(env);
+        }
+        return System.console() != null && terminalColumns > FRAME_WIDTH;
+    }
+
+    public static synchronized int getTerminalColumns() {
+        return terminalColumns;
+    }
+
+    public static synchronized void setTerminalColumns(int columns) {
+        terminalColumns = Math.max(FRAME_WIDTH, columns);
+        if (installedMarginStream != null) {
+            installedMarginStream.setMargin(getLeftMargin());
+        }
+    }
+
+    public static synchronized boolean isCenteringEnabled() {
+        return centeringEnabled;
+    }
+
+    public static synchronized void setCenteringEnabled(boolean enabled) {
+        centeringEnabled = enabled;
+        if (installedMarginStream != null) {
+            installedMarginStream.setMargin(getLeftMargin());
+        }
+    }
+
+    public static synchronized int getLeftMargin() {
+        if (!centeringEnabled || terminalColumns <= FRAME_WIDTH) {
+            return 0;
+        }
+        return Math.max(0, (terminalColumns - FRAME_WIDTH) / 2);
+    }
+
+    public static synchronized String margin() {
+        int m = getLeftMargin();
+        if (m <= 0) return "";
+        return " ".repeat(m);
+    }
+
+    public static synchronized void refreshTerminalDimensions() {
+        terminalColumns = detectTerminalColumns();
+        centeringEnabled = detectCenteringSupport();
+        if (installedMarginStream != null) {
+            installedMarginStream.setMargin(getLeftMargin());
+            installedMarginStream.resetLineStart();
+        }
+    }
+
+    public static synchronized void resetLineStart() {
+        if (installedMarginStream != null) {
+            installedMarginStream.resetLineStart();
+        }
+    }
+
+    public static synchronized void installAutoMargin() {
+        installAutoMargin(System.out);
+    }
+
+    public static synchronized void installAutoMargin(java.io.PrintStream targetOut) {
+        if (installedMarginStream != null) {
+            return;
+        }
+        int margin = getLeftMargin();
+        if (margin > 0) {
+            originalSystemOut = targetOut;
+            installedMarginStream = new AutoMarginOutputStream(targetOut, margin);
+            System.setOut(new java.io.PrintStream(installedMarginStream, true, java.nio.charset.StandardCharsets.UTF_8));
+        }
+    }
+
+    public static synchronized void uninstallAutoMargin() {
+        if (originalSystemOut != null) {
+            System.setOut(originalSystemOut);
+            originalSystemOut = null;
+            installedMarginStream = null;
+        }
+    }
+
+    public static class AutoMarginOutputStream extends java.io.FilterOutputStream {
+        private volatile int margin;
+        private boolean atLineStart = true;
+        private volatile byte[] marginBytes;
+
+        public AutoMarginOutputStream(java.io.OutputStream out, int margin) {
+            super(out);
+            setMargin(margin);
+        }
+
+        public synchronized void setMargin(int newMargin) {
+            this.margin = Math.max(0, newMargin);
+            this.marginBytes = " ".repeat(this.margin).getBytes(java.nio.charset.StandardCharsets.UTF_8);
+        }
+
+        public synchronized void resetLineStart() {
+            this.atLineStart = true;
+        }
+
+        @Override
+        public synchronized void write(int b) throws java.io.IOException {
+            if (margin > 0 && atLineStart && b != '\n' && b != '\r') {
+                out.write(marginBytes);
+                atLineStart = false;
+            }
+            out.write(b);
+            if (b == '\n') {
+                atLineStart = true;
+            }
+        }
+
+        @Override
+        public synchronized void write(byte[] b, int off, int len) throws java.io.IOException {
+            for (int i = 0; i < len; i++) {
+                write(b[off + i]);
+            }
+        }
+    }
+
     public static synchronized boolean isAnsiEnabled() {
         return ansiEnabled;
     }
@@ -75,7 +249,10 @@ public final class ConsoleTheme {
      * Resets ANSI detection to default environment evaluation.
      */
     public static synchronized void resetToDefault() {
+        uninstallAutoMargin();
         ansiEnabled = detectAnsiSupport();
+        terminalColumns = detectTerminalColumns();
+        centeringEnabled = detectCenteringSupport();
     }
 
     public static String cyan(String text) {

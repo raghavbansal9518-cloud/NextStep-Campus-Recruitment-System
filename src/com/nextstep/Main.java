@@ -147,6 +147,11 @@ public class Main {
         Main app = new Main();
         Scanner scanner = new Scanner(System.in);
 
+        // Auto-install responsive centering if terminal width exceeds 64 columns
+        if (ConsoleTheme.isCenteringEnabled()) {
+            ConsoleTheme.installAutoMargin();
+        }
+
         // Optional administrative CLI flag to seed initial placement officer
         if (args != null && args.length > 0 && "--init-officer".equalsIgnoreCase(args[0])) {
             app.handleAdminOfficerSetup(scanner);
@@ -178,6 +183,9 @@ public class Main {
      * Top-level application loop implementing Page 1: Welcome & Unified Campus Gateway.
      */
     public void run(Scanner scanner) {
+        if (ConsoleTheme.isCenteringEnabled()) {
+            ConsoleTheme.installAutoMargin();
+        }
         boolean inApp = true;
         while (inApp) {
             int gatewayChoice = showWelcomeGateway(scanner);
@@ -1068,13 +1076,14 @@ public class Main {
      */
     public static void clearConsole() {
         try {
+            ConsoleTheme.refreshTerminalDimensions();
             if (ConsoleTheme.isAnsiEnabled()) {
-                System.out.print("\033[H\033[2J");
+                System.out.print("\033[H\033[2J\033[3J");
                 System.out.flush();
             } else if (System.console() != null && System.getProperty("os.name", "").toLowerCase().contains("win")) {
                 new ProcessBuilder("cmd", "/c", "cls").inheritIO().start().waitFor();
             } else if (System.console() != null) {
-                System.out.print("\033[H\033[2J");
+                System.out.print("\033[H\033[2J\033[3J");
                 System.out.flush();
             }
         } catch (Exception ignored) {
@@ -2654,17 +2663,18 @@ public class Main {
                 return;
             }
 
-            System.out.printf("%-4s | %-22s | %-26s | %-7s | %-6s%n",
+            System.out.printf("%-2s | %-16s | %-24s | %-5s | %-4s%n",
                     "ID", "Job Title", "Company", "CTC", "Loc");
             System.out.println(ConsoleTheme.divider("----------------------------------------------------------------"));
             for (Job j : jobs) {
                 String title = j.getTitle() != null ? j.getTitle() : "N/A";
-                if (title.length() > 22) title = title.substring(0, 19) + "...";
+                if (title.length() > 16) title = title.substring(0, 13) + "...";
                 String company = j.getCompanyName() != null ? j.getCompanyName() : "N/A";
-                String ctc = j.getCtcLpa() != null ? String.format("%.2f", j.getCtcLpa()) : "0.00";
+                if (company.length() > 24) company = company.substring(0, 21) + "...";
+                String ctc = j.getCtcLpa() != null ? String.format(Locale.US, "%.2f", j.getCtcLpa()) : "0.00";
                 String loc = j.getLocation() != null ? j.getLocation() : "Campus";
-                if (loc.length() > 6) loc = loc.substring(0, 5) + ".";
-                System.out.printf("%-4d | %-22s | %-26s | %-7s | %-6s%n",
+                if (loc.length() > 4) loc = loc.substring(0, 3) + ".";
+                System.out.printf("%-2d | %-16s | %-24s | %-5s | %-4s%n",
                         j.getId(), title, company, ctc, loc);
             }
             System.out.println(ConsoleTheme.divider("----------------------------------------------------------------"));
@@ -3940,19 +3950,27 @@ public class Main {
             renderApplicationConfirmationHeader();
 
             String stdUsn = (student.getStudentId() != null ? student.getStudentId() : "N/A");
-            String stdName = (student.getFullName() != null ? student.getFullName() : "N/A");
+            String rawName = (student.getFullName() != null ? student.getFullName() : "N/A");
+            String stdName = rawName.length() > 24 ? rawName.substring(0, 21) + "..." : rawName;
             String ctcVal = job.getCtcLpa() != null ? String.format(Locale.US, "%.2f", job.getCtcLpa()) : "0.00";
-            String compName = job.getCompanyName() != null ? job.getCompanyName() : "N/A";
-            String jobTitle = job.getTitle() != null ? job.getTitle() : "N/A";
+            String rawComp = job.getCompanyName() != null ? job.getCompanyName() : "N/A";
+            String compName = rawComp.length() > 37 ? rawComp.substring(0, 34) + "..." : rawComp;
+            String rawTitle = job.getTitle() != null ? job.getTitle() : "N/A";
+            String jobTitle = rawTitle.length() > 37 ? rawTitle.substring(0, 34) + "..." : rawTitle;
 
+            System.out.println(ConsoleTheme.cyan("  ┌──────────────────────────────────────────────────────────┐"));
+            System.out.println(ConsoleTheme.cyan("  │") + ConsoleTheme.text("         APPLICATION SPECIFICATIONS & CANDIDATE DATA        ") + ConsoleTheme.cyan("│"));
+            System.out.println(ConsoleTheme.cyan("  └──────────────────────────────────────────────────────────┘"));
             System.out.println("  Candidate USN        :  " + stdUsn + " (" + stdName + ")");
             System.out.println("  Applying For Position:  " + jobTitle);
             System.out.println("  Company Name         :  " + compName);
             System.out.println("  Offered Compensation :  " + ctcVal + " Lakhs Per Annum (CTC)");
+            System.out.println(ConsoleTheme.cyan("  ┌──────────────────────────────────────────────────────────┐"));
+            System.out.println(ConsoleTheme.cyan("  │") + ConsoleTheme.text("             ELIGIBILITY & SKILL VERIFICATION             ") + ConsoleTheme.cyan("│"));
+            System.out.println(ConsoleTheme.cyan("  └──────────────────────────────────────────────────────────┘"));
             System.out.println("  Verified Eligibility :  " + eligibilityStr + " (" + skillMatchStr + ")");
             System.out.println("  Eligibility:         " + eligibilityStr);
             System.out.println("  Skill Match:         " + skillMatchStr);
-            System.out.println();
             System.out.println(ConsoleTheme.divider("----------------------------------------------------------------"));
             System.out.println(ConsoleTheme.red("[BLOCKED] Application rejected: You are not eligible to apply for this job."));
             for (String reason : eligResult.getReasons()) {
@@ -3961,7 +3979,6 @@ public class Main {
             if (!eligResult.getMissingSkills().isEmpty()) {
                 System.out.println(ConsoleTheme.red("  - Missing Required Skills: " + String.join(", ", eligResult.getMissingSkills())));
             }
-            System.out.println();
             System.out.println(ConsoleTheme.divider("----------------------------------------------------------------"));
             System.out.println(ConsoleTheme.text("                  0. CANCEL"));
             System.out.println(ConsoleTheme.border("================================================================"));
@@ -3992,15 +4009,24 @@ public class Main {
             renderApplicationConfirmationHeader();
 
             String stdUsn = (student.getStudentId() != null ? student.getStudentId() : "N/A");
-            String stdName = (student.getFullName() != null ? student.getFullName() : "N/A");
+            String rawName = (student.getFullName() != null ? student.getFullName() : "N/A");
+            String stdName = rawName.length() > 24 ? rawName.substring(0, 21) + "..." : rawName;
             String ctcVal = job.getCtcLpa() != null ? String.format(Locale.US, "%.2f", job.getCtcLpa()) : "0.00";
-            String compName = job.getCompanyName() != null ? job.getCompanyName() : "N/A";
-            String jobTitle = job.getTitle() != null ? job.getTitle() : "N/A";
+            String rawComp = job.getCompanyName() != null ? job.getCompanyName() : "N/A";
+            String compName = rawComp.length() > 37 ? rawComp.substring(0, 34) + "..." : rawComp;
+            String rawTitle = job.getTitle() != null ? job.getTitle() : "N/A";
+            String jobTitle = rawTitle.length() > 37 ? rawTitle.substring(0, 34) + "..." : rawTitle;
 
+            System.out.println(ConsoleTheme.cyan("  ┌──────────────────────────────────────────────────────────┐"));
+            System.out.println(ConsoleTheme.cyan("  │") + ConsoleTheme.text("         APPLICATION SPECIFICATIONS & CANDIDATE DATA        ") + ConsoleTheme.cyan("│"));
+            System.out.println(ConsoleTheme.cyan("  └──────────────────────────────────────────────────────────┘"));
             System.out.println("  Candidate USN        :  " + stdUsn + " (" + stdName + ")");
             System.out.println("  Applying For Position:  " + jobTitle);
             System.out.println("  Company Name         :  " + compName);
             System.out.println("  Offered Compensation :  " + ctcVal + " Lakhs Per Annum (CTC)");
+            System.out.println(ConsoleTheme.cyan("  ┌──────────────────────────────────────────────────────────┐"));
+            System.out.println(ConsoleTheme.cyan("  │") + ConsoleTheme.text("             ELIGIBILITY & SKILL VERIFICATION             ") + ConsoleTheme.cyan("│"));
+            System.out.println(ConsoleTheme.cyan("  └──────────────────────────────────────────────────────────┘"));
             System.out.println("  Verified Eligibility :  " + ConsoleTheme.green("ELIGIBLE (" + skillMatchStr + ")"));
             System.out.println("  Eligibility:         " + ConsoleTheme.green("ELIGIBLE"));
             System.out.println("  Skill Match:         " + skillMatchStr);
@@ -4027,6 +4053,9 @@ public class Main {
                     System.out.println(ConsoleTheme.header("                   NEXTSTEP | APPLICATION PORTAL"));
                     System.out.println(ConsoleTheme.header("        APPLICATION CONFIRMATION — TRANSMITTED SUCCESSFULLY"));
                     System.out.println(ConsoleTheme.border("================================================================"));
+                    System.out.println(ConsoleTheme.cyan("  ┌──────────────────────────────────────────────────────────┐"));
+                    System.out.println(ConsoleTheme.cyan("  │") + ConsoleTheme.text("          OFFICIAL DIGITAL RECRUITMENT FILING RECEIPT       ") + ConsoleTheme.cyan("│"));
+                    System.out.println(ConsoleTheme.cyan("  └──────────────────────────────────────────────────────────┘"));
                     System.out.println(ConsoleTheme.header("           \u2714 APPLICATION TRANSMITTED SUCCESSFULLY!"));
                     System.out.println(ConsoleTheme.border("================================================================"));
                     String formattedAppId = "APP-2026-" + String.format("%03d", app.getId());
@@ -4036,8 +4065,11 @@ public class Main {
                     System.out.println("  Timestamp of Filing     : " + timestampStr);
                     System.out.println("  Initial Review Status   : APPLIED (Under Placement Cell Review)");
                     System.out.println("  Status: " + app.getStatus());
-                    System.out.println("  Company: " + (app.getCompanyName() != null ? app.getCompanyName() : job.getCompanyName()) +
-                            " | Role: " + (app.getJobTitle() != null ? app.getJobTitle() : job.getTitle()));
+                    String comp = (app.getCompanyName() != null ? app.getCompanyName() : job.getCompanyName());
+                    String role = (app.getJobTitle() != null ? app.getJobTitle() : job.getTitle());
+                    if (comp != null && comp.length() > 22) comp = comp.substring(0, 19) + "...";
+                    if (role != null && role.length() > 20) role = role.substring(0, 17) + "...";
+                    System.out.println("  Company: " + comp + " | Role: " + role);
                     System.out.println("  Next Step: The Placement Cell will review your application.");
                     System.out.println("  Track real-time status in Option 4: 'My Applications'.");
                     System.out.println(ConsoleTheme.border("================================================================"));
@@ -4090,9 +4122,9 @@ public class Main {
      */
     public void renderApplicationRecordsFooter() {
         System.out.println(ConsoleTheme.divider("----------------------------------------------------------------"));
-        System.out.println(ConsoleTheme.text("                  1. UPDATE CANDIDATE STATUS (Shortlist / Reject)"));
-        System.out.println(ConsoleTheme.text("                  2. EXPORT AUDIT REPORT (CSV)"));
-        System.out.println(ConsoleTheme.text("                  0. BACK TO OFFICER DASHBOARD"));
+        System.out.println(ConsoleTheme.text("              1. UPDATE CANDIDATE STATUS (Shortlist/Reject)"));
+        System.out.println(ConsoleTheme.text("              2. EXPORT AUDIT REPORT (CSV)"));
+        System.out.println(ConsoleTheme.text("              0. BACK TO OFFICER DASHBOARD"));
         System.out.println(ConsoleTheme.border("================================================================"));
     }
 
@@ -4150,7 +4182,7 @@ public class Main {
                 }
             }
             System.out.println(ConsoleTheme.divider("────────────────────────────────────────────────────────────────"));
-            System.out.println(ConsoleTheme.dim("  Status Legend: ") + ConsoleTheme.blue("APPLIED (Cyan)") + ConsoleTheme.dim(" | ") + ConsoleTheme.green("SHORTLISTED (Green)") + ConsoleTheme.dim(" | ") + ConsoleTheme.red("REJECTED (Red)"));
+            System.out.println(ConsoleTheme.dim("  Status: ") + ConsoleTheme.blue("APPLIED (Cyan)") + ConsoleTheme.dim(" | ") + ConsoleTheme.green("SHORTLIST (Green)") + ConsoleTheme.dim(" | ") + ConsoleTheme.red("REJECT (Red)"));
             renderApplicationRecordsFooter();
 
             while (true) {
