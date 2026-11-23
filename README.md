@@ -4,7 +4,7 @@
 [![Database](https://img.shields.io/badge/MySQL-8.0-4479A1?logo=mysql&logoColor=white)](https://www.mysql.com/)
 [![JDBC Driver](https://img.shields.io/badge/MySQL%20Connector%2FJ-8.4.0-blue)](https://dev.mysql.com/downloads/connector/j/)
 [![Build Tool](https://img.shields.io/badge/Build-Native%20JDK%20%2F%20run.bat-success)](run.bat)
-[![Tests](https://img.shields.io/badge/Tests-269%20Passed%20(100%25)-brightgreen)](docs/TESTING.md)
+[![Tests](https://img.shields.io/badge/Tests-286%20Passed%20(100%25)-brightgreen)](docs/TESTING.md)
 [![Course](https://img.shields.io/badge/Course-Programming%20in%20Java%20(25CSE0202)-blueviolet)](docs/VIVA_PREPARATION.md)
 
 > A console-based campus placement automation system built with pure Java SE, JDBC, and MySQL.  
@@ -52,6 +52,17 @@ The project strictly emphasizes Core Java SE principles, JDBC transaction manage
 - **Master Application Registry (Page 10):** Aligned corporate table displaying candidate roll numbers, names, job titles, and status indicators (`APPLIED` in Cyan, `SHORTLISTED` in Green, `REJECTED` in Red) with inline status updates and RFC-4180 CSV export.
 - **Status Lifecycle Advancement:** Advance candidate applications through the hiring lifecycle (`APPLIED` → `SHORTLISTED` → `SELECTED` / `REJECTED`) with database consistency.
 - **Recruitment Analytics & Archiving:** Compute real-time placement statistics using Java Streams/Collectors and parse exported CSV reports back into `ArrayList<Application>` for audit verification.
+
+### 🚀 Repeatable Demonstration Mode & Safe Demo Data Management
+- **Idempotent Demo Setup (Page 1 Option 4 / `--demo-setup`):** Initializes deterministic demonstration data on first execution and reuses existing accounts on subsequent runs without creating duplicate records or overwriting credentials.
+- **Deterministic Evaluation Scenarios:**
+  - **Scenario A (Fully Eligible):** Vihaan Mehta (`vihaan_demo` / USN `2510990750` / `NextStep@2026`) — passes all cutoffs and skills for Junior Backend Engineer.
+  - **Scenario B (Skill-Gap):** Kabir Malhotra (`kabir_demo` / USN `2510990751` / `NextStep@2026`) — passes academic cutoffs, matches 50% of skills (Java, SQL), identifies missing skills (OOP, Git).
+  - **Scenario C (Academically Ineligible):** Arjun Khanna (`arjun_demo` / USN `2510990752` / `NextStep@2026`) — fails CGPA, backlogs, and branch criteria.
+  - **Placement Officer:** Prof. Vihaan Mehta (`officer_vihaan` / Officer ID `TPO-2026-001` / `NextStep@2026` / Activation Code: `CAMPUS_OFFICER_2026`).
+- **Cryptographic Security:** All demo accounts use PBKDF2WithHmacSHA256 with 16-byte cryptographic salt; plaintext passwords are never stored in database columns.
+- **Strict 3-Page Autofill Policy:** One-click autofill (`[A]`) is strictly isolated to Page 2 (Student Sign Up), Page 4 (Placement Officer Sign Up), and Page 7 (Create Job Drive). Other pages use stable pre-seeded accounts.
+- **Protected Demo-Only Reset:** Explicitly confirmed operation (`CONFIRM` / `RESET`) that safely purges only demo records (`%_demo` users, demo applications) while leaving real user accounts, partner companies, and base jobs untouched.
 
 ### 🎨 Terminal Presentation & Console Usability
 - **24-bit TrueColour ANSI Theme:** Reference palette featuring Sky Blue borders (`#6FC9FF`), Gold input prompts (`#E3B341`), Slate body text (`#CAD5E5`), and Midnight Navy background (`#131B28`).
@@ -262,16 +273,17 @@ NextStep organizes campus recruitment workflows across exactly 10 evaluator-appr
 
 ## 10. Testing Overview
 
-NextStep includes 5 automated regression and integration test suites in `tests/`, covering authentication, database transactions, input validation, Streams/Lambdas, CSV I/O, and console UI:
+NextStep includes 6 automated regression and integration test suites in `tests/`, covering demonstration setup, authentication, database transactions, input validation, Streams/Lambdas, CSV I/O, and console UI:
 
 | Test Suite | Purpose | Tests | Status |
 | :--- | :--- | :---: | :---: |
+| **`DemoModeVerificationTestRunner`** | Repeatable demo initialization, idempotence (0 duplicates), Scenarios A/B/C, deterministic credentials, safe reset, CSV export | **24** | **PASS** |
 | **`ConsoleInputEdgeCaseTestRunner`** | Pages 1–10 console UI, TrueColour ANSI, navigation shortcuts, one-click demo autofill, collision safety, Page 7 10-field job persistence | **89** | **PASS** |
 | **`Phase3TestRunner`** | Registration, PBKDF2 hashing with salt, UserDAO, StudentDAO, CompanyDAO, JobDAO, email uniqueness | **41** | **PASS** |
-| **`Phase4TestRunner`** | Job browsing, 10-field persistence, eligibility rules, application states, officer access control, backward compatibility | **54** | **PASS** |
+| **`Phase4TestRunner`** | Job browsing, 10-field persistence, eligibility rules, application states, officer access control, backward compatibility | **47** | **PASS** |
 | **`Phase5TestRunner`** | Full CA-3 syllabus, Java Streams, Collectors, RFC-4180 CSV export/import, presentation visibility controls | **54** | **PASS** |
 | **`Phase6IntegrationTestRunner`** | Transaction rollback atomicity, simulated restart persistence, data sanitization, seed data idempotency | **31** | **PASS** |
-| **Grand Total** | **Verified Across All 5 Suites** | **269** | **269 / 269 Passed (100%)** |
+| **Grand Total** | **Verified Across All 6 Suites** | **286** | **286 / 286 Passed (100%)** |
 
 To compile and run tests, see the comprehensive guide: 👉 [**docs/TESTING.md**](docs/TESTING.md).
 

@@ -13,6 +13,7 @@ import com.nextstep.model.Role;
 import com.nextstep.model.Student;
 import com.nextstep.model.User;
 import com.nextstep.service.AuthService;
+import com.nextstep.service.DemoService;
 import com.nextstep.service.RecruitmentService;
 import com.nextstep.service.RecruitmentService.EligibilityResult;
 import com.nextstep.util.PresentationConfig;
@@ -61,6 +62,7 @@ public class Main {
     private final ApplicationDAO applicationDAO;
     private final CompanyDAO companyDAO;
     private final UserDAO userDAO;
+    private final DemoService demoService;
 
     private static final SecureRandom SECURE_RANDOM = new SecureRandom();
     private static final String PASSWORD_CHARS = "ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz23456789!@#$%";
@@ -120,6 +122,11 @@ public class Main {
         this.applicationDAO = applicationDAO;
         this.companyDAO = companyDAO;
         this.userDAO = userDAO;
+        this.demoService = new DemoService(authService, userDAO, studentDAO, companyDAO, jobDAO);
+    }
+
+    public DemoService getDemoService() {
+        return demoService;
     }
 
     public static void main(String[] args) {
@@ -129,6 +136,25 @@ public class Main {
         // Optional administrative CLI flag to seed initial placement officer
         if (args != null && args.length > 0 && "--init-officer".equalsIgnoreCase(args[0])) {
             app.handleAdminOfficerSetup(scanner);
+        }
+
+        // Automatic/Repeatable demonstration setup via CLI or system property
+        boolean triggerDemoSetup = "true".equalsIgnoreCase(System.getProperty("nextstep.demo.setup"));
+        if (args != null && args.length > 0) {
+            for (String arg : args) {
+                if ("--demo".equalsIgnoreCase(arg) || "--demo-setup".equalsIgnoreCase(arg) || "--prepare-demo".equalsIgnoreCase(arg)) {
+                    triggerDemoSetup = true;
+                    break;
+                }
+            }
+        }
+        if (triggerDemoSetup) {
+            try {
+                DemoService.DemoSetupResult res = app.demoService.prepareDemoData();
+                System.out.println(ConsoleTheme.cyan("[DEMO MODE] " + res.getMessage()));
+            } catch (Exception e) {
+                System.err.println("[WARN] Demo data preparation failed: " + e.getMessage());
+            }
         }
 
         app.run(scanner);
@@ -145,6 +171,7 @@ public class Main {
                 case 1 -> handleStudentWorkflow(scanner);
                 case 2 -> handlePlacementOfficerWorkflow(scanner);
                 case 3 -> showCampusRecruitmentStatistics(scanner);
+                case 4 -> handleDemoManagerWorkflow(scanner);
                 case 0 -> {
                     System.out.println("\nThank you for using NextStep. Goodbye!");
                     inApp = false;
@@ -165,7 +192,7 @@ public class Main {
      * Displays Page 1 — Welcome & Unified Campus Gateway and dispatches chosen role/metrics.
      * 
      * @param scanner active Scanner
-     * @return int chosen option (1 for Student, 2 for Officer, 3 for Stats, 0 for Exit)
+     * @return int chosen option (1 for Student, 2 for Officer, 3 for Stats, 4 for Demo Mode, 0 for Exit)
      */
     public int showWelcomeGateway(Scanner scanner) {
         clearConsole();
@@ -188,6 +215,8 @@ public class Main {
                 return 2;
             } else if ("3".equals(input)) {
                 return 3;
+            } else if ("4".equals(input) || "D".equalsIgnoreCase(input) || "DEMO".equalsIgnoreCase(input)) {
+                return 4;
             } else if ("0".equals(input)) {
                 return 0;
             } else {
@@ -232,6 +261,7 @@ public class Main {
         System.out.println(ConsoleTheme.text("                  1. Student Portal"));
         System.out.println(ConsoleTheme.text("                  2. Placement Officer Portal"));
         System.out.println(ConsoleTheme.text("                  3. View Campus Recruitment Statistics"));
+        System.out.println(ConsoleTheme.text("                  4. Demonstration Mode & Scenario Setup"));
         System.out.println(ConsoleTheme.text("                  0. Exit System"));
         System.out.println(ConsoleTheme.divider("----------------------------------------------------------------"));
     }
@@ -266,6 +296,160 @@ public class Main {
             System.out.println(ConsoleTheme.warn("  Statistics temporarily unavailable: " + e.getMessage()));
         }
         System.out.print(ConsoleTheme.dim("\nPress ENTER to return to Gateway... "));
+        if (scanner.hasNextLine()) {
+            scanner.nextLine();
+        }
+    }
+
+    /**
+     * Handles Demonstration Mode & Scenario Setup workflow.
+     */
+    public void handleDemoManagerWorkflow(Scanner scanner) {
+        boolean inDemoMenu = true;
+        while (inDemoMenu) {
+            clearConsole();
+            System.out.println(ConsoleTheme.border("================================================================"));
+            System.out.println(ConsoleTheme.header("           NEXTSTEP | CAMPUS RECRUITMENT SYSTEM (2026)"));
+            System.out.println(ConsoleTheme.header("             DEMONSTRATION MODE & SCENARIO MANAGER"));
+            System.out.println(ConsoleTheme.border("================================================================"));
+            boolean prepared = demoService.isDemoDataPrepared();
+            String statusBadge = prepared ? ConsoleTheme.green("[DEMO DATA ACTIVE & READY]") : ConsoleTheme.warn("[DEMO DATA NOT INITIALIZED]");
+            System.out.println("  System Status : " + statusBadge);
+            System.out.println("  Target DB     : nextstep_db (MySQL)");
+            System.out.println("  Credentials   : Fixed, known password for all demo accounts");
+            System.out.println(ConsoleTheme.cyan("  ┌──────────────────────────────────────────────────────────┐"));
+            System.out.println(ConsoleTheme.cyan("  │") + ConsoleTheme.text("               SELECT DEMO OPERATION                      ") + ConsoleTheme.cyan("│"));
+            System.out.println(ConsoleTheme.cyan("  └──────────────────────────────────────────────────────────┘"));
+            System.out.println(ConsoleTheme.text("                  1. Prepare / Verify Demo Data (Idempotent)"));
+            System.out.println(ConsoleTheme.text("                  2. View Demo Credentials & Scenario Guide"));
+            System.out.println(ConsoleTheme.text("                  3. Reset Demonstration Data Only (Protected)"));
+            System.out.println(ConsoleTheme.text("                  0. Return to Gateway"));
+            System.out.println(ConsoleTheme.divider("----------------------------------------------------------------"));
+
+            int choice = readInt(scanner, "Enter your choice: ");
+            switch (choice) {
+                case 1 -> showPrepareDemoData(scanner);
+                case 2 -> showDemoCredentialsGuide(scanner);
+                case 3 -> showResetDemoData(scanner);
+                case 0 -> inDemoMenu = false;
+                default -> {
+                    System.out.println(ConsoleTheme.warn("[WARN] Invalid option. Please enter 0, 1, 2, or 3."));
+                    pauseForEnter(scanner);
+                }
+            }
+        }
+    }
+
+    public void showPrepareDemoData(Scanner scanner) {
+        clearConsole();
+        System.out.println(ConsoleTheme.border("================================================================"));
+        System.out.println(ConsoleTheme.header("           NEXTSTEP | DEMO DATA INITIALIZATION"));
+        System.out.println(ConsoleTheme.header("              PREPARE DEMONSTRATION DATA"));
+        System.out.println(ConsoleTheme.border("================================================================"));
+        try {
+            DemoService.DemoSetupResult result = demoService.prepareDemoData();
+            System.out.println();
+            if (result.isAlreadyExisted()) {
+                System.out.println(ConsoleTheme.cyan("  * " + result.getMessage()));
+            } else {
+                System.out.println(ConsoleTheme.success("  * " + result.getMessage()));
+            }
+            System.out.println();
+            renderDemoScenariosSummary();
+        } catch (SQLException e) {
+            System.out.println(ConsoleTheme.red("  [ERROR] Database error preparing demo data: " + e.getMessage()));
+        }
+        pauseForEnter(scanner);
+    }
+
+    public void showDemoCredentialsGuide(Scanner scanner) {
+        clearConsole();
+        System.out.println(ConsoleTheme.border("================================================================"));
+        System.out.println(ConsoleTheme.header("       DEMONSTRATION CREDENTIALS & SCENARIO REFERENCE GUIDE"));
+        System.out.println(ConsoleTheme.border("================================================================"));
+        System.out.println();
+        renderDemoScenariosSummary();
+        pauseForEnter(scanner);
+    }
+
+    public void renderDemoScenariosSummary() {
+        System.out.println(ConsoleTheme.label("  1. STUDENT PORTAL DEMO ACCOUNTS"));
+        System.out.println(ConsoleTheme.text("     Scenario A — Fully Eligible Candidate:"));
+        System.out.println("       * Student Name     : " + DemoService.DEMO_STUDENT_NAME);
+        System.out.println("       * Username         : " + ConsoleTheme.cyan(DemoService.DEMO_STUDENT_USERNAME));
+        System.out.println("       * Student ID (USN) : " + ConsoleTheme.cyan(DemoService.DEMO_STUDENT_USN));
+        System.out.println("       * Password         : " + ConsoleTheme.cyan(DemoService.DEMO_PASSWORD));
+        System.out.println("       * Academic Profile : " + DemoService.DEMO_STUDENT_BRANCH + " | CGPA " + DemoService.DEMO_STUDENT_CGPA + " | 0 Backlogs");
+        System.out.println("       * Skills           : " + String.join(", ", DemoService.DEMO_STUDENT_SKILLS));
+        System.out.println("       * Expected Outcome : ELIGIBLE on Job 1 (100% Skill Match). Ready to apply & show receipt.");
+        System.out.println();
+        System.out.println(ConsoleTheme.text("     Scenario B — Skill-Gap Candidate:"));
+        System.out.println("       * Student Name     : " + DemoService.DEMO_STUDENT2_NAME);
+        System.out.println("       * Username         : " + ConsoleTheme.cyan(DemoService.DEMO_STUDENT2_USERNAME));
+        System.out.println("       * Student ID (USN) : " + ConsoleTheme.cyan(DemoService.DEMO_STUDENT2_USN));
+        System.out.println("       * Password         : " + ConsoleTheme.cyan(DemoService.DEMO_PASSWORD));
+        System.out.println("       * Academic Profile : " + DemoService.DEMO_STUDENT2_BRANCH + " | CGPA " + DemoService.DEMO_STUDENT2_CGPA + " | 0 Backlogs");
+        System.out.println("       * Skills           : " + String.join(", ", DemoService.DEMO_STUDENT2_SKILLS));
+        System.out.println("       * Expected Outcome : INELIGIBLE on Job 1 (50% match; missing OOP, Git).");
+        System.out.println();
+        System.out.println(ConsoleTheme.text("     Scenario C — Academically Ineligible Candidate:"));
+        System.out.println("       * Student Name     : " + DemoService.DEMO_STUDENT3_NAME);
+        System.out.println("       * Username         : " + ConsoleTheme.cyan(DemoService.DEMO_STUDENT3_USERNAME));
+        System.out.println("       * Student ID (USN) : " + ConsoleTheme.cyan(DemoService.DEMO_STUDENT3_USN));
+        System.out.println("       * Password         : " + ConsoleTheme.cyan(DemoService.DEMO_PASSWORD));
+        System.out.println("       * Academic Profile : " + DemoService.DEMO_STUDENT3_BRANCH + " | CGPA " + DemoService.DEMO_STUDENT3_CGPA + " | " + DemoService.DEMO_STUDENT3_BACKLOGS + " Backlogs");
+        System.out.println("       * Skills           : " + String.join(", ", DemoService.DEMO_STUDENT3_SKILLS));
+        System.out.println("       * Expected Outcome : INELIGIBLE on Job 1 (CGPA < 7.50, 3 Backlogs > 0, Branch mismatch).");
+        System.out.println();
+        System.out.println(ConsoleTheme.divider("----------------------------------------------------------------"));
+        System.out.println(ConsoleTheme.label("  2. PLACEMENT OFFICER PORTAL DEMO ACCOUNT"));
+        System.out.println("       * Officer Name     : " + DemoService.DEMO_OFFICER_NAME);
+        System.out.println("       * Username         : " + ConsoleTheme.cyan(DemoService.DEMO_OFFICER_USERNAME));
+        System.out.println("       * Password         : " + ConsoleTheme.cyan(DemoService.DEMO_PASSWORD));
+        System.out.println("       * Activation Code  : " + DemoService.DEMO_OFFICER_ACTIVATION_CODE);
+        System.out.println("       * Expected Tools   : Job Drive Creation, Application Registry, Status Updates, CSV Export.");
+        System.out.println(ConsoleTheme.divider("----------------------------------------------------------------"));
+    }
+
+    public void showResetDemoData(Scanner scanner) {
+        clearConsole();
+        System.out.println(ConsoleTheme.border("================================================================"));
+        System.out.println(ConsoleTheme.header("           RESET DEMONSTRATION DATA ONLY (CONFIRMATION)"));
+        System.out.println(ConsoleTheme.border("================================================================"));
+        System.out.println(ConsoleTheme.warn("  [NOTICE] This operation will delete ONLY the following demonstration records:"));
+        System.out.println("    - Applications submitted by demo candidates (vihaan_demo, kabir_demo, arjun_demo)");
+        System.out.println("    - Demo student accounts & skills (USNs: 2510990750, 2510990751, 2510990752)");
+        System.out.println("    - Demo placement officer account (officer_vihaan)");
+        System.out.println();
+        System.out.println(ConsoleTheme.green("  [PROTECTED] Real user registrations, partner companies, and base job drives"));
+        System.out.println(ConsoleTheme.green("              will NEVER be touched or modified."));
+        System.out.println(ConsoleTheme.divider("----------------------------------------------------------------"));
+        System.out.print(ConsoleTheme.prompt("  Type 'RESET' to confirm demo data purge (or press ENTER to cancel): "));
+        if (!scanner.hasNextLine()) {
+            return;
+        }
+        String confirmation = scanner.nextLine().trim();
+        if ("RESET".equalsIgnoreCase(confirmation)) {
+            try {
+                DemoService.DemoResetResult resetResult = demoService.resetDemoDataOnly();
+                System.out.println(ConsoleTheme.success("\n  " + resetResult.getMessage()));
+                System.out.println(ConsoleTheme.dim("  Deleted " + resetResult.getUsersDeleted() + " demo accounts and " +
+                        resetResult.getApplicationsDeleted() + " demo applications."));
+                System.out.println();
+                System.out.println(ConsoleTheme.cyan("  Re-initializing clean demonstration accounts now..."));
+                demoService.prepareDemoData();
+                System.out.println(ConsoleTheme.success("  [READY] Fresh demonstration dataset is ready for evaluation!"));
+            } catch (SQLException e) {
+                System.out.println(ConsoleTheme.red("\n  [ERROR] Database error during reset: " + e.getMessage()));
+            }
+        } else {
+            System.out.println(ConsoleTheme.dim("\n  Reset cancelled. Demonstration records were not modified."));
+        }
+        pauseForEnter(scanner);
+    }
+
+    private void pauseForEnter(Scanner scanner) {
+        System.out.print(ConsoleTheme.dim("\nPress ENTER to continue... "));
         if (scanner.hasNextLine()) {
             scanner.nextLine();
         }
@@ -857,7 +1041,7 @@ public class Main {
             return null;
         }
 
-        String tempPass = generateTemporaryDemoPassword();
+        String tempPass = DemoService.DEMO_PASSWORD;
         return new String[] {
                 studentId,
                 name,
@@ -916,7 +1100,7 @@ public class Main {
         }
         String resolvedCode = (actCode != null && !actCode.trim().isEmpty()) ? actCode.trim() : "";
 
-        String tempPass = generateTemporaryDemoPassword();
+        String tempPass = DemoService.DEMO_PASSWORD;
         return new String[] {
                 officerId,
                 "Prof. Vihaan Mehta",

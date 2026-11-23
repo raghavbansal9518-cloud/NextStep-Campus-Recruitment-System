@@ -2365,7 +2365,10 @@ public class ConsoleInputEdgeCaseTestRunner {
 
                 String outStr = out.toString(StandardCharsets.UTF_8);
                 boolean hasAutoFillBanner = outStr.contains("Populating form with verified, unique demo candidate") || outStr.contains("[AUTO-FILL]");
-                boolean hasStudentDetails = outStr.contains("Vihaan Mehta") && outStr.contains("Computer Science") && outStr.contains("8.75");
+                boolean hasStudentDetails = (outStr.contains("Vihaan Mehta") && outStr.contains("8.75"))
+                        || (outStr.contains("Kabir Malhotra") && outStr.contains("8.50"))
+                        || (outStr.contains("Ishaan Verma") && outStr.contains("8.90"))
+                        || (outStr.contains("Arjun Khanna") && outStr.contains("8.20"));
                 boolean hasNotSubmitted = outStr.contains("1. CREATE ACCOUNT") && outStr.contains("0. BACK");
 
                 if (hasAutoFillBanner && hasStudentDetails && hasNotSubmitted) {

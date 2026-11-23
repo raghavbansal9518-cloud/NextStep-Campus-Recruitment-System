@@ -26,7 +26,7 @@ Keep this document open during your demo. It contains:
 1. [A. Before Starting — Setup & Verification](#a-before-starting--setup--verification)
 2. [B. All Supported Ways to Start NextStep](#b-all-supported-ways-to-start-nextstep)
 3. [C. Complete Application Navigation Guide (Pages 1–10)](#c-complete-application-navigation-guide-pages-110)
-4. [D. Ready-to-Use Demonstration Data](#d-ready-to-use-demonstration-data)
+4. [D. Ready-to-Use Demonstration Data & Repeatable Scenarios](#d-ready-to-use-demonstration-data--repeatable-scenarios)
 5. [E. Placement Officer Activation Code Guide](#e-placement-officer-activation-code-guide)
 6. [F. GitHub Collaboration Guide for Teammates](#f-github-collaboration-guide-for-teammates)
 7. [G. Common Problems & Quick Fixes](#g-common-problems--quick-fixes)
@@ -186,12 +186,18 @@ flowchart TD
 ### Page 1 — Welcome & Unified Campus Gateway
 
 - **Screen Header:** `NEXTSTEP | CAMPUS RECRUITMENT SYSTEM (2026)` / `WELCOME & UNIFIED CAMPUS GATEWAY`
-- **Purpose:** Central unified entry point with live campus recruitment statistics and direct role dispatching. Completely removes the legacy redundant splash screen.
+- **Purpose:** Central unified entry point with live campus recruitment statistics, role dispatching, and demonstration setup. Completely removes the legacy redundant splash screen.
 - **Available Options:**
   - `1. Student Portal` — Dispatches to the Student Portal workflow menu (Sign In / Sign Up).
   - `2. Placement Officer Portal` — Dispatches to the Placement Officer workflow menu (Sign In / Sign Up).
   - `3. View Campus Recruitment Statistics` — Instant on-screen display of live drive and applicant metrics.
+  - `4. Demonstration Mode & Scenario Setup` — Evaluator demonstration manager (prepare demo accounts, view scenario guide, safe reset).
   - `0. Exit System` — Terminates the application cleanly.
+- **Demonstration Mode Workflow (Option 4):**
+  - `1. Prepare / Verify Demo Data (Idempotent)` — Creates or verifies deterministic demo accounts (Vihaan, Kabir, Arjun, Officer Vihaan) and reference jobs. Safe to run repeatedly; never duplicates accounts.
+  - `2. View Demo Credentials & Scenario Guide` — Displays all demo login credentials and scenario evaluation summaries.
+  - `3. Reset Demonstration Data Only (Protected)` — Safely deletes only demo records (`%_demo` users and their applications) while strictly protecting real user registrations and partner companies. Requires explicit keyword confirmation (`CONFIRM` or `RESET`).
+  - `0. Return to Gateway` — Returns safely to Page 1.
 - **Framing & Styling:** Full 64-character outer rectangular border in Cyan (`#6FC9FF`) with live metrics and menu items in Slate (`#CAD5E5`).
 
 ---
@@ -364,173 +370,126 @@ flowchart TD
 
 ---
 
-## D. Ready-to-Use Demonstration Data
+## D. Ready-to-Use Demonstration Data & Repeatable Scenarios
 
-Use these prepared, copy-ready records during live evaluation presentations. All values strictly conform to database types, constraints, and validation regexes. Alternatively, simply type `'A'` on any form prompt to autofill these verified profiles instantly!
-
----
-
-### 1. Student Registration Demo Profiles (Passes All Validations)
-
-#### Profile 1: Vihaan Mehta (Primary Demo Candidate — CS Stream)
-```text
-Student ID:             2510990750
-Full Name:              Vihaan Mehta
-Email:                  vihaan.2510990750@university.edu
-Phone Number:           9876543210
-Branch:                 Computer Science
-CGPA:                   8.75
-Technical Skills:       Java, Spring Boot, MySQL, Git, REST APIs, Microservices
-Active Backlogs:        0
-Graduation Year:        2026
-Username:               vihaan_2510
-Password:               (Generated at runtime via SecureRandom)
-Confirm Password:       (Matches generated password)
-```
-
-#### Profile 2: Kabir Malhotra (IT Stream)
-```text
-Student ID:             2510990751
-Full Name:              Kabir Malhotra
-Email:                  kabir.2510990751@university.edu
-Phone Number:           9876543211
-Branch:                 Information Technology
-CGPA:                   8.50
-Technical Skills:       Java, Python, Docker, Kubernetes, AWS, SQL
-Active Backlogs:        0
-Graduation Year:        2026
-Username:               kabir_2510
-Password:               (Generated at runtime via SecureRandom)
-Confirm Password:       (Matches generated password)
-```
-
-#### Profile 3: Ishaan Verma (High CGPA Candidate)
-```text
-Student ID:             2510990752
-Full Name:              Ishaan Verma
-Email:                  ishaan.2510990752@university.edu
-Phone Number:           9876543212
-Branch:                 Computer Science
-CGPA:                   8.90
-Technical Skills:       Java, DSA, System Design, React, Node.js, SQL
-Active Backlogs:        0
-Graduation Year:        2026
-Username:               ishaan_2510
-Password:               (Generated at runtime via SecureRandom)
-Confirm Password:       (Matches generated password)
-```
-
-#### Profile 4: Arjun Khanna (ECE Stream / 1 Backlog — For Ineligibility Testing)
-```text
-Student ID:             2510990753
-Full Name:              Arjun Khanna
-Email:                  arjun.2510990753@university.edu
-Phone Number:           9876543213
-Branch:                 Electronics & Communication
-CGPA:                   8.20
-Technical Skills:       C++, Java, Embedded Systems, IoT, Linux, Git
-Active Backlogs:        1
-Graduation Year:        2026
-Username:               arjun_2510
-Password:               (Generated at runtime via SecureRandom)
-Confirm Password:       (Matches generated password)
-```
+NextStep provides a **Repeatable Demonstration Mode** designed specifically for lab presentations and evaluator walkthroughs. You do not need to re-register accounts or clear your database before every evaluation.
 
 ---
 
-### 2. Placement Officer Registration Data
+### 1. Pre-Configured Demonstration Accounts (Deterministic Credentials)
 
-```text
-Officer ID:             OFF-2026-01
-Full Name:              Prof. Vihaan Mehta
-Official Email:         tpo.vihaan@university.edu
-Username:               officer_vihaan
-Password:               (Generated at runtime via SecureRandom)
-Confirm Password:       (Matches generated password)
-Activation Code:        CAMPUS_OFFICER_2026
-```
-*(Ensure `CAMPUS_OFFICER_2026` matches your configured environment variable or `-Dnextstep.officer.activation.code` before presenting).*
+All demonstration accounts are provisioned with the stable, documented password **`NextStep@2026`**. Passwords are encrypted using salted **PBKDF2WithHmacSHA256** with 16-byte cryptographic salts; plaintext passwords are never stored in the database.
 
----
+| Role | Candidate Name | Username | Student ID / Roll | Password | Demo Scenario |
+| :--- | :--- | :--- | :--- | :--- | :--- |
+| **Student** | Vihaan Mehta | `vihaan_demo` | `2510990750` | `NextStep@2026` | **Scenario A: Fully Eligible** (100% Academic & Skill Match) |
+| **Student** | Kabir Malhotra | `kabir_demo` | `2510990751` | `NextStep@2026` | **Scenario B: Skill-Gap** (Academic PASS, 50% Skills Matched) |
+| **Student** | Arjun Khanna | `arjun_demo` | `2510990752` | `NextStep@2026` | **Scenario C: Academically Ineligible** (Low CGPA, Backlogs, Branch) |
+| **Officer** | Prof. Vihaan Mehta | `officer_vihaan` | `TPO-2026-001` | `NextStep@2026` | **Placement Officer** (Code: `CAMPUS_OFFICER_2026`) |
 
-### 3. Job Drive Creation Data (Page 7)
-
-Use real Company ID `1` (`Nexis Cloud Technologies`) from the seeded database:
-
-```text
-Company ID:             1
-Job Title:              Associate Cloud Engineer
-Job Description:        Design, build, and maintain cloud infrastructure on AWS and GCP.
-CTC (LPA):              12.50
-Job Location:           Bengaluru, KA
-Minimum CGPA:           7.20
-Max Active Backlogs:    0
-Eligible Branches:      Computer Science, Information Technology
-Required Skills:        Java, SQL, Linux, Git, Docker
-Graduation Year:        2026
-```
+> [!TIP]
+> **Dual Authentication Supported:** Demo students can sign in on Page 3 using **either** their username (e.g. `vihaan_demo`) or their University Roll Number / USN (e.g. `2510990750`).
 
 ---
 
-### 4. Eligibility Demonstration: Pass vs. Fail Case
+### 2. Demonstration Scenarios (Tested Against Job ID 1: Junior Backend Engineer)
 
-#### Case A: Eligible Student (PASS)
-- **Student Profile:** Vihaan Mehta (`2510990750`)
-  - Branch: `Computer Science`
-  - CGPA: `8.75`
-  - Active Backlogs: `0`
-  - Graduation Year: `2026`
-- **Target Drive:** Job ID `1` (`Junior Backend Engineer` at Nexis Cloud Technologies)
-  - Requires: Min CGPA `7.50`, Max Backlogs `0`, Branch `Computer Science` / `IT`, Year `2026`.
-- **Expected Result on Page 8 (Unified Matrix):** All criteria display `[PASS]`, and overall banner displays `[ELIGIBLE FOR THIS DRIVE] (OVERALL RESULT: ELIGIBLE)` in green.
+Target Job opening in seeded database:
+- **Company:** `Nexis Cloud Technologies` (Company ID: `1`)
+- **Job Title:** `Junior Backend Engineer` (Job ID: `1`)
+- **Package:** `14.50 LPA` | **Location:** `Bengaluru, KA`
+- **Academic Cutoffs:** Min CGPA `7.00`, Max Active Backlogs `0`, Eligible Branches: `Computer Science`, `Information Technology`
+- **Required Technical Skills:** `Java`, `SQL`, `OOP`, `Git` (4 skills)
 
-#### Case B: Ineligible Student (FAIL)
-- **Student Profile:** Arjun Khanna (`2510990753`)
-  - Branch: `Electronics & Communication`
-  - CGPA: `8.20`
-  - Active Backlogs: `1`
-  - Graduation Year: `2026`
-- **Target Drive:** Job ID `1` (Requires: Max Backlogs `0`, Branch `CSE, IT`)
-- **Expected Result on Page 8 (Unified Matrix):**
-  - CGPA (`8.20 >= 7.50`): `[PASS]`
-  - Backlogs (`1 > 0`): `[FAIL]`
-  - Branch (`Electronics & Communication` not in `CSE, IT`): `[FAIL]`
-  - Graduation Year (`2026 == 2026`): `[PASS]`
-  - Overall Banner displays `[NOT ELIGIBLE FOR THIS DRIVE] (OVERALL RESULT: NOT ELIGIBLE)` in red. Submission is blocked on Page 9.
+#### Scenario A: Fully Eligible Candidate (Vihaan Mehta)
+- **Profile:** CGPA `8.75` (>= 7.00), Backlogs `0` (<= 0), Branch `Computer Science` (Eligible), Year `2026`.
+- **Skills:** `Java`, `SQL`, `OOP`, `Git`, `Spring Boot`, `Docker` (all 4 required skills present).
+- **Page 8 Evaluation:**
+  - Academic Checklist: **ALL PASS**
+  - Skill Match: **4 / 4 (100%)** — `Java` [MATCH], `SQL` [MATCH], `OOP` [MATCH], `Git` [MATCH]
+  - Overall Banner: `[ELIGIBLE FOR THIS DRIVE] (OVERALL RESULT: ELIGIBLE)` (Green)
+- **Workflow:** Allowed to proceed directly to Page 9 and submit application.
 
----
+#### Scenario B: Skill-Gap Candidate (Kabir Malhotra)
+- **Profile:** CGPA `8.10` (>= 7.00), Backlogs `0` (<= 0), Branch `Information Technology` (Eligible), Year `2026`.
+- **Skills:** `Java`, `SQL`, `Python`, `AWS` (Lacks `OOP` and `Git`).
+- **Page 8 Evaluation:**
+  - Academic Checklist: **ALL PASS**
+  - Skill Match: **2 / 4 (50%)** — `Java` [MATCH], `SQL` [MATCH], `OOP` [MISSING], `Git` [MISSING]
+  - Overall Banner: `[NOT ELIGIBLE FOR THIS DRIVE] (OVERALL RESULT: NOT ELIGIBLE)` (Red)
+- **Workflow:** Skill gap prevents application; missing skills are clearly identified in red.
 
-### 5. Technical Skill Match Demonstration (Page 8)
-
-- **Job Required Skills:** `Java, SQL, OOP, Git` (Total: 4)
-- **Student Skills (Vihaan Mehta):** `Java, Spring Boot, MySQL, Git, REST APIs, Microservices`
-- **Calculated Result:**
-  - Matched: `Java` [MATCH], `Git` [MATCH] (2 matched)
-  - Missing: `SQL`, `OOP` [MISSING]
-  - Match Percentage: `Math.round((2 / 4) * 100) = 50%`
+#### Scenario C: Academically Ineligible Candidate (Arjun Khanna)
+- **Profile:** CGPA `6.10` (< 7.00), Backlogs `3` (> 0), Branch `Electronics & Communication` (Not CSE/IT), Year `2026`.
+- **Skills:** `C++`, `Embedded Systems`, `IoT`, `Linux`.
+- **Page 8 Evaluation:**
+  - Academic Checklist: **CGPA FAIL, Backlogs FAIL, Branch FAIL**
+  - Overall Banner: `[NOT ELIGIBLE FOR THIS DRIVE] (OVERALL RESULT: NOT ELIGIBLE)` (Red)
+- **Workflow:** Application blocked upfront with detailed criteria breakdown.
 
 ---
 
-### 6. Application Lifecycle & Duplicate Prevention Demonstration
+### 3. Strict 3-Page Autofill Policy
 
-1. Sign in as student `vihaan_2510` (Page 3).
-2. Choose Option `3. Apply for Verified Placement Opening` from Page 5 (or proceed directly from Page 8) and input Job ID `1`.
-3. Confirm submission on Page 9 (Review & Digital Receipt). Instant Success Digital Receipt Voucher (e.g., `APP-2026-001`) is generated with status `APPLIED`.
-4. Immediately attempt to apply for Job ID `1` again.
-5. **Expected Result:** The system safely rejects the duplicate submission with:
-   `[ERROR] You have already submitted an application for this job drive.`
-   No duplicate row is created in MySQL.
+Autofill (`[A]` shortcut) is strictly limited to **three data-entry pages**:
+1. **Page 2 — Student Sign Up:** Generates collision-free student profile with valid phone, CGPA, and branch.
+2. **Page 4 — Placement Officer Sign Up:** Populates officer profile; safely uses configured activation code.
+3. **Page 7 — Create Job Drive:** Populates 10-parameter job drive using live partner company from MySQL.
+
+> [!NOTE]
+> All other pages (Pages 1, 3, 5, 6, 8, 9, 10) do **not** have form autofill. They use the prepared demo accounts above for instant sign-in and end-to-end demonstrations.
 
 ---
 
-### 7. Status Advancement Demonstration (Placement Officer)
+### 4. Safe Demonstration Reset (Protected Operation)
 
-1. Sign out of student session (`0`) and sign in as Placement Officer (`officer_vihaan`).
-2. On Page 6, select Option `2. Manage Student Applications & Update Status` to open Page 10 (Master Application Registry) and see the new application listed as `APPLIED` (Cyan pill).
-3. Select Option `1. Update Candidate Status`:
-   - Enter Application ID: `<ID>`
-   - Select New Status: `2. SHORTLISTED`
-4. Notice the table on Page 10 immediately displays the candidate's updated status `SHORTLISTED` (Green pill).
+NextStep includes an explicit, protected **Safe Demo Reset** tool accessible via Gateway Option `4` → `3`:
+- **What it removes:** ONLY demonstration records (demo applications and users with `%_demo` or USNs `2510990750`–`2510990752` and `officer_vihaan`).
+- **What it protects:** Real user registrations, partner companies (`companies` table), and base job drives are **100% preserved**.
+- **Protection:** Requires typing the confirmation keyword `CONFIRM` or `RESET` to prevent accidental execution.
+
+---
+
+### 5. Complete 25-Step Live Demonstration Walkthrough
+
+Follow these 25 steps for a flawless, repeatable evaluation walkthrough:
+
+#### Part 1: Gateway & Demo Verification (Steps 1–4)
+1. **Launch NextStep:** Run `.\run.bat` or `java -cp "bin;lib/*" com.nextstep.Main`.
+2. **Gateway Display:** Page 1 loads with TrueColour rectangular borders and live statistics.
+3. **Open Demo Manager:** Select `4. Demonstration Mode & Scenario Setup`.
+4. **Prepare/Verify Data:** Select `1. Prepare / Verify Demo Data (Idempotent)`. Output confirms demo readiness. Return with `0`.
+
+#### Part 2: Scenario A — Eligible Student Flow (Steps 5–12)
+5. **Open Student Portal:** Select `1. Student Portal` from Gateway.
+6. **Student Sign In (Page 3):** Select `1. Student Sign In`.
+7. **Authenticate:** Enter Username `vihaan_demo` (or USN `2510990750`) and Password `NextStep@2026`.
+8. **View Dashboard (Page 5):** Student Placement Hub displays Vihaan's profile (CGPA 8.75, 0 backlogs).
+9. **Instant Evaluation (Page 8):** Select Option `2`, enter Job ID `1`. Unified Matrix displays 100% eligibility.
+10. **Proceed to Apply (Page 9):** Select Option `1` to open Application Review. Review State A details.
+11. **Confirm Submission:** Select `1. CONFIRM APPLICATION`. State B instantly issues Digital Receipt Voucher (`APP-2026-XXX`).
+12. **Verify Duplicate Blocking:** Re-enter `3. Apply for Verified Placement Opening`, input `1`. System catches and blocks duplicate application cleanly!
+
+#### Part 3: Scenario B — Skill-Gap Student Flow (Steps 13–15)
+13. **Sign Out:** Enter `0` to return to Gateway.
+14. **Sign In as Kabir:** Select `1. Student Portal` → `1. Student Sign In` → `kabir_demo` / `NextStep@2026`.
+15. **Inspect Skill Gap (Page 8):** Select `2`, enter Job ID `1`. Screen displays 50% match, with `OOP` and `Git` highlighted in red as missing skills. System blocks application.
+
+#### Part 4: Scenario C — Ineligible Student Flow (Steps 16–17)
+16. **Sign Out & Sign In as Arjun:** Enter `0` to Gateway → `arjun_demo` / `NextStep@2026`.
+17. **Inspect Ineligibility (Page 8):** Select `2`, enter Job ID `1`. Displays Academic Checklist failures (CGPA 6.10, 3 Backlogs, ECE). Overall result: `NOT ELIGIBLE`.
+
+#### Part 5: Placement Officer Administration (Steps 18–23)
+18. **Sign Out:** Enter `0` to Gateway.
+19. **Open Officer Portal:** Select `2. Placement Officer Portal` → `2. Officer Sign In`.
+20. **Authenticate:** Enter Username `officer_vihaan` and Password `NextStep@2026`.
+21. **View Dashboard (Page 6):** Displays live recruitment metrics (active drives, applicants).
+22. **Manage Registry (Page 10):** Select `2. Manage Student Applications & Update Status`. Vihaan's application appears with status `APPLIED` (Cyan pill).
+23. **Advance Status:** Select Option `1. Update Candidate Status`, enter Application ID, choose `2. SHORTLISTED`. Table refreshes with Green `SHORTLISTED` pill!
+
+#### Part 6: CSV Export & Verification (Steps 24–25)
+24. **Export CSV:** Select Option `2. Export Application Registry (RFC-4180 CSV)` on Page 10. Audit ledger is written to disk in `reports/`.
+25. **Sign Out & Exit:** Enter `0` to return to Page 6, enter `0` to return to Gateway, enter `0` to exit cleanly. All demonstration data remains persistent and repeatable for your next demo!
 
 ---
 

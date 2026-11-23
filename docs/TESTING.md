@@ -3,7 +3,7 @@
 > **Project:** NextStep — Campus Recruitment System  
 > **Course:** Programming in Java (25CSE0202)  
 > **Testing Approach:** Standalone Java SE Regression & Integration Test Suites (Pure JDBC, No External Frameworks)  
-> **Test Status:** 269 / 269 Passed (100% Passing)
+> **Test Status:** 286 / 286 Passed (100% Passing across 6 Test Runners)
 
 ---
 
@@ -20,16 +20,17 @@ This ensures that:
 
 ## 2. Test Suites Summary
 
-The project repository includes 5 comprehensive test runners located in the `tests/` directory:
+The project repository includes 6 comprehensive test runners located in the `tests/` directory:
 
 | Test Suite | File Path | Scope & Syllabus Focus | Tests | Status |
 | :--- | :--- | :--- | :---: | :---: |
+| **Demo Mode Verification** | `tests/DemoModeVerificationTestRunner.java` | Repeatable demo initialization, idempotence (0 duplicates), Scenarios A/B/C, deterministic credentials (`NextStep@2026`), safe demo-only reset, real account protection, CSV export | **24** | **PASS** |
 | **Console Verification** | `tests/ConsoleInputEdgeCaseTestRunner.java` | Pages 1–10 console UI, TrueColour ANSI, shortcuts (`B`/`ESC`, `N`/`TAB`, `Enter`), Page 7 10-field job drive persistence, one-click autofill (`[A]`), real student identities (Vihaan Mehta `2510990750`), collision checks, fail-safe error handling | **89** | **PASS** |
 | **Phase 3 Test Suite** | `tests/Phase3TestRunner.java` | Student self-registration, validation rules, PBKDF2 hashing with salt, `UserDAO.existsByEmail`, `StudentDAO`, `CompanyDAO`, `JobDAO` operations | **41** | **PASS** |
-| **Phase 4 Test Suite** | `tests/Phase4TestRunner.java` | Job browsing, 10-field persistence (CTC, location, backlogs), partner company validation, eligibility rules, application lifecycle, duplicate prevention, backward compatibility | **54** | **PASS** |
+| **Phase 4 Test Suite** | `tests/Phase4TestRunner.java` | Job browsing, 10-field persistence (CTC, location, backlogs), partner company validation, eligibility rules, application lifecycle, duplicate prevention, backward compatibility | **47** | **PASS** |
 | **Phase 5 Test Suite** | `tests/Phase5TestRunner.java` | Full CA-3 syllabus, Java Streams/Lambdas, RFC-4180 CSV export and import audit archiving, presentation toggles | **54** | **PASS** |
 | **Phase 6 Test Suite** | `tests/Phase6IntegrationTestRunner.java` | Seed data idempotency, end-to-end student & officer workflows, ACID rollback verification (`conn.rollback()`), simulated restart persistence | **31** | **PASS** |
-| **Grand Total** | **All 5 Test Suites** | **Complete System Verification** | **269** | **100% PASS** |
+| **Grand Total** | **All 6 Test Suites** | **Complete System Verification** | **286** | **100% PASS** |
 
 ---
 
@@ -103,13 +104,19 @@ Verifies database idempotency, atomic rollbacks (`conn.rollback()`), and simulat
 java -cp "bin;lib/*" Phase6IntegrationTestRunner
 ```
 
+#### 6. Demo Mode Verification Suite (24 tests)
+Verifies repeatable demo initialization, idempotence (zero duplicate accounts), deterministic scenarios (Scenarios A/B/C), authentication via username and USN with `NextStep@2026`, safe demo-only reset with real-account protection, and gateway demo manager integration:
+```powershell
+java -cp "bin;lib/*" DemoModeVerificationTestRunner
+```
+
 ---
 
 ### Step 3: Run All Tests Sequentially (One-Liner)
 
 #### In Windows PowerShell:
 ```powershell
-java -cp "bin;lib/*" Phase3TestRunner; java -cp "bin;lib/*" Phase4TestRunner; java -cp "bin;lib/*" Phase5TestRunner; java -cp "bin;lib/*" Phase6IntegrationTestRunner; java "-Dnextstep.officer.activation.code=CAMPUS_OFFICER_2026" -cp "bin;lib/*" ConsoleInputEdgeCaseTestRunner
+java -cp "bin;lib/*" DemoModeVerificationTestRunner; java -cp "bin;lib/*" Phase3TestRunner; java -cp "bin;lib/*" Phase4TestRunner; java -cp "bin;lib/*" Phase5TestRunner; java -cp "bin;lib/*" Phase6IntegrationTestRunner; java "-Dnextstep.officer.activation.code=CAMPUS_OFFICER_2026" -cp "bin;lib/*" ConsoleInputEdgeCaseTestRunner
 ```
 
 ---
