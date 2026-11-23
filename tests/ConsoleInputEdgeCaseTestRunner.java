@@ -1561,7 +1561,7 @@ public class ConsoleInputEdgeCaseTestRunner {
                 System.setOut(originalOut);
 
                 String outStr = out.toString(StandardCharsets.UTF_8);
-                if (!published && outStr.contains("Job drive creation cancelled. Returning to Placement Officer Dashboard...")) {
+                if (!published && (outStr.contains("Job drive creation cancelled") && outStr.contains("Dashboard..."))) {
                     pass("JD.2: Option 0 cancels job drive creation cleanly without persisting record");
                 } else {
                     fail("JD.2", "Option 0 did not cancel job drive creation as expected");
