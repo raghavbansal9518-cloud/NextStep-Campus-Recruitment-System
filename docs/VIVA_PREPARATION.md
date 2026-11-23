@@ -41,10 +41,14 @@ NextStep follows a clean **Layered Architecture (Separation of Concerns)**:
                                │ Calls
 ┌──────────────────────────────▼──────────────────────────────┐
 │                   SERVICE LAYER (Business Logic)             │
-│   AuthService.java           RecruitmentService.java        │
-│   - PBKDF2 Password Hashing  - Eligibility Evaluation Engine│
-│   - Registration Transaction - Streams, Lambdas, Collectors │
-│   - Credential Authentication- CSV Export & Audit Archival  │
+│   AuthService.java       RecruitmentService.java            │
+│   - PBKDF2 Password Hash - Eligibility Engine               │
+│   - Registration Tx      - Streams, Lambdas, Collectors     │
+│   - Authentication       - CSV Export & Audit Archival      │
+│   DemoService.java                                          │
+│   - Centralized Demo Data Manager (Gateway Option 4)        │
+│   - Idempotent Seed & Sync (Scenarios A, B, C)              │
+│   - Safe Protected Demonstration Reset                      │
 └──────────────────────────────┬──────────────────────────────┘
                                │ Calls
 ┌──────────────────────────────▼──────────────────────────────┐
@@ -87,6 +91,7 @@ NextStep follows a clean **Layered Architecture (Separation of Concerns)**:
 ### 2. Service Layer (Business Rules)
 - **`com.nextstep.service.AuthService`**: Handles user authentication, cryptographic salt generation, PBKDF2 password derivation, and multi-table transactional registration.
 - **`com.nextstep.service.RecruitmentService`**: The core recruitment engine. Evaluates academic/skill eligibility, manages application submissions, enforces RBAC checks, executes Java Streams and Collectors, and handles CSV export/archival.
+- **`com.nextstep.service.DemoService`**: The centralized demonstration data manager. Implements idempotent preparation and verification of demonstration data in MySQL, scenario profile management (Scenario A: Vihaan Mehta, Scenario B: Kabir Malhotra, Scenario C: Arjun Khanna, Officer Vihaan), canonical MySQL persistence/synchronization across 6 domain tables, and protected demonstration reset with confirmation keywords.
 
 ### 3. Data Access Layer (DAOs)
 - **`com.nextstep.dao.UserDAO`**: Queries and persists records in `users`. Implements `existsByUsername(username)` and `existsByEmail(email)` querying the unique indexes in MySQL for safe duplicate checking.
@@ -367,8 +372,8 @@ Produces: `{true=2, false=22}` (2 placed, 22 in-progress).
 ### Q12: How is Role-Based Access Control (RBAC) enforced?
 **Answer:** At login, the user's role is stored in their session. When a placement officer operation is invoked (e.g. `updateApplicationStatus` or `exportApplicationsToCsv`), the service layer verifies `actor.getRole() == Role.PLACEMENT_OFFICER`. If an unauthorized student or null user attempts the operation, a `SecurityException` is thrown.
 
-### Q13: How does the one-click demo autofill feature work, and how are database collisions prevented?
-**Answer:** Entering `'A'` on multi-field forms instantly loads pre-configured demo profiles with realistic campus identities (e.g., Vihaan Mehta `2510990750`). To prevent duplicate key violations in MySQL, the generation methods (`getStudentDemoData()`, `getOfficerDemoData()`) query `userDAO.existsByUsername()`, `studentDAO.existsByStudentId()`, and `userDAO.existsByEmail()` inside a loop of up to 1,000 attempts with dynamic numeric seeds. If uniqueness cannot be confirmed due to an `SQLException` or exhausted attempts, autofill stops fail-safely and informs the user rather than populating unverified data.
+### Q13: How does the Centralized Demo Data Manager and application-wide 'A' shortcut work?
+**Answer:** Entering `'A'` on supported screens fetches centralized demonstration data managed by `DemoService` (Gateway Option 4). On Student Sign Up (Page 2), it supports shortcuts `A` / `A1` (Vihaan Mehta - Scenario A), `A2` (Kabir Malhotra - Scenario B), and `A3` (Arjun Khanna - Scenario C). Values render inline in Sky Blue brackets `[Value]` beside Golden Amber prompts, allowing complete review and editing before explicit user submission. Dynamic collision guards query `userDAO.existsByUsername()`, `studentDAO.existsByStudentId()`, and `userDAO.existsByEmail()` up to 1,000 attempts to guarantee uniqueness.
 
 ### Q14: How does NextStep achieve fast typing and responsive console input without lag?
 **Answer:** Form input uses standard line-buffered stream reading (`scanner.nextLine()`) without spawning OS sub-processes or redrawing the entire screen per keystroke. Validation runs after completing each field rather than continuously interrupting typing. Pre-filled values render inline directly beside Golden Amber prompts in Sky Blue brackets `[Value]`, allowing users to confirm with `[Enter]` or override with custom text instantly.
@@ -377,4 +382,10 @@ Produces: `{true=2, false=22}` (2 placed, 22 in-progress).
 **Answer:** On Page 7 (Create Job Drive), partner companies are queried live from MySQL (`companyDAO.findAllCompanies()`). The officer specifies the Company ID along with 9 additional parameters: title, description, CTC (LPA), location, minimum CGPA, max backlogs, eligible branches, required technical skills, and target graduation batch. `JobDAO.createJob()` persists the job atomically across `jobs`, `job_eligible_branches`, and `job_required_skills` using parameterized queries and batch execution.
 
 ### Q16: How is the system verified without external testing frameworks like JUnit?
-**Answer:** NextStep utilizes 5 standalone regression and integration test runners in `tests/` (`ConsoleInputEdgeCaseTestRunner`, `Phase3TestRunner`, `Phase4TestRunner`, `Phase5TestRunner`, `Phase6IntegrationTestRunner`). They execute real JDBC transactions against MySQL, verifying ACID rollbacks, unique constraints, and UI edge cases using pure Java assertions, reporting 269/269 passed tests (100% pass rate).
+**Answer:** NextStep utilizes 7 standalone regression and integration test runners in `tests/` (`CentralizedDemoManagerTestRunner`, `DemoModeVerificationTestRunner`, `ConsoleInputEdgeCaseTestRunner`, `Phase3TestRunner`, `Phase4TestRunner`, `Phase5TestRunner`, `Phase6IntegrationTestRunner`). They execute real JDBC transactions against MySQL, verifying ACID rollbacks, unique constraints, PBKDF2 cryptography, streams, and UI edge cases using pure Java assertions, reporting 297/297 passed tests (100% pass rate). In addition, `VisualInspectionVerifier` validates 30 terminal layout screens, guaranteeing strict 64-column bounds with 0 line overflows.
+
+### Q17: How is responsive terminal centering achieved in console mode?
+**Answer:** Console centering is dynamically computed via `ConsoleTheme.getLeftMargin()`. It determines terminal width from `-Dnextstep.columns`, the `COLUMNS` environment variable, or Windows console metrics. When width exceeds the 64-column box frame (`columns > 64`), it pads every output line with `(columns - 64) / 2` leading spaces. This perfectly centers screens on 80-column (8-space margin), 100-column (18-space margin), and 120-column (28-space margin) terminal windows without content clipping. Furthermore, `clearConsole()` flushes `\033[H\033[2J\033[3J` to erase both visible viewports and scrollback buffers during screen transitions.
+
+### Q18: How does Centralized Demonstration Data Management prevent database bloat and ensure repeatability?
+**Answer:** `DemoService` provides idempotent preparation (`prepareOrVerifyDemoData()`). It queries existing demo records before inserting; if accounts exist, it verifies and re-links them without duplicating rows. For presentations, it maintains deterministic credentials (`NextStep@2026`) across 3 distinct candidate scenarios (A: Fully Eligible, B: Skill-Gap, C: Ineligible). When resetting, Option 8 executes a protected purge that deletes only `%_demo` records while strictly safeguarding real student registrations and base partner companies, requiring explicit keyword confirmation (`CONFIRM` or `RESET`).

@@ -83,14 +83,17 @@ If you do not have direct push access to the main repository:
    git checkout -b fix/issue-description
    ```
 5. Make your modifications, adhering to the project coding standards.
-6. Compile the code and run the regression test suites (all 269 tests should pass):
+6. Compile the code and run the regression test suites (all 297 tests should pass):
    ```powershell
    javac -d bin -cp "bin;lib/*" src/com/nextstep/model/*.java src/com/nextstep/database/*.java src/com/nextstep/dao/*.java src/com/nextstep/service/*.java src/com/nextstep/util/*.java src/com/nextstep/Main.java tests/*.java
+   java -cp "bin;lib/*" CentralizedDemoManagerTestRunner
+   java -cp "bin;lib/*" DemoModeVerificationTestRunner
    java -cp "bin;lib/*" Phase3TestRunner
    java -cp "bin;lib/*" Phase4TestRunner
    java -cp "bin;lib/*" Phase5TestRunner
    java -cp "bin;lib/*" Phase6IntegrationTestRunner
    java "-Dnextstep.officer.activation.code=CAMPUS_OFFICER_2026" -cp "bin;lib/*" ConsoleInputEdgeCaseTestRunner
+   java -cp "bin;lib/*" VisualInspectionVerifier
    ```
 7. Commit your changes using [Conventional Commits](https://www.conventionalcommits.org/):
    ```bash
