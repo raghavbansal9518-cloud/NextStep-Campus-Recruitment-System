@@ -80,6 +80,34 @@ public class CompanyDAO {
         return null;
     }
 
+    /**
+     * Updates an existing partner company record.
+     *
+     * @param company Company entity with updated fields
+     * @return boolean true if update succeeded
+     * @throws SQLException on database error
+     */
+    public boolean updateCompany(Company company) throws SQLException {
+        if (company == null || company.getId() <= 0) {
+            return false;
+        }
+
+        String sql = "UPDATE companies SET name = ?, industry = ?, email = ?, location = ?, website = ? WHERE id = ?";
+
+        try (Connection conn = DatabaseConnection.getConnection();
+             PreparedStatement stmt = conn.prepareStatement(sql)) {
+
+            stmt.setString(1, company.getName().trim());
+            stmt.setString(2, company.getIndustry().trim());
+            stmt.setString(3, company.getEmail().trim());
+            stmt.setString(4, company.getLocation().trim());
+            stmt.setString(5, company.getWebsite() != null ? company.getWebsite().trim() : null);
+            stmt.setInt(6, company.getId());
+
+            return stmt.executeUpdate() > 0;
+        }
+    }
+
     private Company mapRowToCompany(ResultSet rs) throws SQLException {
         int id = rs.getInt("id");
         String name = rs.getString("name");

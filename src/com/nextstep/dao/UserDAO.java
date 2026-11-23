@@ -233,6 +233,56 @@ public class UserDAO {
     }
 
     /**
+     * Updates an existing user's email and password hash.
+     *
+     * @param user User entity with updated fields
+     * @return boolean true if updated successfully
+     * @throws SQLException on database error
+     */
+    public boolean updateUser(User user) throws SQLException {
+        if (user == null || user.getId() <= 0) {
+            return false;
+        }
+
+        String sql = "UPDATE users SET email = ?, password_hash = ? WHERE id = ?";
+
+        try (Connection conn = DatabaseConnection.getConnection();
+             PreparedStatement stmt = conn.prepareStatement(sql)) {
+
+            stmt.setString(1, user.getEmail().trim());
+            stmt.setString(2, user.getPasswordHash());
+            stmt.setInt(3, user.getId());
+
+            return stmt.executeUpdate() > 0;
+        }
+    }
+
+    /**
+     * Updates an existing user's password hash by username.
+     *
+     * @param username username of user to update
+     * @param newPasswordHash encoded password hash
+     * @return boolean true if password was updated
+     * @throws SQLException on database error
+     */
+    public boolean updatePassword(String username, String newPasswordHash) throws SQLException {
+        if (username == null || username.trim().isEmpty() || newPasswordHash == null) {
+            return false;
+        }
+
+        String sql = "UPDATE users SET password_hash = ? WHERE username = ?";
+
+        try (Connection conn = DatabaseConnection.getConnection();
+             PreparedStatement stmt = conn.prepareStatement(sql)) {
+
+            stmt.setString(1, newPasswordHash);
+            stmt.setString(2, username.trim());
+
+            return stmt.executeUpdate() > 0;
+        }
+    }
+
+    /**
      * Self-contained verification runner for testing UserDAO operations.
      */
     public static void main(String[] args) {

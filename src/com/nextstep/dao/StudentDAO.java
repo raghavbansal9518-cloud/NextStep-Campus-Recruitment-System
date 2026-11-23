@@ -245,6 +245,32 @@ public class StudentDAO {
     }
 
     /**
+     * Atomically updates a student's technical skills by replacing existing skills with new ones.
+     */
+    public void updateStudentSkills(Connection conn, int studentId, List<String> skills) throws SQLException {
+        if (conn == null) {
+            throw new IllegalArgumentException("Connection cannot be null");
+        }
+        String deleteSql = "DELETE FROM student_skills WHERE student_id = ?";
+        try (PreparedStatement stmt = conn.prepareStatement(deleteSql)) {
+            stmt.setInt(1, studentId);
+            stmt.executeUpdate();
+        }
+        if (skills != null && !skills.isEmpty()) {
+            saveStudentSkills(conn, studentId, skills);
+        }
+    }
+
+    /**
+     * Standalone skill update opening its own database connection.
+     */
+    public void updateStudentSkills(int studentId, List<String> skills) throws SQLException {
+        try (Connection conn = DatabaseConnection.getConnection()) {
+            updateStudentSkills(conn, studentId, skills);
+        }
+    }
+
+    /**
      * Helper method to map a ResultSet row to a Student model and populate their skills.
      */
     private Student mapRowToStudent(ResultSet rs) throws SQLException {

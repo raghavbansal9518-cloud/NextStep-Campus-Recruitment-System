@@ -429,28 +429,73 @@ Target Job opening in seeded database:
 
 ---
 
-### 3. Strict 3-Page Autofill Policy
+### 3. Centralized Demo Data Management System (Gateway Option 4)
 
-Autofill (`[A]` shortcut) is strictly limited to **three data-entry pages**:
-1. **Page 2 — Student Sign Up:** Generates collision-free student profile with valid phone, CGPA, and branch.
-2. **Page 4 — Placement Officer Sign Up:** Populates officer profile; safely uses configured activation code.
-3. **Page 7 — Create Job Drive:** Populates 10-parameter job drive using live partner company from MySQL.
+NextStep includes a **Centralized, Editable Demo Data Management System** accessible directly from Page 1 (Unified Campus Gateway) via Option `4. Demonstration Mode & Scenario Setup` (or by typing `DEMO` / `D`).
 
-> [!NOTE]
-> All other pages (Pages 1, 3, 5, 6, 8, 9, 10) do **not** have form autofill. They use the prepared demo accounts above for instant sign-in and end-to-end demonstrations.
+This system centralizes all demonstration configuration, allowing you to configure, inspect, edit, and canonically persist demo data in MySQL before or during your presentation:
+
+```text
+================================================================
+             NEXTSTEP | DEMONSTRATION MODE & SCENARIO MANAGER
+          Centralized Data Management & Professor Walkthrough
+================================================================
+  1. Prepare / Verify Demo Data (Idempotent Setup)
+  2. View Demo Credentials & Scenario Reference Guide
+  3. Manage Demo Student Profiles (Scenarios A, B, C)
+  4. Manage Demo Placement Officer Profile
+  5. Manage Demo Partner Companies
+  6. Manage Demo Job Drive Specifications
+  7. Manage Demo Applications & Status Tracking
+  8. Reset Demonstration Data Only (Protected)
+  0. Return to Gateway
+================================================================
+```
+
+#### Centralized Management Features:
+- **Option 1 — Prepare / Verify Demo Data:** Idempotently provisions all required demo users, student profiles, skills, partner companies, and job drives in MySQL. If records already exist, it detects them and leaves them untouched without duplicating rows.
+- **Option 2 — Credentials & Scenario Reference Guide:** Live on-screen cheat sheet displaying all usernames, USNs, passwords, cutoffs, and expected scenario outcomes.
+- **Option 3 — Manage Demo Student Profiles:** Select and edit any of the 3 candidate profiles (Scenario A: Vihaan Mehta, Scenario B: Kabir Malhotra, Scenario C: Arjun Khanna). Edit Name, USN, Email, Phone, Branch, CGPA, Backlogs, Passing Year, Skills, or Password, then optionally save changes directly to MySQL (`students`, `users`, and `student_skills` tables).
+- **Option 4 — Manage Placement Officer Profile:** Inspect and edit Officer ID (`TPO-2026-001`), Name (`Prof. Vihaan Mehta`), Email, and Password, and sync changes directly to MySQL.
+- **Option 5 — Manage Demo Partner Companies:** View registered partner corporate profiles (Nexis Cloud Technologies, Apex Financial Software, Quantum Robotics Labs) and edit location or contact details in MySQL.
+- **Option 6 — Manage Demo Job Drive Specifications:** View and edit corporate requirements (Title, CTC, Location, CGPA, Backlogs, Eligible Branches, Required Skills, Passing Year) used across job creation and evaluations.
+- **Option 7 — Manage Demo Applications & Status Tracking:** Inspect real applications submitted by demo candidates (`vihaan_demo`, `kabir_demo`, `arjun_demo`) and advance their review status (`APPLIED` → `SHORTLISTED` → `SELECTED` / `REJECTED`) in MySQL with real-time audit logging.
+- **Option 8 — Safe Demo Reset Only:** Purges demo records while strictly protecting real user registrations and base corporate tables. Requires typing `CONFIRM` or `RESET`.
 
 ---
 
-### 4. Safe Demonstration Reset (Protected Operation)
+### 4. Application-Wide 'A' Shortcut Fetching System
 
-NextStep includes an explicit, protected **Safe Demo Reset** tool accessible via Gateway Option `4` → `3`:
+NextStep features an **Application-Wide Shortcut System** where typing `'A'` fetches centralized demo data into bracketed input fields `[ Value ]` without bypassing authentication or auto-submitting forms:
+
+| Page / Workflow | Shortcut Input | Action & Populated Data | Security & Interaction |
+| :--- | :---: | :--- | :--- |
+| **Page 2: Student Sign Up** | `A` or `A1` | Populates **Scenario A** (Vihaan Mehta — Eligible) | Pre-fills all 12 fields inside `[ ]`. Allows editing fields 1–12 or typing `S` to switch scenarios. Explicitly submit with `1. CREATE ACCOUNT`. |
+| **Page 2: Student Sign Up** | `A2` | Populates **Scenario B** (Kabir Malhotra — Skill Gap) | Same as above. |
+| **Page 2: Student Sign Up** | `A3` | Populates **Scenario C** (Arjun Khanna — Ineligible) | Same as above. |
+| **Page 3: Student Sign In** | `A` or `A1` | Loads `vihaan_demo` / `NextStep@2026` | Masks password `[ ******** ]`. User enters `1. SIGN IN` to authenticate via real PBKDF2 in MySQL. |
+| **Page 3: Student Sign In** | `A2` | Loads `kabir_demo` / `NextStep@2026` | Same as above. |
+| **Page 3: Student Sign In** | `A3` | Loads `arjun_demo` / `NextStep@2026` | Same as above. |
+| **Placement Officer Sign In** | `A` | Loads `officer_vihaan` / `NextStep@2026` | User enters `1. SIGN IN` to authenticate via real PBKDF2 in MySQL. |
+| **Page 4: Officer Sign Up** | `A` | Loads demo officer profile & activation code | Populates all 7 fields inside `[ ]`. Explicitly submit with `1. CREATE ACCOUNT`. |
+| **Page 7: Create Job Drive** | `A` | Populates corporate criteria template | Populates all 10 job parameters from Demo Manager. Allows editing before publishing. |
+| **Pages 5, 8, 9: Job Selection** | `A` | Selects Demo Job `#1` (Junior Backend Engineer) | Instantly selects Job 1 for eligibility matrix check or application submission. |
+
+> [!IMPORTANT]
+> **No Bypass Guarantee:** Pressing `'A'` never circumvents password verification or user confirmation. Passwords are encrypted with salted PBKDF2, and accounts must pass real MySQL cryptographic authentication before access is granted.
+
+---
+
+### 5. Safe Demonstration Reset (Protected Operation)
+
+NextStep includes an explicit, protected **Safe Demo Reset** tool accessible via Gateway Option `4` → `8`:
 - **What it removes:** ONLY demonstration records (demo applications and users with `%_demo` or USNs `2510990750`–`2510990752` and `officer_vihaan`).
 - **What it protects:** Real user registrations, partner companies (`companies` table), and base job drives are **100% preserved**.
 - **Protection:** Requires typing the confirmation keyword `CONFIRM` or `RESET` to prevent accidental execution.
 
 ---
 
-### 5. Complete 25-Step Live Demonstration Walkthrough
+### 6. Complete 25-Step Live Demonstration Walkthrough
 
 Follow these 25 steps for a flawless, repeatable evaluation walkthrough:
 

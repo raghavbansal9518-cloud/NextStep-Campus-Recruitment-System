@@ -220,7 +220,7 @@ public class Main {
             } else if ("0".equals(input)) {
                 return 0;
             } else {
-                System.out.println(ConsoleTheme.warn("[WARN] Invalid choice. Please enter 0, 1, 2, or 3."));
+                System.out.println(ConsoleTheme.warn("[WARN] Invalid choice. Please enter 0, 1, 2, or 3. (Or 4 for Demonstration Mode)"));
                 System.out.println(ConsoleTheme.divider("----------------------------------------------------------------"));
             }
         }
@@ -261,7 +261,7 @@ public class Main {
         System.out.println(ConsoleTheme.text("                  1. Student Portal"));
         System.out.println(ConsoleTheme.text("                  2. Placement Officer Portal"));
         System.out.println(ConsoleTheme.text("                  3. View Campus Recruitment Statistics"));
-        System.out.println(ConsoleTheme.text("                  4. Demonstration Mode & Scenario Setup"));
+        System.out.println(ConsoleTheme.text("                  4. Demonstration Mode & Scenario Setup (Centralized Demo Manager)"));
         System.out.println(ConsoleTheme.text("                  0. Exit System"));
         System.out.println(ConsoleTheme.divider("----------------------------------------------------------------"));
     }
@@ -302,7 +302,7 @@ public class Main {
     }
 
     /**
-     * Handles Demonstration Mode & Scenario Setup workflow.
+     * Handles Centralized Demo Data Management & Scenario Setup workflow.
      */
     public void handleDemoManagerWorkflow(Scanner scanner) {
         boolean inDemoMenu = true;
@@ -310,19 +310,25 @@ public class Main {
             clearConsole();
             System.out.println(ConsoleTheme.border("================================================================"));
             System.out.println(ConsoleTheme.header("           NEXTSTEP | CAMPUS RECRUITMENT SYSTEM (2026)"));
-            System.out.println(ConsoleTheme.header("             DEMONSTRATION MODE & SCENARIO MANAGER"));
+            System.out.println(ConsoleTheme.header("       DEMONSTRATION MODE & SCENARIO MANAGER — DEMO DATA"));
             System.out.println(ConsoleTheme.border("================================================================"));
             boolean prepared = demoService.isDemoDataPrepared();
             String statusBadge = prepared ? ConsoleTheme.green("[DEMO DATA ACTIVE & READY]") : ConsoleTheme.warn("[DEMO DATA NOT INITIALIZED]");
             System.out.println("  System Status : " + statusBadge);
             System.out.println("  Target DB     : nextstep_db (MySQL)");
-            System.out.println("  Credentials   : Fixed, known password for all demo accounts");
+            System.out.println("  Persistence   : Canonical MySQL Storage (Editable & Persistent)");
+            System.out.println("  Credentials   : Centralized & Deterministic for All Scenarios");
             System.out.println(ConsoleTheme.cyan("  ┌──────────────────────────────────────────────────────────┐"));
             System.out.println(ConsoleTheme.cyan("  │") + ConsoleTheme.text("               SELECT DEMO OPERATION                      ") + ConsoleTheme.cyan("│"));
             System.out.println(ConsoleTheme.cyan("  └──────────────────────────────────────────────────────────┘"));
             System.out.println(ConsoleTheme.text("                  1. Prepare / Verify Demo Data (Idempotent)"));
-            System.out.println(ConsoleTheme.text("                  2. View Demo Credentials & Scenario Guide"));
-            System.out.println(ConsoleTheme.text("                  3. Reset Demonstration Data Only (Protected)"));
+            System.out.println(ConsoleTheme.text("                  2. View Demo Credentials & Scenario Reference Guide"));
+            System.out.println(ConsoleTheme.text("                  3. Manage Demo Student Profiles (Scenarios A, B, C)"));
+            System.out.println(ConsoleTheme.text("                  4. Manage Demo Placement Officer Profile"));
+            System.out.println(ConsoleTheme.text("                  5. Manage Demo Partner Companies"));
+            System.out.println(ConsoleTheme.text("                  6. Manage Demo Job Drive Specifications"));
+            System.out.println(ConsoleTheme.text("                  7. Manage Demo Applications & Status Tracking"));
+            System.out.println(ConsoleTheme.text("                  8. Reset Demonstration Data Only (Protected)"));
             System.out.println(ConsoleTheme.text("                  0. Return to Gateway"));
             System.out.println(ConsoleTheme.divider("----------------------------------------------------------------"));
 
@@ -330,10 +336,555 @@ public class Main {
             switch (choice) {
                 case 1 -> showPrepareDemoData(scanner);
                 case 2 -> showDemoCredentialsGuide(scanner);
-                case 3 -> showResetDemoData(scanner);
+                case 3 -> manageDemoStudentProfilesWorkflow(scanner);
+                case 4 -> manageDemoOfficerProfileWorkflow(scanner);
+                case 5 -> manageDemoCompaniesWorkflow(scanner);
+                case 6 -> manageDemoJobDriveWorkflow(scanner);
+                case 7 -> manageDemoApplicationsWorkflow(scanner);
+                case 8 -> showResetDemoData(scanner);
                 case 0 -> inDemoMenu = false;
                 default -> {
-                    System.out.println(ConsoleTheme.warn("[WARN] Invalid option. Please enter 0, 1, 2, or 3."));
+                    System.out.println(ConsoleTheme.warn("[WARN] Invalid option. Please enter a choice between 0 and 8."));
+                    pauseForEnter(scanner);
+                }
+            }
+        }
+    }
+
+    public void manageDemoStudentProfilesWorkflow(Scanner scanner) {
+        boolean inProfilesMenu = true;
+        while (inProfilesMenu) {
+            clearConsole();
+            System.out.println(ConsoleTheme.border("================================================================"));
+            System.out.println(ConsoleTheme.header("           NEXTSTEP | CENTRALIZED DEMO DATA MANAGER"));
+            System.out.println(ConsoleTheme.header("                 MANAGE DEMO STUDENT PROFILES"));
+            System.out.println(ConsoleTheme.border("================================================================"));
+            System.out.println(ConsoleTheme.dim("  Select candidate profile to inspect, edit, or synchronize with MySQL:"));
+            System.out.println();
+            List<DemoService.DemoStudentProfile> profiles = demoService.getDemoStudentProfiles();
+            for (int i = 0; i < profiles.size(); i++) {
+                DemoService.DemoStudentProfile p = profiles.get(i);
+                System.out.println(ConsoleTheme.cyan("  " + (i + 1) + ". " + p.getScenarioName()));
+                System.out.println("     * Name & USN       : " + p.getFullName() + " (USN: " + p.getStudentId() + ")");
+                System.out.println("     * Credentials      : Username: " + ConsoleTheme.cyan(p.getUsername()) + " | Password: " + p.getPassword());
+                System.out.println("     * Academic Profile : " + p.getBranch() + " | CGPA " + String.format(Locale.US, "%.2f", p.getCgpa()) + " | " + p.getActiveBacklogs() + " Backlogs | " + p.getGraduationYear());
+                System.out.println("     * Technical Skills : " + String.join(", ", p.getSkills()));
+                System.out.println("     * Expected Outcome : " + p.getExpectedOutcome());
+                System.out.println();
+            }
+            System.out.println(ConsoleTheme.text("  0. Back to Demo Manager"));
+            System.out.println(ConsoleTheme.divider("----------------------------------------------------------------"));
+
+            int choice = readInt(scanner, "Choose profile (1-3, or 0 to Return): ");
+            if (choice >= 1 && choice <= profiles.size()) {
+                editDemoStudentProfileWorkflow(scanner, choice - 1);
+            } else if (choice == 0) {
+                inProfilesMenu = false;
+            } else {
+                System.out.println(ConsoleTheme.warn("[WARN] Invalid option. Please enter 1, 2, 3, or 0."));
+                pauseForEnter(scanner);
+            }
+        }
+    }
+
+    public void editDemoStudentProfileWorkflow(Scanner scanner, int profileIndex) {
+        DemoService.DemoStudentProfile prof = demoService.getDemoStudentProfile(profileIndex);
+        String[] prompts = {
+                "Student ID (USN)      : ",
+                "Full Name             : ",
+                "Email Address         : ",
+                "Phone Number          : ",
+                "Degree Branch         : ",
+                "Academic CGPA         : ",
+                "Technical Skills      : ",
+                "Active Backlogs       : ",
+                "Graduation Year       : ",
+                "Account Username      : ",
+                "Account Password      : "
+        };
+
+        boolean editing = true;
+        while (editing) {
+            clearConsole();
+            System.out.println(ConsoleTheme.border("================================================================"));
+            System.out.println(ConsoleTheme.header("           NEXTSTEP | CENTRALIZED DEMO DATA MANAGER"));
+            System.out.println(ConsoleTheme.header("             EDIT STUDENT PROFILE — " + prof.getScenarioName().toUpperCase()));
+            System.out.println(ConsoleTheme.border("================================================================"));
+            System.out.println(ConsoleTheme.dim("  Expected Role Outcome: " + prof.getExpectedOutcome()));
+            System.out.println(ConsoleTheme.divider("----------------------------------------------------------------"));
+
+            String[] currentValues = {
+                    prof.getStudentId(),
+                    prof.getFullName(),
+                    prof.getEmail(),
+                    prof.getPhone(),
+                    prof.getBranch(),
+                    String.format(Locale.US, "%.2f", prof.getCgpa()),
+                    String.join(", ", prof.getSkills()),
+                    String.valueOf(prof.getActiveBacklogs()),
+                    String.valueOf(prof.getGraduationYear()),
+                    prof.getUsername(),
+                    prof.getPassword()
+            };
+
+            for (int k = 0; k < prompts.length; k++) {
+                System.out.printf("  [%2d] %s%n", (k + 1), formatFormFieldRow(prompts[k], currentValues[k], k == 10));
+            }
+            System.out.println(ConsoleTheme.divider("----------------------------------------------------------------"));
+            System.out.println(ConsoleTheme.dim("  Actions: [1-11] Edit field number  |  [S] Save to MySQL DB  |  [0] Done / Return"));
+            System.out.print(ConsoleTheme.prompt("  Enter action: "));
+
+            if (!scanner.hasNextLine()) {
+                return;
+            }
+            String action = scanner.nextLine().trim();
+            if (System.console() == null) {
+                System.out.println(action);
+            }
+
+            if ("0".equals(action) || action.isEmpty()) {
+                editing = false;
+            } else if ("S".equalsIgnoreCase(action) || "SAVE".equalsIgnoreCase(action)) {
+                try {
+                    boolean saved = demoService.saveStudentProfile(prof);
+                    if (saved) {
+                        System.out.println(ConsoleTheme.success("\n  [SUCCESS] Profile for " + prof.getFullName() + " saved directly to MySQL database!"));
+                    } else {
+                        System.out.println(ConsoleTheme.warn("\n  [NOTICE] Profile updated in memory."));
+                    }
+                } catch (SQLException e) {
+                    System.out.println(ConsoleTheme.red("\n  [ERROR] Database error saving student profile: " + e.getMessage()));
+                }
+                pauseForEnter(scanner);
+            } else {
+                try {
+                    int fNum = Integer.parseInt(action);
+                    if (fNum >= 1 && fNum <= prompts.length) {
+                        int fIdx = fNum - 1;
+                        String fLabel = prompts[fIdx].replace(":", "").trim();
+                        System.out.print(ConsoleTheme.prompt("  Enter new value for " + fLabel + ": "));
+                        if (scanner.hasNextLine()) {
+                            String newVal = scanner.nextLine().trim();
+                            if (System.console() == null) {
+                                System.out.println(newVal);
+                            }
+                            if (!newVal.isEmpty()) {
+                                switch (fIdx) {
+                                    case 0 -> prof.setStudentId(newVal);
+                                    case 1 -> prof.setFullName(newVal);
+                                    case 2 -> prof.setEmail(newVal);
+                                    case 3 -> prof.setPhone(newVal);
+                                    case 4 -> prof.setBranch(newVal);
+                                    case 5 -> {
+                                        try {
+                                            prof.setCgpa(Double.parseDouble(newVal));
+                                        } catch (NumberFormatException e) {
+                                            System.out.println(ConsoleTheme.warn("  [WARN] Invalid CGPA format; kept previous value."));
+                                        }
+                                    }
+                                    case 6 -> prof.setSkills(ValidationUtil.parseCommaSeparatedList(newVal));
+                                    case 7 -> {
+                                        try {
+                                            prof.setActiveBacklogs(Integer.parseInt(newVal));
+                                        } catch (NumberFormatException e) {
+                                            System.out.println(ConsoleTheme.warn("  [WARN] Invalid backlogs; kept previous value."));
+                                        }
+                                    }
+                                    case 8 -> {
+                                        try {
+                                            prof.setGraduationYear(Integer.parseInt(newVal));
+                                        } catch (NumberFormatException e) {
+                                            System.out.println(ConsoleTheme.warn("  [WARN] Invalid grad year; kept previous value."));
+                                        }
+                                    }
+                                    case 9 -> prof.setUsername(newVal);
+                                    case 10 -> prof.setPassword(newVal);
+                                }
+                                System.out.println(ConsoleTheme.cyan("  * Updated field " + fNum + " (" + fLabel + ")."));
+                            }
+                        }
+                    }
+                } catch (NumberFormatException ignored) {}
+            }
+        }
+    }
+
+    public void manageDemoOfficerProfileWorkflow(Scanner scanner) {
+        DemoService.DemoOfficerProfile prof = demoService.getDemoOfficerProfile();
+        String[] prompts = {
+                "Officer ID            : ",
+                "Full Name             : ",
+                "Official Email        : ",
+                "Account Username      : ",
+                "Account Password      : ",
+                "Activation Code       : "
+        };
+
+        boolean editing = true;
+        while (editing) {
+            clearConsole();
+            System.out.println(ConsoleTheme.border("================================================================"));
+            System.out.println(ConsoleTheme.header("           NEXTSTEP | CENTRALIZED DEMO DATA MANAGER"));
+            System.out.println(ConsoleTheme.header("             EDIT PLACEMENT OFFICER DEMO PROFILE"));
+            System.out.println(ConsoleTheme.border("================================================================"));
+            System.out.println(ConsoleTheme.dim("  Authorized Officer identity used for demonstration workflows:"));
+            System.out.println(ConsoleTheme.divider("----------------------------------------------------------------"));
+
+            String[] currentValues = {
+                    prof.getOfficerId(),
+                    prof.getFullName(),
+                    prof.getEmail(),
+                    prof.getUsername(),
+                    prof.getPassword(),
+                    prof.getActivationCode()
+            };
+
+            for (int k = 0; k < prompts.length; k++) {
+                System.out.printf("  [%2d] %s%n", (k + 1), formatFormFieldRow(prompts[k], currentValues[k], k == 4));
+            }
+            System.out.println(ConsoleTheme.divider("----------------------------------------------------------------"));
+            System.out.println(ConsoleTheme.dim("  Actions: [1-6] Edit field number  |  [S] Save to MySQL DB  |  [0] Done / Return"));
+            System.out.print(ConsoleTheme.prompt("  Enter action: "));
+
+            if (!scanner.hasNextLine()) {
+                return;
+            }
+            String action = scanner.nextLine().trim();
+            if (System.console() == null) {
+                System.out.println(action);
+            }
+
+            if ("0".equals(action) || action.isEmpty()) {
+                editing = false;
+            } else if ("S".equalsIgnoreCase(action) || "SAVE".equalsIgnoreCase(action)) {
+                try {
+                    boolean saved = demoService.saveOfficerProfile(prof);
+                    if (saved) {
+                        System.out.println(ConsoleTheme.success("\n  [SUCCESS] Officer profile saved directly to MySQL database!"));
+                    }
+                } catch (SQLException e) {
+                    System.out.println(ConsoleTheme.red("\n  [ERROR] Database error saving officer profile: " + e.getMessage()));
+                }
+                pauseForEnter(scanner);
+            } else {
+                try {
+                    int fNum = Integer.parseInt(action);
+                    if (fNum >= 1 && fNum <= prompts.length) {
+                        int fIdx = fNum - 1;
+                        String fLabel = prompts[fIdx].replace(":", "").trim();
+                        System.out.print(ConsoleTheme.prompt("  Enter new value for " + fLabel + ": "));
+                        if (scanner.hasNextLine()) {
+                            String newVal = scanner.nextLine().trim();
+                            if (System.console() == null) {
+                                System.out.println(newVal);
+                            }
+                            if (!newVal.isEmpty()) {
+                                switch (fIdx) {
+                                    case 0 -> prof.setOfficerId(newVal);
+                                    case 1 -> prof.setFullName(newVal);
+                                    case 2 -> prof.setEmail(newVal);
+                                    case 3 -> prof.setUsername(newVal);
+                                    case 4 -> prof.setPassword(newVal);
+                                    case 5 -> prof.setActivationCode(newVal);
+                                }
+                                System.out.println(ConsoleTheme.cyan("  * Updated field " + fNum + " (" + fLabel + ")."));
+                            }
+                        }
+                    }
+                } catch (NumberFormatException ignored) {}
+            }
+        }
+    }
+
+    public void manageDemoCompaniesWorkflow(Scanner scanner) {
+        boolean inCompanyMenu = true;
+        while (inCompanyMenu) {
+            clearConsole();
+            System.out.println(ConsoleTheme.border("================================================================"));
+            System.out.println(ConsoleTheme.header("           NEXTSTEP | CENTRALIZED DEMO DATA MANAGER"));
+            System.out.println(ConsoleTheme.header("                 MANAGE DEMO PARTNER COMPANIES"));
+            System.out.println(ConsoleTheme.border("================================================================"));
+            List<Company> companies;
+            try {
+                companies = companyDAO.findAllCompanies();
+            } catch (SQLException e) {
+                System.out.println(ConsoleTheme.red("  [ERROR] Could not load companies: " + e.getMessage()));
+                companies = Collections.emptyList();
+            }
+
+            if (companies.isEmpty()) {
+                System.out.println(ConsoleTheme.warn("  No partner companies registered in MySQL. Run Prepare Demo Data first."));
+            } else {
+                System.out.println(ConsoleTheme.header("  Registered Hiring Partners (Live MySQL Table):"));
+                for (Company c : companies) {
+                    System.out.printf("    [ID %2d] %-28s | %-20s | %s%n",
+                            c.getId(), c.getName(), c.getIndustry(), c.getLocation());
+                }
+            }
+            System.out.println(ConsoleTheme.divider("----------------------------------------------------------------"));
+            System.out.println(ConsoleTheme.text("  Enter Company ID to edit, or 0 to Return:"));
+
+            int compId = readInt(scanner, "Choose company: ");
+            if (compId == 0) {
+                inCompanyMenu = false;
+            } else {
+                try {
+                    Company company = companyDAO.findById(compId);
+                    if (company != null) {
+                        editCompanyWorkflow(scanner, company);
+                    } else {
+                        System.out.println(ConsoleTheme.warn("  [WARN] Company with ID " + compId + " not found."));
+                        pauseForEnter(scanner);
+                    }
+                } catch (SQLException e) {
+                    System.out.println(ConsoleTheme.red("  [ERROR] Database error: " + e.getMessage()));
+                    pauseForEnter(scanner);
+                }
+            }
+        }
+    }
+
+    private void editCompanyWorkflow(Scanner scanner, Company company) {
+        String[] prompts = {
+                "Company Name          : ",
+                "Industry Sector       : ",
+                "Corporate Email       : ",
+                "Primary Location      : ",
+                "Website URL           : "
+        };
+
+        boolean editing = true;
+        while (editing) {
+            clearConsole();
+            System.out.println(ConsoleTheme.border("================================================================"));
+            System.out.println(ConsoleTheme.header("           EDIT COMPANY — " + company.getName().toUpperCase()));
+            System.out.println(ConsoleTheme.border("================================================================"));
+            String[] currentValues = {
+                    company.getName(),
+                    company.getIndustry(),
+                    company.getEmail(),
+                    company.getLocation(),
+                    company.getWebsite() != null ? company.getWebsite() : ""
+            };
+
+            for (int k = 0; k < prompts.length; k++) {
+                System.out.printf("  [%d] %s%n", (k + 1), formatFormFieldRow(prompts[k], currentValues[k], false));
+            }
+            System.out.println(ConsoleTheme.divider("----------------------------------------------------------------"));
+            System.out.println(ConsoleTheme.dim("  Actions: [1-5] Edit field  |  [S] Save to MySQL  |  [0] Done / Return"));
+            System.out.print(ConsoleTheme.prompt("  Enter action: "));
+
+            if (!scanner.hasNextLine()) {
+                return;
+            }
+            String action = scanner.nextLine().trim();
+            if (System.console() == null) {
+                System.out.println(action);
+            }
+
+            if ("0".equals(action) || action.isEmpty()) {
+                editing = false;
+            } else if ("S".equalsIgnoreCase(action) || "SAVE".equalsIgnoreCase(action)) {
+                try {
+                    boolean updated = demoService.saveCompanyProfile(company);
+                    if (updated) {
+                        System.out.println(ConsoleTheme.success("\n  [SUCCESS] Company record saved directly to MySQL database!"));
+                    }
+                } catch (SQLException e) {
+                    System.out.println(ConsoleTheme.red("\n  [ERROR] Database error saving company: " + e.getMessage()));
+                }
+                pauseForEnter(scanner);
+            } else {
+                try {
+                    int fNum = Integer.parseInt(action);
+                    if (fNum >= 1 && fNum <= prompts.length) {
+                        int fIdx = fNum - 1;
+                        String fLabel = prompts[fIdx].replace(":", "").trim();
+                        System.out.print(ConsoleTheme.prompt("  Enter new value for " + fLabel + ": "));
+                        if (scanner.hasNextLine()) {
+                            String newVal = scanner.nextLine().trim();
+                            if (System.console() == null) {
+                                System.out.println(newVal);
+                            }
+                            if (!newVal.isEmpty()) {
+                                switch (fIdx) {
+                                    case 0 -> company.setName(newVal);
+                                    case 1 -> company.setIndustry(newVal);
+                                    case 2 -> company.setEmail(newVal);
+                                    case 3 -> company.setLocation(newVal);
+                                    case 4 -> company.setWebsite(newVal);
+                                }
+                                System.out.println(ConsoleTheme.cyan("  * Updated field " + fNum + " (" + fLabel + ")."));
+                            }
+                        }
+                    }
+                } catch (NumberFormatException ignored) {}
+            }
+        }
+    }
+
+    public void manageDemoJobDriveWorkflow(Scanner scanner) {
+        DemoService.DemoJobProfile prof = demoService.getDemoJobProfile();
+        String[] prompts = {
+                "Partner Company ID    : ",
+                "Job Title             : ",
+                "Job Description       : ",
+                "Package CTC (LPA)     : ",
+                "Job Location          : ",
+                "Minimum CGPA Cutoff   : ",
+                "Max Allowed Backlogs  : ",
+                "Eligible Branches     : ",
+                "Required Skills       : ",
+                "Target Passing Year   : "
+        };
+
+        boolean editing = true;
+        while (editing) {
+            clearConsole();
+            System.out.println(ConsoleTheme.border("================================================================"));
+            System.out.println(ConsoleTheme.header("           NEXTSTEP | CENTRALIZED DEMO DATA MANAGER"));
+            System.out.println(ConsoleTheme.header("             MANAGE DEMO JOB DRIVE SPECIFICATIONS"));
+            System.out.println(ConsoleTheme.border("================================================================"));
+            System.out.println(ConsoleTheme.dim("  Default Demo Drive (Job ID " + prof.getJobId() + " — " + prof.getTitle() + "):"));
+            System.out.println(ConsoleTheme.divider("----------------------------------------------------------------"));
+
+            String[] currentValues = prof.toFormValues();
+            for (int k = 0; k < prompts.length; k++) {
+                System.out.printf("  [%2d] %s%n", (k + 1), formatFormFieldRow(prompts[k], currentValues[k], false));
+            }
+            System.out.println(ConsoleTheme.divider("----------------------------------------------------------------"));
+            System.out.println(ConsoleTheme.dim("  Actions: [1-10] Edit field  |  [S] Save to MySQL DB  |  [0] Done / Return"));
+            System.out.print(ConsoleTheme.prompt("  Enter action: "));
+
+            if (!scanner.hasNextLine()) {
+                return;
+            }
+            String action = scanner.nextLine().trim();
+            if (System.console() == null) {
+                System.out.println(action);
+            }
+
+            if ("0".equals(action) || action.isEmpty()) {
+                editing = false;
+            } else if ("S".equalsIgnoreCase(action) || "SAVE".equalsIgnoreCase(action)) {
+                try {
+                    boolean saved = demoService.saveJobProfile(prof);
+                    if (saved) {
+                        System.out.println(ConsoleTheme.success("\n  [SUCCESS] Job drive specifications saved directly to MySQL database!"));
+                    }
+                } catch (SQLException e) {
+                    System.out.println(ConsoleTheme.red("\n  [ERROR] Database error saving job drive: " + e.getMessage()));
+                }
+                pauseForEnter(scanner);
+            } else {
+                try {
+                    int fNum = Integer.parseInt(action);
+                    if (fNum >= 1 && fNum <= prompts.length) {
+                        int fIdx = fNum - 1;
+                        String fLabel = prompts[fIdx].replace(":", "").trim();
+                        System.out.print(ConsoleTheme.prompt("  Enter new value for " + fLabel + ": "));
+                        if (scanner.hasNextLine()) {
+                            String newVal = scanner.nextLine().trim();
+                            if (System.console() == null) {
+                                System.out.println(newVal);
+                            }
+                            if (!newVal.isEmpty()) {
+                                switch (fIdx) {
+                                    case 0 -> {
+                                        try { prof.setCompanyId(Integer.parseInt(newVal)); } catch (Exception ignored) {}
+                                    }
+                                    case 1 -> prof.setTitle(newVal);
+                                    case 2 -> prof.setDescription(newVal);
+                                    case 3 -> {
+                                        try { prof.setCtcLpa(new BigDecimal(newVal)); } catch (Exception ignored) {}
+                                    }
+                                    case 4 -> prof.setLocation(newVal);
+                                    case 5 -> {
+                                        try { prof.setMinCgpa(Double.parseDouble(newVal)); } catch (Exception ignored) {}
+                                    }
+                                    case 6 -> {
+                                        try { prof.setMaxBacklogs(Integer.parseInt(newVal)); } catch (Exception ignored) {}
+                                    }
+                                    case 7 -> prof.setEligibleBranches(ValidationUtil.parseCommaSeparatedList(newVal));
+                                    case 8 -> prof.setRequiredSkills(ValidationUtil.parseCommaSeparatedList(newVal));
+                                    case 9 -> {
+                                        try { prof.setGraduationYear(Integer.parseInt(newVal)); } catch (Exception ignored) {}
+                                    }
+                                }
+                                System.out.println(ConsoleTheme.cyan("  * Updated field " + fNum + " (" + fLabel + ")."));
+                            }
+                        }
+                    }
+                } catch (NumberFormatException ignored) {}
+            }
+        }
+    }
+
+    public void manageDemoApplicationsWorkflow(Scanner scanner) {
+        boolean inAppMenu = true;
+        while (inAppMenu) {
+            clearConsole();
+            System.out.println(ConsoleTheme.border("================================================================"));
+            System.out.println(ConsoleTheme.header("           NEXTSTEP | CENTRALIZED DEMO DATA MANAGER"));
+            System.out.println(ConsoleTheme.header("             DEMO APPLICATIONS & STATUS TRACKING"));
+            System.out.println(ConsoleTheme.border("================================================================"));
+
+            List<DemoService.DemoApplicationView> apps = Collections.emptyList();
+            try {
+                apps = demoService.getDemoApplications();
+            } catch (SQLException e) {
+                System.out.println(ConsoleTheme.red("  [ERROR] Database error fetching demo applications: " + e.getMessage()));
+            }
+
+            if (apps.isEmpty()) {
+                System.out.println(ConsoleTheme.warn("  [NOTICE] No demonstration applications recorded yet."));
+                System.out.println(ConsoleTheme.dim("  To demonstrate application submission, sign in as Vihaan Mehta (vihaan_demo)"));
+                System.out.println(ConsoleTheme.dim("  and submit an application for Job #1 (Junior Backend Engineer)."));
+                System.out.println();
+            } else {
+                System.out.println(ConsoleTheme.header("  Active Demo Applications in MySQL:"));
+                System.out.printf("  %-6s | %-12s | %-18s | %-22s | %-11s%n",
+                        "App ID", "USN", "Student Name", "Job Title", "Status");
+                System.out.println(ConsoleTheme.divider("----------------------------------------------------------------"));
+                for (DemoService.DemoApplicationView a : apps) {
+                    System.out.printf("  %-6d | %-12s | %-18s | %-22s | %-11s%n",
+                            a.getId(), a.getStudentUsn(), a.getStudentName(), a.getJobTitle(), a.getStatus().name());
+                }
+                System.out.println(ConsoleTheme.divider("----------------------------------------------------------------"));
+            }
+
+            System.out.println(ConsoleTheme.dim("  Actions: Enter Application ID to update status, or 0 to Return"));
+            int appId = readInt(scanner, "Choose action: ");
+            if (appId == 0) {
+                inAppMenu = false;
+            } else {
+                boolean found = false;
+                for (DemoService.DemoApplicationView a : apps) {
+                    if (a.getId() == appId) {
+                        found = true;
+                        System.out.println("\nSelect New Status for App #" + appId + " (" + a.getStudentName() + "):");
+                        ApplicationStatus[] statuses = ApplicationStatus.values();
+                        for (int k = 0; k < statuses.length; k++) {
+                            System.out.println("  " + (k + 1) + ". " + statuses[k]);
+                        }
+                        int sChoice = readInt(scanner, "Choose status (1-4): ");
+                        if (sChoice >= 1 && sChoice <= statuses.length) {
+                            ApplicationStatus newStatus = statuses[sChoice - 1];
+                            try {
+                                boolean updated = demoService.updateDemoApplicationStatus(appId, newStatus);
+                                if (updated) {
+                                    System.out.println(ConsoleTheme.success("  [SUCCESS] Application #" + appId + " status updated to " + newStatus + "!"));
+                                }
+                            } catch (SQLException e) {
+                                System.out.println(ConsoleTheme.red("  [ERROR] Database error: " + e.getMessage()));
+                            }
+                        }
+                        pauseForEnter(scanner);
+                        break;
+                    }
+                }
+                if (!found && !apps.isEmpty()) {
+                    System.out.println(ConsoleTheme.warn("  [WARN] Application ID " + appId + " not found in demo records."));
                     pauseForEnter(scanner);
                 }
             }
@@ -614,7 +1165,7 @@ public class Main {
         while (true) {
             clearConsole();
             renderStudentSignUpHeader();
-            System.out.println(ConsoleTheme.cyan(" Mode: [A] Quick Auto-Fill Demo Data  |  [ENTER] Fill Form Manually"));
+            System.out.println(ConsoleTheme.cyan(" Mode: [A] Quick Auto-Fill Demo Data  |  [A1/A2/A3] Select Scenario  |  [ENTER] Fill Form Manually"));
             System.out.print(ConsoleTheme.prompt(" Choose mode (or press 0 to Cancel): "));
             if (!scanner.hasNextLine()) {
                 return false;
@@ -645,16 +1196,42 @@ public class Main {
                     false, false, false, false, false, false, false, false, false, false, true, true
             };
 
-            boolean isAutoFill = "A".equalsIgnoreCase(modeChoice) || "AUTO".equalsIgnoreCase(modeChoice) || "AUTOFILL".equalsIgnoreCase(modeChoice);
+            boolean isAutoFill = "A".equalsIgnoreCase(modeChoice) || "AUTO".equalsIgnoreCase(modeChoice) || "AUTOFILL".equalsIgnoreCase(modeChoice)
+                    || "A1".equalsIgnoreCase(modeChoice) || "A2".equalsIgnoreCase(modeChoice) || "A3".equalsIgnoreCase(modeChoice);
+            int chosenScenarioIdx = 0;
+            if ("A2".equalsIgnoreCase(modeChoice)) {
+                chosenScenarioIdx = 1;
+            } else if ("A3".equalsIgnoreCase(modeChoice)) {
+                chosenScenarioIdx = 2;
+            }
+
             if (isAutoFill) {
-                String[] demoData = getStudentDemoData();
+                boolean dbCheckOk = true;
+                try {
+                    if (userDAO != null) {
+                        userDAO.existsByUsername("__health_check__");
+                    }
+                } catch (SQLException e) {
+                    dbCheckOk = false;
+                    System.out.println();
+                    System.out.println(ConsoleTheme.red("[ERROR] Demo data could not be verified due to database error: " + e.getMessage()));
+                    System.out.println(ConsoleTheme.dim("  Autofill stopped safely. Please enter details manually or cancel."));
+                }
+                String[] demoData = null;
+                DemoService.DemoStudentProfile prof = null;
+                if (dbCheckOk) {
+                    prof = (demoService != null) ? demoService.getDemoStudentProfile(chosenScenarioIdx) : null;
+                    demoData = (prof != null) ? prof.toFormValues() : getStudentDemoData();
+                }
                 if (demoData == null) {
                     System.out.println(ConsoleTheme.warn("\n [WARN] Autofill is unavailable: verified demo data could not be generated."));
                     System.out.println(ConsoleTheme.dim("  Please enter details manually for each field, or enter 0 at action prompt to cancel."));
                     System.out.println(ConsoleTheme.dim(" Switching to manual form entry mode..."));
                 } else {
                     System.arraycopy(demoData, 0, values, 0, Math.min(demoData.length, values.length));
-                    System.out.println(ConsoleTheme.cyan(" * [AUTO-FILL] Populating form with verified, unique demo candidate..."));
+                    String candName = (prof != null) ? prof.getFullName() : demoData[1];
+                    String scenLabel = (prof != null) ? prof.getScenarioName() : "Scenario A";
+                    System.out.println(ConsoleTheme.cyan(" * [AUTO-FILL] Populating form with saved demo candidate: " + candName + " (" + scenLabel + ")..."));
                     System.out.println(ConsoleTheme.divider(" ----------------------------------------------------------------"));
                     while (true) {
                         for (int k = 0; k < prompts.length; k++) {
@@ -662,7 +1239,7 @@ public class Main {
                         }
                         System.out.println(ConsoleTheme.divider(" ----------------------------------------------------------------"));
                         System.out.println(ConsoleTheme.dim("  (Labels in Golden Amber  |  Auto-filled values in Sky Blue)"));
-                        System.out.print(ConsoleTheme.prompt("  Action: Press ENTER to accept all, or type field number (1-12) to edit: "));
+                        System.out.print(ConsoleTheme.prompt("  Action: Press ENTER to accept all, type field (1-12) to edit, or [S] Switch Scenario: "));
                         if (!scanner.hasNextLine()) {
                             return false;
                         }
@@ -672,6 +1249,17 @@ public class Main {
                         }
                         if (editInput.isEmpty()) {
                             break;
+                        }
+                        if ("S".equalsIgnoreCase(editInput) || "SWITCH".equalsIgnoreCase(editInput) || "C".equalsIgnoreCase(editInput)) {
+                            System.out.println(ConsoleTheme.cyan("  Select Candidate Scenario: 1. Vihaan (Eligible) | 2. Kabir (Skill-Gap) | 3. Arjun (Ineligible)"));
+                            int sNum = readInt(scanner, "  Choose (1-3): ");
+                            if (sNum >= 1 && sNum <= 3 && demoService != null) {
+                                prof = demoService.getDemoStudentProfile(sNum - 1);
+                                String[] sData = prof.toFormValues();
+                                System.arraycopy(sData, 0, values, 0, Math.min(sData.length, values.length));
+                                System.out.println(ConsoleTheme.cyan(" * Switched candidate to " + prof.getFullName() + " (" + prof.getScenarioName() + ")."));
+                            }
+                            continue;
                         }
                         try {
                             int fNum = Integer.parseInt(editInput);
@@ -1269,6 +1857,25 @@ public class Main {
             System.out.println("You can now log in using your username and password.");
             return true;
         } catch (IllegalArgumentException e) {
+            if (demoService != null && (demoService.isDemoStudent(username) || demoService.isDemoStudent(studentId))) {
+                try {
+                    Student existing = studentDAO.findByStudentId(studentId);
+                    if (existing != null) {
+                        existing.setFullName(fullName);
+                        existing.setPhone(phone);
+                        existing.setBranch(branch);
+                        existing.setCgpa(cgpa);
+                        existing.setActiveBacklogs(activeBacklogs);
+                        existing.setGraduationYear(graduationYear);
+                        studentDAO.updateStudent(existing);
+                        studentDAO.updateStudentSkills(existing.getId(), skills);
+                        System.out.println(ConsoleTheme.cyan("\n[DEMO MODE] Existing demonstration profile synchronized with MySQL database."));
+                        System.out.println(ConsoleTheme.success("[SUCCESS] Account verified and ready for " + fullName + "!"));
+                        System.out.println("You can now log in using your username and password.");
+                        return true;
+                    }
+                } catch (Exception ignored) {}
+            }
             System.out.println("\n[ERROR] Registration validation failed: " + e.getMessage());
             return false;
         } catch (SQLException e) {
@@ -1296,7 +1903,41 @@ public class Main {
             renderStudentSignInHeader();
 
             String identifier = readField(scanner, "Student ID / Username:  ");
-            String password = readPasswordField(scanner, "Password:               ");
+            String password = "";
+
+            if ("A".equalsIgnoreCase(identifier) || "A1".equalsIgnoreCase(identifier) ||
+                    "AUTO".equalsIgnoreCase(identifier) || "DEMO".equalsIgnoreCase(identifier)) {
+                DemoService.DemoStudentProfile prof = (demoService != null) ? demoService.getDemoStudentProfile(0) : null;
+                identifier = (prof != null) ? prof.getUsername() : DemoService.DEMO_STUDENT_USERNAME;
+                password = (prof != null) ? prof.getPassword() : DemoService.DEMO_PASSWORD;
+                String cName = (prof != null) ? prof.getFullName() : DemoService.DEMO_STUDENT_NAME;
+                statusMessage = "Demo credentials loaded for " + cName + " (Scenario A). Press 1 to Sign In.";
+                System.out.println(ConsoleTheme.cyan("  * [AUTO-FILL] Loaded Scenario A profile: " + cName + " (" + identifier + ")"));
+                System.out.println("  Password:               [ ******** ]");
+                System.out.println(ConsoleTheme.dim("    (Hint: Enter A1 for Vihaan, A2 for Kabir, A3 for Arjun)"));
+            } else if ("A2".equalsIgnoreCase(identifier)) {
+                DemoService.DemoStudentProfile prof = (demoService != null) ? demoService.getDemoStudentProfile(1) : null;
+                identifier = (prof != null) ? prof.getUsername() : DemoService.DEMO_STUDENT2_USERNAME;
+                password = (prof != null) ? prof.getPassword() : DemoService.DEMO_PASSWORD;
+                String cName = (prof != null) ? prof.getFullName() : DemoService.DEMO_STUDENT2_NAME;
+                statusMessage = "Demo credentials loaded for " + cName + " (Scenario B). Press 1 to Sign In.";
+                System.out.println(ConsoleTheme.cyan("  * [AUTO-FILL] Loaded Scenario B profile: " + cName + " (" + identifier + ")"));
+                System.out.println("  Password:               [ ******** ]");
+            } else if ("A3".equalsIgnoreCase(identifier)) {
+                DemoService.DemoStudentProfile prof = (demoService != null) ? demoService.getDemoStudentProfile(2) : null;
+                identifier = (prof != null) ? prof.getUsername() : DemoService.DEMO_STUDENT3_USERNAME;
+                password = (prof != null) ? prof.getPassword() : DemoService.DEMO_PASSWORD;
+                String cName = (prof != null) ? prof.getFullName() : DemoService.DEMO_STUDENT3_NAME;
+                statusMessage = "Demo credentials loaded for " + cName + " (Scenario C). Press 1 to Sign In.";
+                System.out.println(ConsoleTheme.cyan("  * [AUTO-FILL] Loaded Scenario C profile: " + cName + " (" + identifier + ")"));
+                System.out.println("  Password:               [ ******** ]");
+            } else {
+                password = readPasswordField(scanner, "Password:               ");
+                if ("A".equalsIgnoreCase(password) || "AUTO".equalsIgnoreCase(password)) {
+                    password = DemoService.DEMO_PASSWORD;
+                    System.out.println(ConsoleTheme.cyan("  * [AUTO-FILL] Loaded demo password."));
+                }
+            }
             System.out.println();
 
             renderStudentSignInActions();
@@ -1444,7 +2085,21 @@ public class Main {
 
             boolean isAutoFill = "A".equalsIgnoreCase(modeChoice) || "AUTO".equalsIgnoreCase(modeChoice) || "AUTOFILL".equalsIgnoreCase(modeChoice);
             if (isAutoFill) {
-                String[] demoData = getOfficerDemoData();
+                boolean dbCheckOk = true;
+                try {
+                    if (userDAO != null) {
+                        userDAO.existsByUsername("__health_check__");
+                    }
+                } catch (SQLException e) {
+                    dbCheckOk = false;
+                    System.out.println();
+                    System.out.println(ConsoleTheme.red("[ERROR] Officer demo data could not be verified due to database error: " + e.getMessage()));
+                    System.out.println(ConsoleTheme.dim("  Autofill stopped safely. Please enter details manually or cancel."));
+                }
+                String[] demoData = null;
+                if (dbCheckOk) {
+                    demoData = (demoService != null) ? demoService.getDemoOfficerProfile().toFormValues() : getOfficerDemoData();
+                }
                 if (demoData == null) {
                     System.out.println(ConsoleTheme.warn("\n [WARN] Autofill is unavailable: verified officer demo data could not be generated."));
                     System.out.println(ConsoleTheme.dim(" Switching to manual form entry mode..."));
@@ -1676,6 +2331,12 @@ public class Main {
             System.out.println("\n[ERROR] Configuration error: " + e.getMessage());
             return false;
         } catch (IllegalArgumentException e) {
+            if (demoService != null && demoService.isDemoOfficer(username)) {
+                System.out.println(ConsoleTheme.cyan("\n[DEMO MODE] Existing demonstration officer account verified in MySQL database."));
+                System.out.println(ConsoleTheme.success("[SUCCESS] Placement Officer account verified and ready for '" + username + "'!"));
+                System.out.println("You can now sign in using option 2 (Officer Sign In).");
+                return true;
+            }
             System.out.println("\n[ERROR] Registration validation failed: " + e.getMessage());
             return false;
         } catch (SQLException e) {
@@ -1705,10 +2366,23 @@ public class Main {
         System.out.println(ConsoleTheme.header("              NEXTSTEP | PLACEMENT OFFICER PORTAL"));
         System.out.println(ConsoleTheme.header("                    PLACEMENT OFFICER LOGIN"));
         System.out.println(ConsoleTheme.border("================================================================"));
-        System.out.println(ConsoleTheme.dim("  Authorized Access: Placement Officer Credentials Only"));
+        System.out.println(ConsoleTheme.dim("  Authorized Access: Placement Officer Credentials Only | Shortcut: [A] Demo Officer"));
         System.out.println();
         String username = readField(scanner, "Username:               ");
-        String password = readPasswordField(scanner, "Password:               ");
+        String password;
+        if ("A".equalsIgnoreCase(username) || "AUTO".equalsIgnoreCase(username) || "DEMO".equalsIgnoreCase(username)) {
+            DemoService.DemoOfficerProfile off = (demoService != null) ? demoService.getDemoOfficerProfile() : null;
+            username = (off != null) ? off.getUsername() : DemoService.DEMO_OFFICER_USERNAME;
+            password = (off != null) ? off.getPassword() : DemoService.DEMO_PASSWORD;
+            System.out.println(ConsoleTheme.cyan("  * [AUTO-FILL] Loaded saved demo officer credentials: " + username));
+            System.out.println("  Password:               [ ******** ]");
+        } else {
+            password = readPasswordField(scanner, "Password:               ");
+            if ("A".equalsIgnoreCase(password) || "AUTO".equalsIgnoreCase(password)) {
+                password = DemoService.DEMO_PASSWORD;
+                System.out.println(ConsoleTheme.cyan("  * [AUTO-FILL] Loaded saved demo password."));
+            }
+        }
 
         try {
             User user = authService.login(username, password);
@@ -1861,7 +2535,7 @@ public class Main {
     public void viewAvailableJobsFlow(Scanner scanner, Student student) {
         viewAvailableJobs();
         System.out.println();
-        System.out.print("Enter Job ID to select & check eligibility (or 0 to Back): ");
+        System.out.print("Enter Job ID to select & check eligibility (or press 'A' for Demo Drive #1, or 0 to Back): ");
         if (!scanner.hasNextLine()) {
             return;
         }
@@ -1874,11 +2548,16 @@ public class Main {
         }
 
         int jobId;
-        try {
-            jobId = Integer.parseInt(input);
-        } catch (NumberFormatException e) {
-            System.out.println(ConsoleTheme.red("[ERROR] Invalid Job ID. Must be numeric."));
-            return;
+        if ("A".equalsIgnoreCase(input) || "AUTO".equalsIgnoreCase(input) || "DEMO".equalsIgnoreCase(input)) {
+            jobId = 1;
+            System.out.println(ConsoleTheme.cyan("  * [AUTO-SELECT] Selected Demo Job Drive #1."));
+        } else {
+            try {
+                jobId = Integer.parseInt(input);
+            } catch (NumberFormatException e) {
+                System.out.println(ConsoleTheme.red("[ERROR] Invalid Job ID. Must be numeric."));
+                return;
+            }
         }
 
         try {
@@ -1956,7 +2635,30 @@ public class Main {
     }
 
     private void checkStudentJobEligibility(Scanner scanner, Student student) {
-        int jobId = readInt(scanner, "\nEnter Job ID to evaluate eligibility: ");
+        System.out.print("\nEnter Job ID to evaluate eligibility (or press 'A' for Demo Drive #1): ");
+        if (!scanner.hasNextLine()) {
+            return;
+        }
+        String input = scanner.nextLine().trim();
+        if (System.console() == null) {
+            System.out.println(input);
+        }
+        if (input.isEmpty()) {
+            System.out.println("[ERROR] Job ID cannot be empty.");
+            return;
+        }
+        int jobId;
+        if ("A".equalsIgnoreCase(input) || "AUTO".equalsIgnoreCase(input) || "DEMO".equalsIgnoreCase(input)) {
+            jobId = 1;
+            System.out.println(ConsoleTheme.cyan("  * [AUTO-SELECT] Selected Demo Job Drive #1."));
+        } else {
+            try {
+                jobId = Integer.parseInt(input);
+            } catch (NumberFormatException e) {
+                System.out.println("[ERROR] Invalid Job ID. Must be numeric.");
+                return;
+            }
+        }
         try {
             Job job = jobDAO.findById(jobId);
             if (job == null) {
@@ -1984,7 +2686,30 @@ public class Main {
     }
 
     private void applyForJobFlow(Scanner scanner, Student student) {
-        int jobId = readInt(scanner, "\nEnter Job ID you want to apply for: ");
+        System.out.print("\nEnter Job ID you want to apply for (or press 'A' for Demo Drive #1): ");
+        if (!scanner.hasNextLine()) {
+            return;
+        }
+        String input = scanner.nextLine().trim();
+        if (System.console() == null) {
+            System.out.println(input);
+        }
+        if (input.isEmpty()) {
+            System.out.println("[ERROR] Job ID cannot be empty.");
+            return;
+        }
+        int jobId;
+        if ("A".equalsIgnoreCase(input) || "AUTO".equalsIgnoreCase(input) || "DEMO".equalsIgnoreCase(input)) {
+            jobId = 1;
+            System.out.println(ConsoleTheme.cyan("  * [AUTO-SELECT] Selected Demo Job Drive #1."));
+        } else {
+            try {
+                jobId = Integer.parseInt(input);
+            } catch (NumberFormatException e) {
+                System.out.println("[ERROR] Invalid Job ID. Must be numeric.");
+                return;
+            }
+        }
         try {
             Application app = recruitmentService.applyForJob(student, jobId);
             System.out.println("\n[SUCCESS] Application successfully submitted!");
@@ -2378,7 +3103,9 @@ public class Main {
 
             boolean isAutoFill = "A".equalsIgnoreCase(modeChoice) || "AUTO".equalsIgnoreCase(modeChoice) || "AUTOFILL".equalsIgnoreCase(modeChoice);
             if (isAutoFill) {
-                String[] demoData = getJobDemoData(companies);
+                String[] demoData = (demoService != null && demoService.getDemoJobProfile() != null)
+                        ? demoService.getDemoJobProfile().toFormValues()
+                        : getJobDemoData(companies);
                 if (demoData == null) {
                     System.out.println(ConsoleTheme.warn("\n [WARN] Autofill is unavailable: could not retrieve partner company."));
                     System.out.println(ConsoleTheme.dim(" Switching to manual job entry mode..."));
@@ -2729,7 +3456,7 @@ public class Main {
             return;
         }
 
-        System.out.print("Enter Job ID: ");
+        System.out.print(ConsoleTheme.prompt("Enter Job ID (or press 'A' for Demo Drive #1): "));
         if (!scanner.hasNextLine()) {
             return;
         }
@@ -2746,11 +3473,16 @@ public class Main {
         }
 
         int jobId;
-        try {
-            jobId = Integer.parseInt(input);
-        } catch (NumberFormatException e) {
-            System.out.println("[ERROR] Invalid Job ID. Must be numeric.");
-            return;
+        if ("A".equalsIgnoreCase(input) || "AUTO".equalsIgnoreCase(input) || "DEMO".equalsIgnoreCase(input)) {
+            jobId = 1;
+            System.out.println(ConsoleTheme.cyan("  * [AUTO-SELECT] Selected Demo Job Drive #1."));
+        } else {
+            try {
+                jobId = Integer.parseInt(input);
+            } catch (NumberFormatException e) {
+                System.out.println("[ERROR] Invalid Job ID. Must be numeric.");
+                return;
+            }
         }
 
         Job job;
@@ -2943,7 +3675,7 @@ public class Main {
      * Direct flow for Option 5 on Student Dashboard (Analyse Skill Match).
      */
     private void showSkillAnalysisFlow(Scanner scanner, Student student) {
-        System.out.print("Enter Job ID: ");
+        System.out.print(ConsoleTheme.prompt("Enter Job ID (or press 'A' for Demo Drive #1): "));
         if (!scanner.hasNextLine()) {
             return;
         }
@@ -2957,11 +3689,16 @@ public class Main {
         }
 
         int jobId;
-        try {
-            jobId = Integer.parseInt(input);
-        } catch (NumberFormatException e) {
-            System.out.println("[ERROR] Invalid Job ID. Must be numeric.");
-            return;
+        if ("A".equalsIgnoreCase(input) || "AUTO".equalsIgnoreCase(input) || "DEMO".equalsIgnoreCase(input)) {
+            jobId = 1;
+            System.out.println(ConsoleTheme.cyan("  * [AUTO-SELECT] Selected Demo Job Drive #1."));
+        } else {
+            try {
+                jobId = Integer.parseInt(input);
+            } catch (NumberFormatException e) {
+                System.out.println("[ERROR] Invalid Job ID. Must be numeric.");
+                return;
+            }
         }
 
         try {
@@ -3005,7 +3742,7 @@ public class Main {
             return;
         }
 
-        System.out.print("Enter Job ID you want to apply for: ");
+        System.out.print(ConsoleTheme.prompt("Enter Job ID you want to apply for (or press 'A' for Demo Drive #1): "));
         if (!scanner.hasNextLine()) {
             return;
         }
@@ -3022,11 +3759,16 @@ public class Main {
         }
 
         int jobId;
-        try {
-            jobId = Integer.parseInt(input);
-        } catch (NumberFormatException e) {
-            System.out.println("[ERROR] Invalid Job ID. Must be numeric.");
-            return;
+        if ("A".equalsIgnoreCase(input) || "AUTO".equalsIgnoreCase(input) || "DEMO".equalsIgnoreCase(input)) {
+            jobId = 1;
+            System.out.println(ConsoleTheme.cyan("  * [AUTO-SELECT] Selected Demo Job Drive #1."));
+        } else {
+            try {
+                jobId = Integer.parseInt(input);
+            } catch (NumberFormatException e) {
+                System.out.println("[ERROR] Invalid Job ID. Must be numeric.");
+                return;
+            }
         }
 
         Job job;

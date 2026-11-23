@@ -150,6 +150,82 @@ public class JobDAO {
     }
 
     /**
+     * Updates an existing job opening and its normalized eligible branches and required skills
+     * in a single atomic database transaction.
+     */
+    public boolean updateJob(Job job, List<String> eligibleBranches, List<String> requiredSkills) throws SQLException {
+        if (job == null || job.getId() <= 0) {
+            return false;
+        }
+
+        String sql = "UPDATE jobs SET company_id = ?, title = ?, description = ?, ctc_lpa = ?, location = ?, " +
+                     "min_cgpa = ?, max_backlogs = ?, graduation_year = ?, status = ? WHERE id = ?";
+
+        try (Connection conn = DatabaseConnection.getConnection()) {
+            conn.setAutoCommit(false);
+            try {
+                try (PreparedStatement stmt = conn.prepareStatement(sql)) {
+                    stmt.setInt(1, job.getCompanyId());
+                    stmt.setString(2, job.getTitle());
+                    stmt.setString(3, job.getDescription() != null ? job.getDescription() : "Campus Drive for " + job.getTitle());
+                    stmt.setBigDecimal(4, job.getCtcLpa() != null ? job.getCtcLpa() : BigDecimal.ZERO);
+                    stmt.setString(5, job.getLocation() != null ? job.getLocation() : "Campus");
+                    stmt.setDouble(6, job.getMinCgpa());
+                    stmt.setInt(7, job.getMaxBacklogs());
+                    stmt.setInt(8, job.getGraduationYear());
+                    stmt.setString(9, job.getStatus() != null ? job.getStatus() : "OPEN");
+                    stmt.setInt(10, job.getId());
+                    stmt.executeUpdate();
+                }
+
+                if (eligibleBranches != null) {
+                    try (PreparedStatement delStmt = conn.prepareStatement("DELETE FROM job_eligible_branches WHERE job_id = ?")) {
+                        delStmt.setInt(1, job.getId());
+                        delStmt.executeUpdate();
+                    }
+                    String branchSql = "INSERT INTO job_eligible_branches (job_id, branch_name) VALUES (?, ?)";
+                    try (PreparedStatement bStmt = conn.prepareStatement(branchSql)) {
+                        for (String branch : eligibleBranches) {
+                            if (branch != null && !branch.trim().isEmpty()) {
+                                bStmt.setInt(1, job.getId());
+                                bStmt.setString(2, branch.trim());
+                                bStmt.addBatch();
+                            }
+                        }
+                        bStmt.executeBatch();
+                    }
+                }
+
+                if (requiredSkills != null) {
+                    try (PreparedStatement delStmt = conn.prepareStatement("DELETE FROM job_required_skills WHERE job_id = ?")) {
+                        delStmt.setInt(1, job.getId());
+                        delStmt.executeUpdate();
+                    }
+                    String skillSql = "INSERT INTO job_required_skills (job_id, skill_name) VALUES (?, ?)";
+                    try (PreparedStatement sStmt = conn.prepareStatement(skillSql)) {
+                        for (String skill : requiredSkills) {
+                            if (skill != null && !skill.trim().isEmpty()) {
+                                sStmt.setInt(1, job.getId());
+                                sStmt.setString(2, skill.trim());
+                                sStmt.addBatch();
+                            }
+                        }
+                        sStmt.executeBatch();
+                    }
+                }
+
+                conn.commit();
+                return true;
+            } catch (SQLException e) {
+                conn.rollback();
+                throw e;
+            } finally {
+                conn.setAutoCommit(true);
+            }
+        }
+    }
+
+    /**
      * Finds a job opening by its primary key ID.
      */
     public Job findById(int id) throws SQLException {
