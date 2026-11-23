@@ -1700,8 +1700,13 @@ public class Main {
         if (expectedRole == Role.STUDENT) {
             return showStudentSignIn(scanner);
         }
-        String roleHeader = expectedRole == null ? "USER LOGIN" : "PLACEMENT OFFICER LOGIN";
-        System.out.println("\n--- " + roleHeader + " ---");
+        clearConsole();
+        System.out.println(ConsoleTheme.border("================================================================"));
+        System.out.println(ConsoleTheme.header("              NEXTSTEP | PLACEMENT OFFICER PORTAL"));
+        System.out.println(ConsoleTheme.header("                    PLACEMENT OFFICER LOGIN"));
+        System.out.println(ConsoleTheme.border("================================================================"));
+        System.out.println(ConsoleTheme.dim("  Authorized Access: Placement Officer Credentials Only"));
+        System.out.println();
         String username = readField(scanner, "Username:               ");
         String password = readPasswordField(scanner, "Password:               ");
 

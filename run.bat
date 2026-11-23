@@ -79,7 +79,7 @@ echo [2/2] Launching NextStep Campus Recruitment System...
 echo.
 
 :: 7. Execute Application with Classpath
-java -cp "bin;lib\mysql-connector-j-8.4.0.jar" com.nextstep.Main
+java -cp "bin;lib\mysql-connector-j-8.4.0.jar" com.nextstep.Main %*
 set APP_STATUS=%errorlevel%
 
 if %APP_STATUS% neq 0 (

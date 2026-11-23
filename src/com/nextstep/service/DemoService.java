@@ -160,7 +160,14 @@ public class DemoService {
         }
 
         // 3. Provision Student 1: Vihaan Mehta (Eligible)
-        if (!userDAO.existsByUsername(DEMO_STUDENT_USERNAME) && !studentDAO.existsByStudentId(DEMO_STUDENT_USN)) {
+        if (!userDAO.existsByUsername(DEMO_STUDENT_USERNAME)) {
+            if (studentDAO.existsByStudentId(DEMO_STUDENT_USN)) {
+                try (Connection conn = DatabaseConnection.getConnection();
+                     PreparedStatement stmt = conn.prepareStatement("DELETE FROM students WHERE student_id = ?")) {
+                    stmt.setString(1, DEMO_STUDENT_USN);
+                    stmt.executeUpdate();
+                }
+            }
             authService.registerStudent(
                     DEMO_STUDENT_USERNAME,
                     DEMO_PASSWORD,
@@ -175,10 +182,24 @@ public class DemoService {
                     DEMO_STUDENT_SKILLS
             );
             createdStudents++;
+        } else {
+            Student s = studentDAO.findByStudentId(DEMO_STUDENT_USN);
+            if (s != null && (s.getSkills() == null || s.getSkills().size() < DEMO_STUDENT_SKILLS.size())) {
+                try (Connection conn = DatabaseConnection.getConnection()) {
+                    studentDAO.saveStudentSkills(conn, s.getId(), DEMO_STUDENT_SKILLS);
+                }
+            }
         }
 
         // 4. Provision Student 2: Kabir Malhotra (Skill Gap)
-        if (!userDAO.existsByUsername(DEMO_STUDENT2_USERNAME) && !studentDAO.existsByStudentId(DEMO_STUDENT2_USN)) {
+        if (!userDAO.existsByUsername(DEMO_STUDENT2_USERNAME)) {
+            if (studentDAO.existsByStudentId(DEMO_STUDENT2_USN)) {
+                try (Connection conn = DatabaseConnection.getConnection();
+                     PreparedStatement stmt = conn.prepareStatement("DELETE FROM students WHERE student_id = ?")) {
+                    stmt.setString(1, DEMO_STUDENT2_USN);
+                    stmt.executeUpdate();
+                }
+            }
             authService.registerStudent(
                     DEMO_STUDENT2_USERNAME,
                     DEMO_PASSWORD,
@@ -193,10 +214,24 @@ public class DemoService {
                     DEMO_STUDENT2_SKILLS
             );
             createdStudents++;
+        } else {
+            Student s = studentDAO.findByStudentId(DEMO_STUDENT2_USN);
+            if (s != null && (s.getSkills() == null || s.getSkills().size() < DEMO_STUDENT2_SKILLS.size())) {
+                try (Connection conn = DatabaseConnection.getConnection()) {
+                    studentDAO.saveStudentSkills(conn, s.getId(), DEMO_STUDENT2_SKILLS);
+                }
+            }
         }
 
         // 5. Provision Student 3: Arjun Khanna (Academically Ineligible)
-        if (!userDAO.existsByUsername(DEMO_STUDENT3_USERNAME) && !studentDAO.existsByStudentId(DEMO_STUDENT3_USN)) {
+        if (!userDAO.existsByUsername(DEMO_STUDENT3_USERNAME)) {
+            if (studentDAO.existsByStudentId(DEMO_STUDENT3_USN)) {
+                try (Connection conn = DatabaseConnection.getConnection();
+                     PreparedStatement stmt = conn.prepareStatement("DELETE FROM students WHERE student_id = ?")) {
+                    stmt.setString(1, DEMO_STUDENT3_USN);
+                    stmt.executeUpdate();
+                }
+            }
             authService.registerStudent(
                     DEMO_STUDENT3_USERNAME,
                     DEMO_PASSWORD,
@@ -211,6 +246,13 @@ public class DemoService {
                     DEMO_STUDENT3_SKILLS
             );
             createdStudents++;
+        } else {
+            Student s = studentDAO.findByStudentId(DEMO_STUDENT3_USN);
+            if (s != null && (s.getSkills() == null || s.getSkills().size() < DEMO_STUDENT3_SKILLS.size())) {
+                try (Connection conn = DatabaseConnection.getConnection()) {
+                    studentDAO.saveStudentSkills(conn, s.getId(), DEMO_STUDENT3_SKILLS);
+                }
+            }
         }
 
         String message;
@@ -244,7 +286,27 @@ public class DemoService {
                     appsDeleted = stmt.executeUpdate();
                 }
 
-                // 2. Delete demo users (ON DELETE CASCADE removes students and student_skills automatically)
+                // 2. Delete student skills for demo students
+                String deleteSkillsSql = "DELETE FROM student_skills WHERE student_id IN (" +
+                        "  SELECT id FROM students WHERE student_id IN (?, ?, ?)" +
+                        ")";
+                try (PreparedStatement stmt = conn.prepareStatement(deleteSkillsSql)) {
+                    stmt.setString(1, DEMO_STUDENT_USN);
+                    stmt.setString(2, DEMO_STUDENT2_USN);
+                    stmt.setString(3, DEMO_STUDENT3_USN);
+                    stmt.executeUpdate();
+                }
+
+                // 3. Delete demo students by USN
+                String deleteStudentsSql = "DELETE FROM students WHERE student_id IN (?, ?, ?)";
+                try (PreparedStatement stmt = conn.prepareStatement(deleteStudentsSql)) {
+                    stmt.setString(1, DEMO_STUDENT_USN);
+                    stmt.setString(2, DEMO_STUDENT2_USN);
+                    stmt.setString(3, DEMO_STUDENT3_USN);
+                    stmt.executeUpdate();
+                }
+
+                // 4. Delete demo users (ON DELETE CASCADE cleans any remaining linkages)
                 int usersDeleted = 0;
                 String deleteUsersSql = "DELETE FROM users WHERE username IN (?, ?, ?, ?)";
                 try (PreparedStatement stmt = conn.prepareStatement(deleteUsersSql)) {

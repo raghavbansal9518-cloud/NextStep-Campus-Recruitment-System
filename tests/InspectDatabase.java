@@ -16,7 +16,15 @@ public class InspectDatabase {
                 }
             }
 
-            System.out.println("\n=== 2. SAMPLE COMPANIES ===");
+            System.out.println("\n=== 2. SAMPLE USERS ===");
+            try (Statement stmt = conn.createStatement();
+                 ResultSet rs = stmt.executeQuery("SELECT u.id, u.username, u.role, u.email, s.student_id, s.full_name FROM users u LEFT JOIN students s ON u.id = s.user_id")) {
+                while (rs.next()) {
+                    System.out.println("User: ID " + rs.getInt("id") + " | " + rs.getString("username") + " (" + rs.getString("role") + ") | Email: " + rs.getString("email") + " | USN: " + rs.getString("student_id") + " | Name: " + rs.getString("full_name"));
+                }
+            }
+
+            System.out.println("\n=== 3. SAMPLE COMPANIES ===");
             try (Statement stmt = conn.createStatement();
                  ResultSet rs = stmt.executeQuery("SELECT id, name, industry, email, location FROM companies")) {
                 while (rs.next()) {
@@ -24,7 +32,7 @@ public class InspectDatabase {
                 }
             }
 
-            System.out.println("\n=== 3. SAMPLE JOBS ===");
+            System.out.println("\n=== 4. SAMPLE JOBS ===");
             try (Statement stmt = conn.createStatement();
                  ResultSet rs = stmt.executeQuery("SELECT j.id, j.title, c.name, j.ctc_lpa, j.min_cgpa, j.max_backlogs, j.status FROM jobs j JOIN companies c ON j.company_id = c.id")) {
                 while (rs.next()) {
@@ -32,7 +40,7 @@ public class InspectDatabase {
                 }
             }
 
-            System.out.println("\n=== 4. UNIQUE CONSTRAINTS & INDEXES ===");
+            System.out.println("\n=== 5. UNIQUE CONSTRAINTS & INDEXES ===");
             for (String t : tables) {
                 try (ResultSet rs = meta.getIndexInfo("nextstep_db", null, t, false, false)) {
                     while (rs.next()) {
@@ -48,7 +56,7 @@ public class InspectDatabase {
                 }
             }
 
-            System.out.println("\n=== 5. FOREIGN KEYS ===");
+            System.out.println("\n=== 6. FOREIGN KEYS ===");
             for (String t : tables) {
                 try (ResultSet rs = meta.getImportedKeys("nextstep_db", null, t)) {
                     while (rs.next()) {
