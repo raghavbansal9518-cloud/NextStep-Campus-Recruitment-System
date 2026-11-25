@@ -1,6 +1,9 @@
 @echo off
 setlocal enabledelayedexpansion
 
+:: 0. Enable UTF-8 console output in Windows Command Prompt
+chcp 65001 >nul 2>nul
+
 :: 1. Navigate reliably to project root directory
 cd /d "%~dp0"
 
@@ -79,7 +82,7 @@ echo [2/2] Launching NextStep Campus Recruitment System...
 echo.
 
 :: 7. Execute Application with Classpath
-java -cp "bin;lib\mysql-connector-j-8.4.0.jar" com.nextstep.Main %*
+java -Dfile.encoding=UTF-8 -cp "bin;lib\mysql-connector-j-8.4.0.jar" com.nextstep.Main %*
 set APP_STATUS=%errorlevel%
 
 if %APP_STATUS% neq 0 (
