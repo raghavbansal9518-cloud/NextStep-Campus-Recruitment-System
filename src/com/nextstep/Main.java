@@ -225,10 +225,7 @@ public class Main {
             if (!scanner.hasNextLine()) {
                 return 0;
             }
-            String input = scanner.nextLine().trim();
-            if (System.console() == null) {
-                System.out.println(input);
-            }
+            String input = readConsoleLine(scanner).trim();
             System.out.println(ConsoleTheme.border("================================================================"));
 
             if ("1".equals(input)) {
@@ -1072,20 +1069,12 @@ public class Main {
 
     /**
      * Clears the console screen if supported by the terminal environment.
-     * Provides safe fallback for non-interactive or unsupported terminals.
+     * Uses centralized ConsoleTheme.clearScreen() to guarantee proper
+     * margin resetting and screen alignment across all screens.
      */
     public static void clearConsole() {
         try {
-            ConsoleTheme.refreshTerminalDimensions();
-            if (ConsoleTheme.isAnsiEnabled()) {
-                System.out.print("\033[H\033[2J\033[3J");
-                System.out.flush();
-            } else if (System.console() != null && System.getProperty("os.name", "").toLowerCase().contains("win")) {
-                new ProcessBuilder("cmd", "/c", "cls").inheritIO().start().waitFor();
-            } else if (System.console() != null) {
-                System.out.print("\033[H\033[2J\033[3J");
-                System.out.flush();
-            }
+            ConsoleTheme.clearScreen();
         } catch (Exception ignored) {
             // Safe fallback
         }
@@ -1766,14 +1755,7 @@ public class Main {
      */
     private String readField(Scanner scanner, String prompt) {
         System.out.print(ConsoleTheme.prompt(prompt));
-        if (!scanner.hasNextLine()) {
-            return "";
-        }
-        String input = scanner.nextLine().trim();
-        if (System.console() == null) {
-            System.out.println(input);
-        }
-        return input;
+        return readConsoleLine(scanner).trim();
     }
 
     /**
@@ -1783,14 +1765,7 @@ public class Main {
      */
     private String readPasswordField(Scanner scanner, String prompt) {
         System.out.print(ConsoleTheme.prompt(prompt));
-        if (!scanner.hasNextLine()) {
-            return "";
-        }
-        String input = scanner.nextLine().trim();
-        if (System.console() == null) {
-            System.out.println(input);
-        }
-        return input;
+        return readConsoleLine(scanner).trim();
     }
 
     /**
@@ -4228,16 +4203,26 @@ public class Main {
     // CONSOLE INPUT HELPERS
     // =========================================================================
 
-    private static String readString(Scanner scanner, String prompt) {
-        System.out.print(ConsoleTheme.prompt(prompt));
+    /**
+     * Reads a line from console, echoing it in non-interactive/automated testing environments,
+     * and resets line start tracking in ConsoleTheme so that subsequent output properly respects
+     * the responsive terminal margin.
+     */
+    public static String readConsoleLine(Scanner scanner) {
         if (!scanner.hasNextLine()) {
             return "";
         }
-        String input = scanner.nextLine().trim();
+        String line = scanner.nextLine();
         if (System.console() == null) {
-            System.out.println(input);
+            System.out.println(line);
         }
-        return input;
+        ConsoleTheme.resetLineStart();
+        return line;
+    }
+
+    private static String readString(Scanner scanner, String prompt) {
+        System.out.print(ConsoleTheme.prompt(prompt));
+        return readConsoleLine(scanner).trim();
     }
 
     private static String readNonEmptyString(Scanner scanner, String prompt) {
@@ -4246,10 +4231,7 @@ public class Main {
             if (!scanner.hasNextLine()) {
                 return "";
             }
-            String input = scanner.nextLine().trim();
-            if (System.console() == null) {
-                System.out.println(input);
-            }
+            String input = readConsoleLine(scanner).trim();
             if (!input.isEmpty()) {
                 return input;
             }
@@ -4263,10 +4245,7 @@ public class Main {
             if (!scanner.hasNextLine()) {
                 return 0;
             }
-            String line = scanner.nextLine().trim();
-            if (System.console() == null) {
-                System.out.println(line);
-            }
+            String line = readConsoleLine(scanner).trim();
             try {
                 return Integer.parseInt(line);
             } catch (NumberFormatException e) {
@@ -4281,10 +4260,7 @@ public class Main {
             if (!scanner.hasNextLine()) {
                 return 0.0;
             }
-            String line = scanner.nextLine().trim();
-            if (System.console() == null) {
-                System.out.println(line);
-            }
+            String line = readConsoleLine(scanner).trim();
             try {
                 return Double.parseDouble(line);
             } catch (NumberFormatException e) {
