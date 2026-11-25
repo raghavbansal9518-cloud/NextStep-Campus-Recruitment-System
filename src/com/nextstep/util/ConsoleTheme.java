@@ -5,13 +5,13 @@ package com.nextstep.util;
  * 
  * Centralized styling and 24-bit TrueColour ANSI theme for the NextStep console interface,
  * matched exactly against the reference Vantique specification:
- * - Borders and dividers: #6FC9FF (RGB 111, 201, 255) — Cyan / Sky Blue
- * - Prompts and input labels: #E3B341 (RGB 227, 179, 65) — Yellow / Gold
- * - Headings, menu options, and content text: #CAD5E5 (RGB 202, 213, 229) — Light Slate
- * - Terminal background: #131B28 (RGB 19, 27, 40) — Midnight Navy
- * - Success, confirmations, PASS, and MATCH: #56D364 (RGB 86, 211, 100) — Green
- * - Errors, blocked actions, FAIL, and MISSING: #F85149 (RGB 248, 81, 73) — Red
- * - Subdued notices and [Coming Soon] badges: #8B949E (RGB 139, 148, 158) — Subdued Slate
+ * - Borders and dividers: #6FC9FF (RGB 111, 201, 255) - Cyan / Sky Blue
+ * - Prompts and input labels: #E3B341 (RGB 227, 179, 65) - Yellow / Gold
+ * - Headings, menu options, and content text: #CAD5E5 (RGB 202, 213, 229) - Light Slate
+ * - Terminal background: #131B28 (RGB 19, 27, 40) - Midnight Navy
+ * - Success, confirmations, PASS, and MATCH: #56D364 (RGB 86, 211, 100) - Green
+ * - Errors, blocked actions, FAIL, and MISSING: #F85149 (RGB 248, 81, 73) - Red
+ * - Subdued notices and [Coming Soon] badges: #8B949E (RGB 139, 148, 158) - Subdued Slate
  * 
  * Auto-detects terminal support: falls back cleanly to plain text when
  * running in non-interactive / automated testing environments (pipes), or when
@@ -121,7 +121,7 @@ public final class ConsoleTheme {
         if (env != null) {
             return Boolean.parseBoolean(env);
         }
-        return System.console() != null && terminalColumns > FRAME_WIDTH;
+        return false;
     }
 
     public static synchronized int getTerminalColumns() {

@@ -803,9 +803,10 @@ public class DemoService {
             if (configuredCode == null || configuredCode.trim().isEmpty()) {
                 configuredCode = System.getenv(AuthService.ACTIVATION_CODE_ENV);
             }
-            String resolvedCode = (configuredCode != null && !configuredCode.trim().isEmpty())
-                    ? configuredCode.trim()
-                    : "";
+            if (configuredCode == null || configuredCode.trim().isEmpty()) {
+                configuredCode = DemoService.DEMO_OFFICER_ACTIVATION_CODE;
+            }
+            String resolvedCode = configuredCode.trim();
             return new String[] {
                     officerId,
                     fullName,

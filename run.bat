@@ -1,4 +1,7 @@
+
+
 @echo off
+chcp 65001 >nul 2>nul
 setlocal enabledelayedexpansion
 
 :: 1. Navigate reliably to project root directory
@@ -79,7 +82,7 @@ echo [2/2] Launching NextStep Campus Recruitment System...
 echo.
 
 :: 7. Execute Application with Classpath
-java -cp "bin;lib\mysql-connector-j-8.4.0.jar" com.nextstep.Main %*
+java -Dfile.encoding=UTF-8 -Dnextstep.officer.activation.code=CAMPUS_OFFICER_2026 -cp "bin;lib\mysql-connector-j-8.4.0.jar" com.nextstep.Main %*
 set APP_STATUS=%errorlevel%
 
 if %APP_STATUS% neq 0 (

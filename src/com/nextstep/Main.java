@@ -273,18 +273,23 @@ public class Main {
                 totalApplications = applicationDAO.countApplications();
             }
         } catch (Exception ignored) {}
+        System.out.println();
         System.out.println(ConsoleTheme.dim(String.format(Locale.US,
                 "  Active Drives: %-2d | Candidates: %-2d | Apps: %-2d | Avg: %.1f LPA",
                 openJobs, registeredStudents, totalApplications, avgCtc)));
         System.out.println(ConsoleTheme.dim("  System Status:  [ONLINE]   |   Academic Year:     2025-2026"));
-        System.out.println(ConsoleTheme.cyan("  ┌──────────────────────────────────────────────────────────┐"));
-        System.out.println(ConsoleTheme.cyan("  │") + ConsoleTheme.text("                    SELECT YOUR PORTAL                    ") + ConsoleTheme.cyan("│"));
-        System.out.println(ConsoleTheme.cyan("  └──────────────────────────────────────────────────────────┘"));
-        System.out.println(ConsoleTheme.text("                  1. Student Portal"));
-        System.out.println(ConsoleTheme.text("                  2. Placement Officer Portal"));
-        System.out.println(ConsoleTheme.text("                  3. View Campus Recruitment Statistics"));
-        System.out.println(ConsoleTheme.text("                  4. Demonstration Mode & Scenario Setup"));
-        System.out.println(ConsoleTheme.text("                  0. Exit System"));
+        System.out.println();
+        System.out.println(ConsoleTheme.cyan("  +----------------------------------------------------------+"));
+        System.out.println(ConsoleTheme.cyan("  |") + ConsoleTheme.text("                    SELECT YOUR PORTAL                    ") + ConsoleTheme.cyan("|"));
+        System.out.println(ConsoleTheme.cyan("  +----------------------------------------------------------+"));
+        System.out.println();
+        System.out.println(ConsoleTheme.text("    [1] Student Portal"));
+        System.out.println(ConsoleTheme.text("    [2] Placement Officer Portal"));
+        System.out.println(ConsoleTheme.text("    [3] View Campus Recruitment Statistics"));
+        System.out.println(ConsoleTheme.text("    [4] Demonstration Mode & Scenario Setup"));
+        System.out.println();
+        System.out.println(ConsoleTheme.text("    [0] Exit System"));
+        System.out.println();
         System.out.println(ConsoleTheme.divider("----------------------------------------------------------------"));
     }
 
@@ -340,18 +345,22 @@ public class Main {
             System.out.println("  Target DB     : nextstep_db (MySQL)");
             System.out.println("  Persistence   : Canonical MySQL Storage (Persistent)");
             System.out.println("  Credentials   : Centralized & Deterministic for All Scenarios");
-            System.out.println(ConsoleTheme.cyan("  ┌──────────────────────────────────────────────────────────┐"));
-            System.out.println(ConsoleTheme.cyan("  │") + ConsoleTheme.text("               SELECT DEMO OPERATION                      ") + ConsoleTheme.cyan("│"));
-            System.out.println(ConsoleTheme.cyan("  └──────────────────────────────────────────────────────────┘"));
-            System.out.println(ConsoleTheme.text("          1. Prepare / Verify Demo Data (Idempotent)"));
-            System.out.println(ConsoleTheme.text("          2. View Demo Credentials & Scenario Reference Guide"));
-            System.out.println(ConsoleTheme.text("          3. Manage Demo Student Profiles (Scenarios A, B, C)"));
-            System.out.println(ConsoleTheme.text("          4. Manage Demo Placement Officer Profile"));
-            System.out.println(ConsoleTheme.text("          5. Manage Demo Partner Companies"));
-            System.out.println(ConsoleTheme.text("          6. Manage Demo Job Drive Specifications"));
-            System.out.println(ConsoleTheme.text("          7. Manage Demo Applications & Status Tracking"));
-            System.out.println(ConsoleTheme.text("          8. Reset Demonstration Data Only (Protected)"));
-            System.out.println(ConsoleTheme.text("          0. Return to Gateway"));
+            System.out.println();
+            System.out.println(ConsoleTheme.cyan("  +----------------------------------------------------------+"));
+            System.out.println(ConsoleTheme.cyan("  |") + ConsoleTheme.text("               SELECT DEMO OPERATION                      ") + ConsoleTheme.cyan("|"));
+            System.out.println(ConsoleTheme.cyan("  +----------------------------------------------------------+"));
+            System.out.println();
+            System.out.println(ConsoleTheme.text("    [1] Prepare / Verify Demo Data (Idempotent)"));
+            System.out.println(ConsoleTheme.text("    [2] View Demo Credentials & Scenario Reference Guide"));
+            System.out.println(ConsoleTheme.text("    [3] Manage Demo Student Profiles (Scenarios A, B, C)"));
+            System.out.println(ConsoleTheme.text("    [4] Manage Demo Placement Officer Profile"));
+            System.out.println(ConsoleTheme.text("    [5] Manage Demo Partner Companies"));
+            System.out.println(ConsoleTheme.text("    [6] Manage Demo Job Drive Specifications"));
+            System.out.println(ConsoleTheme.text("    [7] Manage Demo Applications & Status Tracking"));
+            System.out.println(ConsoleTheme.text("    [8] Reset Demonstration Data Only (Protected)"));
+            System.out.println();
+            System.out.println(ConsoleTheme.text("    [0] Return to Gateway"));
+            System.out.println();
             System.out.println(ConsoleTheme.divider("----------------------------------------------------------------"));
 
             int choice = readInt(scanner, "Enter your choice: ");
@@ -1106,12 +1115,14 @@ public class Main {
             System.out.println(ConsoleTheme.border("================================================================"));
             System.out.println();
             if (PresentationConfig.isStudentRegistrationVisible()) {
-                System.out.println(ConsoleTheme.text("                  1. Student Sign Up"));
-                System.out.println(ConsoleTheme.text("                  2. Student Sign In"));
-                System.out.println(ConsoleTheme.text("                  0. Back to Gateway"));
+                System.out.println(ConsoleTheme.text("    [1] Student Sign Up"));
+                System.out.println(ConsoleTheme.text("    [2] Student Sign In"));
+                System.out.println();
+                System.out.println(ConsoleTheme.text("    [0] Back to Gateway"));
             } else {
-                System.out.println(ConsoleTheme.text("                  1. Student Sign In"));
-                System.out.println(ConsoleTheme.text("                  0. Back to Gateway"));
+                System.out.println(ConsoleTheme.text("    [1] Student Sign In"));
+                System.out.println();
+                System.out.println(ConsoleTheme.text("    [0] Back to Gateway"));
             }
             System.out.println();
             System.out.println(ConsoleTheme.divider("----------------------------------------------------------------"));
@@ -1151,8 +1162,6 @@ public class Main {
      * @param scanner active Scanner
      */
     private void handlePlacementOfficerWorkflow(Scanner scanner) {
-        checkFirstRunOfficerSetup(scanner);
-
         boolean inOfficerMenu = true;
         while (inOfficerMenu) {
             clearConsole();
@@ -1161,9 +1170,10 @@ public class Main {
             System.out.println(ConsoleTheme.header("                      PLACEMENT OFFICER MENU"));
             System.out.println(ConsoleTheme.border("================================================================"));
             System.out.println();
-            System.out.println(ConsoleTheme.text("                  1. Officer Sign Up"));
-            System.out.println(ConsoleTheme.text("                  2. Officer Sign In"));
-            System.out.println(ConsoleTheme.text("                  0. Back to Gateway"));
+            System.out.println(ConsoleTheme.text("    [1] Officer Sign Up"));
+            System.out.println(ConsoleTheme.text("    [2] Officer Sign In"));
+            System.out.println();
+            System.out.println(ConsoleTheme.text("    [0] Back to Gateway"));
             System.out.println();
             System.out.println(ConsoleTheme.divider("----------------------------------------------------------------"));
 
@@ -1370,7 +1380,7 @@ public class Main {
             renderStudentSignUpFooter();
 
             while (true) {
-                System.out.print(ConsoleTheme.prompt("Enter your choice: "));
+                System.out.print(ConsoleTheme.prompt("Enter your choice [ENTER or 1: Submit, 0: Cancel]: "));
                 if (!scanner.hasNextLine()) {
                     return false;
                 }
@@ -1380,13 +1390,20 @@ public class Main {
                 }
                 System.out.println(ConsoleTheme.border("================================================================"));
 
-                if ("1".equals(choice)) {
+                if ("1".equals(choice) || choice.isEmpty()) {
                     boolean created = processStudentRegistration(
                             studentId, fullName, email, phone, branch, cgpaStr,
                             skillsStr, backlogsStr, gradYearStr,
                             username, password, confirmPassword
                     );
                     if (created) {
+                        System.out.print("\nPress ENTER to proceed to Sign In (or 0 for Menu): ");
+                        if (scanner.hasNextLine()) {
+                            String nextAction = scanner.nextLine().trim();
+                            if (!"0".equals(nextAction)) {
+                                showStudentSignIn(scanner);
+                            }
+                        }
                         return true;
                     } else {
                         System.out.print("\nPress Enter to try again, or enter 0 to return: ");
@@ -1429,8 +1446,8 @@ public class Main {
      */
     public void renderStudentSignUpFooter() {
         System.out.println(ConsoleTheme.divider("----------------------------------------------------------------"));
-        System.out.println(ConsoleTheme.text("                  1. CREATE ACCOUNT (SUBMIT REGISTRATION)"));
-        System.out.println(ConsoleTheme.text("                  0. BACK (CANCEL & RETURN)"));
+        System.out.println(ConsoleTheme.text("    [1] Create Account (Submit Registration)"));
+        System.out.println(ConsoleTheme.text("    [0] Back (Cancel & Return)"));
         System.out.println(ConsoleTheme.border("================================================================"));
     }
 
@@ -1724,7 +1741,10 @@ public class Main {
         if (actCode == null || actCode.trim().isEmpty()) {
             actCode = System.getenv(AuthService.ACTIVATION_CODE_ENV);
         }
-        String resolvedCode = (actCode != null && !actCode.trim().isEmpty()) ? actCode.trim() : "";
+        if (actCode == null || actCode.trim().isEmpty()) {
+            actCode = DemoService.DEMO_OFFICER_ACTIVATION_CODE;
+        }
+        String resolvedCode = actCode.trim();
 
         String tempPass = DemoService.DEMO_PASSWORD;
         return new String[] {
@@ -2004,7 +2024,7 @@ public class Main {
             System.out.println(ConsoleTheme.border("================================================================"));
 
             while (true) {
-                System.out.print(ConsoleTheme.prompt("Enter your choice: "));
+                System.out.print(ConsoleTheme.prompt("Enter your choice [ENTER or 1: Sign In, 0: Back]: "));
                 if (!scanner.hasNextLine()) {
                     return false;
                 }
@@ -2014,7 +2034,7 @@ public class Main {
                 }
                 System.out.println(ConsoleTheme.border("================================================================"));
 
-                if ("1".equals(choice)) {
+                if ("1".equals(choice) || choice.isEmpty()) {
                     boolean success = processStudentSignIn(scanner, identifier, password);
                     if (success) {
                         return true;
@@ -2059,8 +2079,8 @@ public class Main {
      */
     public void renderStudentSignInActions() {
         System.out.println(ConsoleTheme.divider("----------------------------------------------------------------"));
-        System.out.println(ConsoleTheme.text("                  1. SIGN IN"));
-        System.out.println(ConsoleTheme.text("                  0. BACK TO ROLE SELECT"));
+        System.out.println(ConsoleTheme.text("    [1] Sign In"));
+        System.out.println(ConsoleTheme.text("    [0] Back to Role Select"));
         System.out.println(ConsoleTheme.border("================================================================"));
     }
 
@@ -2169,23 +2189,13 @@ public class Main {
                     System.out.println(ConsoleTheme.cyan(" * [AUTO-FILL] Populating form with verified demo data..."));
                     System.out.println(ConsoleTheme.divider("----------------------------------------------------------------"));
                     while (true) {
-                        boolean hasUnsetActivation = false;
                         for (int k = 0; k < prompts.length; k++) {
-                            boolean warnField = false;
-                            String val = values[k];
-                            if (k == 6 && (val == null || val.trim().isEmpty())) {
-                                val = "[NOT CONFIGURED — ENTER MANUALLY]";
-                                warnField = true;
-                                hasUnsetActivation = true;
+                            if (k == 6 && (values[k] == null || values[k].trim().isEmpty())) {
+                                values[k] = authService.getAuthorizedActivationCode();
                             }
-                            System.out.println(formatFormFieldRow(prompts[k], val, isPassword[k] && !warnField, warnField));
+                            System.out.println(formatFormFieldRow(prompts[k], values[k], isPassword[k]));
                         }
                         System.out.println(ConsoleTheme.divider("----------------------------------------------------------------"));
-                        if (hasUnsetActivation) {
-                            System.out.println(ConsoleTheme.warn("  [NOT CONFIGURED — ENTER MANUALLY]"));
-                            System.out.println(ConsoleTheme.warn("Officer activation code is not configured in system environment."));
-                            System.out.println(ConsoleTheme.warn("  ! NOTICE: Activation code must be entered manually."));
-                        }
                         System.out.println(ConsoleTheme.dim("  (Golden: Field Labels  |  Sky Blue: Pre-filled Values)"));
                         System.out.print(ConsoleTheme.prompt("  Action [ENTER: Accept, 1-7: Edit field]: "));
                         if (!scanner.hasNextLine()) {
@@ -2265,7 +2275,7 @@ public class Main {
             renderOfficerSignUpFooter();
 
             while (true) {
-                System.out.print(ConsoleTheme.prompt("Enter your choice: "));
+                System.out.print(ConsoleTheme.prompt("Enter your choice [ENTER or 1: Create Account, 0: Back]: "));
                 if (!scanner.hasNextLine()) {
                     return false;
                 }
@@ -2275,12 +2285,19 @@ public class Main {
                 }
                 System.out.println(ConsoleTheme.border("================================================================"));
 
-                if ("1".equals(choice)) {
+                if ("1".equals(choice) || choice.isEmpty()) {
                     boolean created = processOfficerRegistration(
                             officerId, fullName, email,
                             username, password, confirmPassword, activationCode
                     );
                     if (created) {
+                        System.out.print("\nPress ENTER to proceed to Sign In (or 0 for Menu): ");
+                        if (scanner.hasNextLine()) {
+                            String nextAction = scanner.nextLine().trim();
+                            if (!"0".equals(nextAction)) {
+                                handleLogin(scanner, Role.PLACEMENT_OFFICER);
+                            }
+                        }
                         return true;
                     } else {
                         System.out.print("\nPress Enter to try again, or enter 0 to return: ");
@@ -2324,8 +2341,8 @@ public class Main {
      */
     public void renderOfficerSignUpFooter() {
         System.out.println(ConsoleTheme.divider("----------------------------------------------------------------"));
-        System.out.println(ConsoleTheme.text("                  1. CREATE ACCOUNT (SUBMIT REGISTRATION)"));
-        System.out.println(ConsoleTheme.text("                  0. BACK (CANCEL & RETURN)"));
+        System.out.println(ConsoleTheme.text("    [1] Create Account (Submit Registration)"));
+        System.out.println(ConsoleTheme.text("    [0] Back (Cancel & Return)"));
         System.out.println(ConsoleTheme.border("================================================================"));
     }
 
@@ -2465,12 +2482,26 @@ public class Main {
             User user = authService.login(username, password);
             if (user == null) {
                 System.out.println("\n[ERROR] Invalid credentials. Please check your username and password.");
+                System.out.print("\nPress Enter to return: ");
+                if (scanner.hasNextLine()) {
+                    String retry = scanner.nextLine().trim();
+                    if (System.console() == null) {
+                        System.out.println(retry);
+                    }
+                }
                 return false;
             }
 
             if (expectedRole != null && user.getRole() != expectedRole) {
                 String roleName = expectedRole == Role.STUDENT ? "Student" : "Placement Officer";
                 System.out.println("\n[ERROR] Access denied. This account does not have " + roleName + " privileges.");
+                System.out.print("\nPress Enter to return: ");
+                if (scanner.hasNextLine()) {
+                    String r = scanner.nextLine().trim();
+                    if (System.console() == null) {
+                        System.out.println(r);
+                    }
+                }
                 return false;
             }
 
@@ -2478,6 +2509,13 @@ public class Main {
                 Student student = studentDAO.findByUserId(user.getId());
                 if (student == null) {
                     System.out.println("\n[ERROR] Student profile not found for this account.");
+                    System.out.print("\nPress Enter to return: ");
+                    if (scanner.hasNextLine()) {
+                        String r = scanner.nextLine().trim();
+                        if (System.console() == null) {
+                            System.out.println(r);
+                        }
+                    }
                     return false;
                 }
                 System.out.println("\n[SUCCESS] Login successful! Welcome, " + student.getFullName() + ".");
@@ -2489,10 +2527,24 @@ public class Main {
                 return true;
             } else {
                 System.out.println("\n[ERROR] Unrecognized user role: " + user.getRole());
+                System.out.print("\nPress Enter to return: ");
+                if (scanner.hasNextLine()) {
+                    String r = scanner.nextLine().trim();
+                    if (System.console() == null) {
+                        System.out.println(r);
+                    }
+                }
                 return false;
             }
         } catch (SQLException e) {
             System.out.println("\n[ERROR] Database error during login: " + e.getMessage());
+            System.out.print("\nPress Enter to return: ");
+            if (scanner.hasNextLine()) {
+                String r = scanner.nextLine().trim();
+                if (System.console() == null) {
+                    System.out.println(r);
+                }
+            }
             return false;
         }
     }
@@ -2550,18 +2602,22 @@ public class Main {
         System.out.printf("  Welcome, %-20s | Student ID: %s%n", studentName, usn);
         System.out.printf("  Branch : %-21s | CGPA: %.2f (Backlogs: %d)%n", branch, cgpa, backlogs);
         System.out.println(ConsoleTheme.divider("----------------------------------------------------------------"));
-        System.out.println(ConsoleTheme.cyan("  ┌──────────────────────────────────────────────────────────┐"));
-        System.out.println(ConsoleTheme.cyan("  │") + ConsoleTheme.text("                    PLACEMENT WORKFLOW                    ") + ConsoleTheme.cyan("│"));
-        System.out.println(ConsoleTheme.cyan("  └──────────────────────────────────────────────────────────┘"));
+        System.out.println();
+        System.out.println(ConsoleTheme.cyan("  +----------------------------------------------------------+"));
+        System.out.println(ConsoleTheme.cyan("  |") + ConsoleTheme.text("                    PLACEMENT WORKFLOW                    ") + ConsoleTheme.cyan("|"));
+        System.out.println(ConsoleTheme.cyan("  +----------------------------------------------------------+"));
+        System.out.println();
         long openJobs = 0;
         try {
             openJobs = recruitmentService.countOpenJobs();
         } catch (Exception ignored) {}
-        System.out.println(ConsoleTheme.text("    1. View Available Job Drives (" + openJobs + " Active)"));
-        System.out.println(ConsoleTheme.text("    2. Check Job Eligibility & Skill Match (Instant Evaluation)"));
-        System.out.println(ConsoleTheme.text("    3. Apply for an Eligible Job Opening"));
-        System.out.println(ConsoleTheme.text("    4. View My Applications & Status"));
-        System.out.println(ConsoleTheme.text("    0. Sign Out / Lock Session"));
+        System.out.println(ConsoleTheme.text("    [1] View Available Job Drives (" + openJobs + " Active)"));
+        System.out.println(ConsoleTheme.text("    [2] Check Job Eligibility & Skill Match (Instant Evaluation)"));
+        System.out.println(ConsoleTheme.text("    [3] Apply for an Eligible Job Opening"));
+        System.out.println(ConsoleTheme.text("    [4] View My Applications & Status"));
+        System.out.println();
+        System.out.println(ConsoleTheme.text("    [0] Sign Out / Lock Session"));
+        System.out.println();
         System.out.println(ConsoleTheme.border("================================================================"));
     }
 
@@ -2862,14 +2918,18 @@ public class Main {
         System.out.printf("  Drives  : %-2d Open  | Applicants: %-2d  | Shortlisted: %-2d%n",
                 totalDrives, totalApplicants, shortlistedCount);
         System.out.println(ConsoleTheme.divider("----------------------------------------------------------------"));
-        System.out.println(ConsoleTheme.cyan("  ┌──────────────────────────────────────────────────────────┐"));
-        System.out.println(ConsoleTheme.cyan("  │") + ConsoleTheme.text("                   ADMINISTRATIVE TOOLS                   ") + ConsoleTheme.cyan("│"));
-        System.out.println(ConsoleTheme.cyan("  └──────────────────────────────────────────────────────────┘"));
+        System.out.println();
+        System.out.println(ConsoleTheme.cyan("  +----------------------------------------------------------+"));
+        System.out.println(ConsoleTheme.cyan("  |") + ConsoleTheme.text("                   ADMINISTRATIVE TOOLS                   ") + ConsoleTheme.cyan("|"));
+        System.out.println(ConsoleTheme.cyan("  +----------------------------------------------------------+"));
+        System.out.println();
         System.out.println(ConsoleTheme.text("    [1] Create & Publish New Job Opening"));
         System.out.println(ConsoleTheme.text("    [2] Manage Student Applications (Shortlist / Reject)"));
         System.out.println(ConsoleTheme.text("    [3] Export Placement Audit Ledger (CSV File)"));
         System.out.println(ConsoleTheme.text("    [4] Presentation Visibility & Demo Controls"));
+        System.out.println();
         System.out.println(ConsoleTheme.text("    [0] Sign Out"));
+        System.out.println();
         System.out.println(ConsoleTheme.border("================================================================"));
     }
 
@@ -3281,7 +3341,7 @@ public class Main {
             renderCreateJobDriveFooter();
 
             while (true) {
-                System.out.print(ConsoleTheme.prompt("Enter your choice: "));
+                System.out.print(ConsoleTheme.prompt("Enter your choice [ENTER or 1: Sign In, 0: Back]: "));
                 if (!scanner.hasNextLine()) {
                     return false;
                 }
@@ -3291,7 +3351,7 @@ public class Main {
                 }
                 System.out.println(ConsoleTheme.border("================================================================"));
 
-                if ("1".equals(choice)) {
+                if ("1".equals(choice) || choice.isEmpty()) {
                     boolean created = processJobDriveCreation(
                             companyIdStr, jobTitle, description, ctcStr, location,
                             minCgpaStr, maxBacklogsStr, branchesStr, skillsStr, gradYearStr
@@ -3636,22 +3696,23 @@ public class Main {
             // Calculate unified eligibility using RecruitmentService as the single source of truth
             EligibilityResult result = recruitmentService.checkEligibility(student, job);
 
+            System.out.println();
             System.out.println("  ACADEMIC ELIGIBILITY CHECKLIST:");
-            System.out.println(ConsoleTheme.border("┌──────────────────┬─────────────────┬────────────────┬────────┐"));
-            System.out.println(ConsoleTheme.header("│ Parameter        │ Drive Cutoff    │ Student Status │ Result │"));
-            System.out.println(ConsoleTheme.border("├──────────────────┼─────────────────┼────────────────┼────────┤"));
+            System.out.println(ConsoleTheme.border("+------------------+-----------------+----------------+--------+"));
+            System.out.println(ConsoleTheme.header("| Parameter        | Drive Cutoff    | Student Status | Result |"));
+            System.out.println(ConsoleTheme.border("+------------------+-----------------+----------------+--------+"));
 
             // 1. CGPA Cutoff
             String cgpaReq = ">= " + String.format(Locale.US, "%.2f", job.getMinCgpa());
             String cgpaStatus = String.format(Locale.US, "%.2f", student.getCgpa());
             String cgpaPassStr = result.isCgpaEligible() ? ConsoleTheme.green(" PASS ") : ConsoleTheme.red(" FAIL ");
-            System.out.printf("│ %-16s │ %-15s │ %-14s │ %s │%n", "CGPA Cutoff", cgpaReq, cgpaStatus, cgpaPassStr);
+            System.out.printf("| %-16s | %-15s | %-14s | %s |%n", "CGPA Cutoff", cgpaReq, cgpaStatus, cgpaPassStr);
 
             // 2. Active Backlogs
             String backlogsReq = "<= " + job.getMaxBacklogs() + " Backlogs";
             String backlogsStatus = student.getActiveBacklogs() + " Backlogs";
             String backlogsPassStr = result.isBacklogsEligible() ? ConsoleTheme.green(" PASS ") : ConsoleTheme.red(" FAIL ");
-            System.out.printf("│ %-16s │ %-15s │ %-14s │ %s │%n", "Active Backlogs", backlogsReq, backlogsStatus, backlogsPassStr);
+            System.out.printf("| %-16s | %-15s | %-14s | %s |%n", "Active Backlogs", backlogsReq, backlogsStatus, backlogsPassStr);
 
             // 3. Branch Match
             List<String> branches = job.getEligibleBranches();
@@ -3660,15 +3721,16 @@ public class Main {
             String stdBranch = student.getBranch() != null ? student.getBranch() : "N/A";
             String branchStatus = stdBranch.length() > 14 ? stdBranch.substring(0, 11) + "..." : stdBranch;
             String branchPassStr = result.isBranchEligible() ? ConsoleTheme.green(" PASS ") : ConsoleTheme.red(" FAIL ");
-            System.out.printf("│ %-16s │ %-15s │ %-14s │ %s │%n", "Branch Match", branchReq, branchStatus, branchPassStr);
+            System.out.printf("| %-16s | %-15s | %-14s | %s |%n", "Branch Match", branchReq, branchStatus, branchPassStr);
 
             // 4. Graduation Year
             String gradReq = (job.getGraduationYear() > 0) ? String.valueOf(job.getGraduationYear()) : "Any";
             String gradStatus = String.valueOf(student.getGraduationYear());
             String gradPassStr = result.isGraduationYearEligible() ? ConsoleTheme.green(" PASS ") : ConsoleTheme.red(" FAIL ");
-            System.out.printf("│ %-16s │ %-15s │ %-14s │ %s │%n", "Graduation Year", gradReq, gradStatus, gradPassStr);
+            System.out.printf("| %-16s | %-15s | %-14s | %s |%n", "Graduation Year", gradReq, gradStatus, gradPassStr);
 
-            System.out.println(ConsoleTheme.border("└──────────────────┴─────────────────┴────────────────┴────────┘"));
+            System.out.println(ConsoleTheme.border("+------------------+-----------------+----------------+--------+"));
+            System.out.println();
 
             // Technical Skills Breakdown
             List<String> requiredSkills = job.getRequiredSkills() != null ? job.getRequiredSkills() : new ArrayList<>();
@@ -3677,15 +3739,15 @@ public class Main {
             int matchedCount = result.getMatchedSkills().size();
             int matchPct = totalSkills > 0 ? (int) Math.round(((double) matchedCount / totalSkills) * 100.0) : 100;
 
-            System.out.println("  TECHNICAL SKILLS BREAKDOWN (Score: " + matchedCount + " / " + totalSkills + " \u2014 " + matchPct + "% Match):");
+            System.out.println("  TECHNICAL SKILLS BREAKDOWN (Score: " + matchedCount + " / " + totalSkills + " - " + matchPct + "% Match):");
             System.out.println("  Matched Skills:         " + matchedCount + " / " + totalSkills);
             System.out.println("  Skill Match:            " + matchPct + "%");
-            System.out.println(ConsoleTheme.border("┌──────────────────────┬──────────────────────┬────────────────┐"));
-            System.out.println(ConsoleTheme.header("│ Required Skill       │ Student Skill Match  │ Evaluation     │"));
-            System.out.println(ConsoleTheme.border("├──────────────────────┼──────────────────────┼────────────────┤"));
+            System.out.println(ConsoleTheme.border("+----------------------+----------------------+----------------+"));
+            System.out.println(ConsoleTheme.header("| Required Skill       | Student Skill Match  | Evaluation     |"));
+            System.out.println(ConsoleTheme.border("+----------------------+----------------------+----------------+"));
 
             if (requiredSkills.isEmpty()) {
-                System.out.printf("│ %-20s │ %-20s │ %s │%n", "None", "-", ConsoleTheme.green(" MATCH        "));
+                System.out.printf("| %-20s | %-20s | %s |%n", "None", "-", ConsoleTheme.green(" MATCH        "));
             } else {
                 Set<String> matchedSet = new HashSet<>();
                 for (String ms : result.getMatchedSkills()) {
@@ -3698,10 +3760,11 @@ public class Main {
                     String evalDisplay = isMatch ? ConsoleTheme.green(" MATCH        ") : ConsoleTheme.red(" MISSING      ");
                     String rDisplay = reqTrim.length() > 20 ? reqTrim.substring(0, 17) + "..." : reqTrim;
                     String sDisplay = studentSkill.length() > 20 ? studentSkill.substring(0, 17) + "..." : studentSkill;
-                    System.out.printf("│ %-20s │ %-20s │ %s │%n", rDisplay, sDisplay, evalDisplay);
+                    System.out.printf("| %-20s | %-20s | %s |%n", rDisplay, sDisplay, evalDisplay);
                 }
             }
-            System.out.println(ConsoleTheme.border("└──────────────────────┴──────────────────────┴────────────────┘"));
+            System.out.println(ConsoleTheme.border("+----------------------+----------------------+----------------+"));
+            System.out.println();
 
             boolean overallEligible = result.isEligible();
             if (overallEligible) {
@@ -3958,19 +4021,20 @@ public class Main {
             String rawTitle = job.getTitle() != null ? job.getTitle() : "N/A";
             String jobTitle = rawTitle.length() > 37 ? rawTitle.substring(0, 34) + "..." : rawTitle;
 
-            System.out.println(ConsoleTheme.cyan("  ┌──────────────────────────────────────────────────────────┐"));
-            System.out.println(ConsoleTheme.cyan("  │") + ConsoleTheme.text("         APPLICATION SPECIFICATIONS & CANDIDATE DATA        ") + ConsoleTheme.cyan("│"));
-            System.out.println(ConsoleTheme.cyan("  └──────────────────────────────────────────────────────────┘"));
+            System.out.println();
+            System.out.println(ConsoleTheme.cyan("  +----------------------------------------------------------+"));
+            System.out.println(ConsoleTheme.cyan("  |") + ConsoleTheme.text("         APPLICATION SPECIFICATIONS & CANDIDATE DATA        ") + ConsoleTheme.cyan("|"));
+            System.out.println(ConsoleTheme.cyan("  +----------------------------------------------------------+"));
             System.out.println("  Candidate USN        :  " + stdUsn + " (" + stdName + ")");
             System.out.println("  Applying For Position:  " + jobTitle);
             System.out.println("  Company Name         :  " + compName);
             System.out.println("  Offered Compensation :  " + ctcVal + " Lakhs Per Annum (CTC)");
-            System.out.println(ConsoleTheme.cyan("  ┌──────────────────────────────────────────────────────────┐"));
-            System.out.println(ConsoleTheme.cyan("  │") + ConsoleTheme.text("             ELIGIBILITY & SKILL VERIFICATION             ") + ConsoleTheme.cyan("│"));
-            System.out.println(ConsoleTheme.cyan("  └──────────────────────────────────────────────────────────┘"));
-            System.out.println("  Verified Eligibility :  " + eligibilityStr + " (" + skillMatchStr + ")");
-            System.out.println("  Eligibility:         " + eligibilityStr);
-            System.out.println("  Skill Match:         " + skillMatchStr);
+            System.out.println();
+            System.out.println(ConsoleTheme.cyan("  +----------------------------------------------------------+"));
+            System.out.println(ConsoleTheme.cyan("  |") + ConsoleTheme.text("             ELIGIBILITY & SKILL VERIFICATION             ") + ConsoleTheme.cyan("|"));
+            System.out.println(ConsoleTheme.cyan("  +----------------------------------------------------------+"));
+            System.out.println("  Verified Eligibility :  " + eligibilityStr);
+            System.out.println("  Skill Match          :  " + skillMatchStr);
             System.out.println(ConsoleTheme.divider("----------------------------------------------------------------"));
             System.out.println(ConsoleTheme.red("[BLOCKED] Application rejected: You are not eligible to apply for this job."));
             for (String reason : eligResult.getReasons()) {
@@ -3980,7 +4044,9 @@ public class Main {
                 System.out.println(ConsoleTheme.red("  - Missing Required Skills: " + String.join(", ", eligResult.getMissingSkills())));
             }
             System.out.println(ConsoleTheme.divider("----------------------------------------------------------------"));
-            System.out.println(ConsoleTheme.text("                  0. CANCEL"));
+            System.out.println();
+            System.out.println(ConsoleTheme.text("    [0] CANCEL"));
+            System.out.println();
             System.out.println(ConsoleTheme.border("================================================================"));
 
             while (true) {
@@ -4017,22 +4083,25 @@ public class Main {
             String rawTitle = job.getTitle() != null ? job.getTitle() : "N/A";
             String jobTitle = rawTitle.length() > 37 ? rawTitle.substring(0, 34) + "..." : rawTitle;
 
-            System.out.println(ConsoleTheme.cyan("  ┌──────────────────────────────────────────────────────────┐"));
-            System.out.println(ConsoleTheme.cyan("  │") + ConsoleTheme.text("         APPLICATION SPECIFICATIONS & CANDIDATE DATA        ") + ConsoleTheme.cyan("│"));
-            System.out.println(ConsoleTheme.cyan("  └──────────────────────────────────────────────────────────┘"));
+            System.out.println();
+            System.out.println(ConsoleTheme.cyan("  +----------------------------------------------------------+"));
+            System.out.println(ConsoleTheme.cyan("  |") + ConsoleTheme.text("         APPLICATION SPECIFICATIONS & CANDIDATE DATA        ") + ConsoleTheme.cyan("|"));
+            System.out.println(ConsoleTheme.cyan("  +----------------------------------------------------------+"));
             System.out.println("  Candidate USN        :  " + stdUsn + " (" + stdName + ")");
             System.out.println("  Applying For Position:  " + jobTitle);
             System.out.println("  Company Name         :  " + compName);
             System.out.println("  Offered Compensation :  " + ctcVal + " Lakhs Per Annum (CTC)");
-            System.out.println(ConsoleTheme.cyan("  ┌──────────────────────────────────────────────────────────┐"));
-            System.out.println(ConsoleTheme.cyan("  │") + ConsoleTheme.text("             ELIGIBILITY & SKILL VERIFICATION             ") + ConsoleTheme.cyan("│"));
-            System.out.println(ConsoleTheme.cyan("  └──────────────────────────────────────────────────────────┘"));
-            System.out.println("  Verified Eligibility :  " + ConsoleTheme.green("ELIGIBLE (" + skillMatchStr + ")"));
-            System.out.println("  Eligibility:         " + ConsoleTheme.green("ELIGIBLE"));
-            System.out.println("  Skill Match:         " + skillMatchStr);
+            System.out.println();
+            System.out.println(ConsoleTheme.cyan("  +----------------------------------------------------------+"));
+            System.out.println(ConsoleTheme.cyan("  |") + ConsoleTheme.text("             ELIGIBILITY & SKILL VERIFICATION             ") + ConsoleTheme.cyan("|"));
+            System.out.println(ConsoleTheme.cyan("  +----------------------------------------------------------+"));
+            System.out.println("  Verified Eligibility :  " + ConsoleTheme.green("ELIGIBLE"));
+            System.out.println("  Skill Match          :  " + skillMatchStr);
             System.out.println(ConsoleTheme.divider("----------------------------------------------------------------"));
-            System.out.println(ConsoleTheme.text("                  1. CONFIRM & TRANSMIT APPLICATION"));
-            System.out.println(ConsoleTheme.text("                  0. CANCEL"));
+            System.out.println();
+            System.out.println(ConsoleTheme.text("    [1] Confirm & Transmit Application"));
+            System.out.println(ConsoleTheme.text("    [0] Cancel"));
+            System.out.println();
             System.out.println(ConsoleTheme.border("================================================================"));
 
             System.out.print(ConsoleTheme.prompt("Enter your choice: "));
@@ -4053,10 +4122,11 @@ public class Main {
                     System.out.println(ConsoleTheme.header("                   NEXTSTEP | APPLICATION PORTAL"));
                     System.out.println(ConsoleTheme.header("        APPLICATION CONFIRMATION — TRANSMITTED SUCCESSFULLY"));
                     System.out.println(ConsoleTheme.border("================================================================"));
-                    System.out.println(ConsoleTheme.cyan("  ┌──────────────────────────────────────────────────────────┐"));
-                    System.out.println(ConsoleTheme.cyan("  │") + ConsoleTheme.text("          OFFICIAL DIGITAL RECRUITMENT FILING RECEIPT       ") + ConsoleTheme.cyan("│"));
-                    System.out.println(ConsoleTheme.cyan("  └──────────────────────────────────────────────────────────┘"));
-                    System.out.println(ConsoleTheme.header("           \u2714 APPLICATION TRANSMITTED SUCCESSFULLY!"));
+                    System.out.println(ConsoleTheme.cyan("  +----------------------------------------------------------+"));
+                    System.out.println(ConsoleTheme.cyan("  |") + ConsoleTheme.text("          OFFICIAL DIGITAL RECRUITMENT FILING RECEIPT       ") + ConsoleTheme.cyan("|"));
+                    System.out.println(ConsoleTheme.cyan("  +----------------------------------------------------------+"));
+                    System.out.println();
+                    System.out.println(ConsoleTheme.header("             APPLICATION TRANSMITTED SUCCESSFULLY"));
                     System.out.println(ConsoleTheme.border("================================================================"));
                     String formattedAppId = "APP-2026-" + String.format("%03d", app.getId());
                     String timestampStr = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss").format(LocalDateTime.now()) + " IST";
@@ -4122,9 +4192,10 @@ public class Main {
      */
     public void renderApplicationRecordsFooter() {
         System.out.println(ConsoleTheme.divider("----------------------------------------------------------------"));
-        System.out.println(ConsoleTheme.text("              1. UPDATE CANDIDATE STATUS (Shortlist/Reject)"));
-        System.out.println(ConsoleTheme.text("              2. EXPORT AUDIT REPORT (CSV)"));
-        System.out.println(ConsoleTheme.text("              0. BACK TO OFFICER DASHBOARD"));
+        System.out.println(ConsoleTheme.text("    [1] Update Candidate Status (Shortlist/Reject)"));
+        System.out.println(ConsoleTheme.text("    [2] Export Audit Report (CSV)"));
+        System.out.println();
+        System.out.println(ConsoleTheme.text("    [0] Back to Officer Dashboard"));
         System.out.println(ConsoleTheme.border("================================================================"));
     }
 
@@ -4153,7 +4224,7 @@ public class Main {
             }
 
             System.out.printf("  %-11s %-10s %-14s %-12s %-11s%n", "App ID", "USN", "Student Name", "Status", "Drive Title");
-            System.out.println(ConsoleTheme.divider("────────────────────────────────────────────────────────────────"));
+            System.out.println(ConsoleTheme.divider("----------------------------------------------------------------"));
 
             if (apps.isEmpty()) {
                 System.out.println("  No student applications have been submitted yet.");
@@ -4181,7 +4252,7 @@ public class Main {
                     System.out.printf("  %-11s %-10s %-14s %s %-11s%n", appIdStr, rollNo, name, coloredStatus, drive);
                 }
             }
-            System.out.println(ConsoleTheme.divider("────────────────────────────────────────────────────────────────"));
+            System.out.println(ConsoleTheme.divider("----------------------------------------------------------------"));
             System.out.println(ConsoleTheme.dim("  Status: ") + ConsoleTheme.blue("APPLIED (Cyan)") + ConsoleTheme.dim(" | ") + ConsoleTheme.green("SHORTLIST (Green)") + ConsoleTheme.dim(" | ") + ConsoleTheme.red("REJECT (Red)"));
             renderApplicationRecordsFooter();
 
