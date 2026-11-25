@@ -174,6 +174,31 @@ public final class ConsoleTheme {
         }
     }
 
+    /**
+     * Clears the console screen reliably across platforms and ANSI modes,
+     * writing directly to the underlying raw output stream so that no extraneous
+     * margin bytes precede the screen clear, and resets line start tracking
+     * so that the very next line rendered begins with the proper left margin.
+     */
+    public static synchronized void clearScreen() {
+        refreshTerminalDimensions();
+        java.io.PrintStream raw = (originalSystemOut != null) ? originalSystemOut : System.out;
+        if (ansiEnabled) {
+            raw.print("\033[H\033[2J\033[3J");
+            raw.flush();
+        } else if (System.console() != null && System.getProperty("os.name", "").toLowerCase().contains("win")) {
+            try {
+                new ProcessBuilder("cmd", "/c", "cls").inheritIO().start().waitFor();
+            } catch (Exception ignored) {}
+        } else if (System.console() != null) {
+            raw.print("\033[H\033[2J\033[3J");
+            raw.flush();
+        }
+        if (installedMarginStream != null) {
+            installedMarginStream.resetLineStart();
+        }
+    }
+
     public static synchronized void installAutoMargin() {
         installAutoMargin(System.out);
     }
@@ -182,12 +207,10 @@ public final class ConsoleTheme {
         if (installedMarginStream != null) {
             return;
         }
+        originalSystemOut = targetOut;
         int margin = getLeftMargin();
-        if (margin > 0) {
-            originalSystemOut = targetOut;
-            installedMarginStream = new AutoMarginOutputStream(targetOut, margin);
-            System.setOut(new java.io.PrintStream(installedMarginStream, true, java.nio.charset.StandardCharsets.UTF_8));
-        }
+        installedMarginStream = new AutoMarginOutputStream(targetOut, margin);
+        System.setOut(new java.io.PrintStream(installedMarginStream, true, java.nio.charset.StandardCharsets.UTF_8));
     }
 
     public static synchronized void uninstallAutoMargin() {
@@ -224,7 +247,7 @@ public final class ConsoleTheme {
                 atLineStart = false;
             }
             out.write(b);
-            if (b == '\n') {
+            if (b == '\n' || b == '\r') {
                 atLineStart = true;
             }
         }
