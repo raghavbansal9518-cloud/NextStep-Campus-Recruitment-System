@@ -12,12 +12,8 @@ import java.sql.Statement;
 import java.sql.Timestamp;
 import java.time.LocalDateTime;
 
-/**
- * UserDAO — Handles all SQL queries on the 'users' table using PreparedStatement.
- */
 public class UserDAO {
 
-    /** Inserts a new user within an existing transaction and sets generated ID. */
     public boolean createUser(Connection conn, User user) throws SQLException {
         String sql = "INSERT INTO users (username, password_hash, role, email) VALUES (?, ?, ?, ?)";
 
@@ -37,14 +33,13 @@ public class UserDAO {
             }
             return true;
         } catch (SQLException e) {
-            if (e.getErrorCode() == 1062) { // Duplicate entry
+            if (e.getErrorCode() == 1062) {
                 return false;
             }
             throw e;
         }
     }
 
-    /** Inserts a new user using its own connection. */
     public boolean createUser(User user) throws SQLException {
         try (Connection conn = DatabaseConnection.getConnection()) {
             return createUser(conn, user);
@@ -114,7 +109,6 @@ public class UserDAO {
         }
     }
 
-    // Helper: checks if any row matches a single string parameter
     private boolean existsByField(String sql, String value) throws SQLException {
         if (value == null || value.trim().isEmpty()) return false;
         try (Connection conn = DatabaseConnection.getConnection();
@@ -126,7 +120,6 @@ public class UserDAO {
         }
     }
 
-    // Helper: converts a SQL ResultSet row into a User object
     private User mapRowToUser(ResultSet rs) throws SQLException {
         Timestamp ts = rs.getTimestamp("created_at");
         LocalDateTime createdAt = (ts != null) ? ts.toLocalDateTime() : null;

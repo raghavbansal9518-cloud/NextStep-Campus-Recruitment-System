@@ -11,9 +11,6 @@ import java.sql.Statement;
 import java.util.ArrayList;
 import java.util.List;
 
-/**
- * StudentDAO — Handles SQL operations for 'students' and 'student_skills' tables.
- */
 public class StudentDAO {
 
     private static final String SELECT_STUDENT =

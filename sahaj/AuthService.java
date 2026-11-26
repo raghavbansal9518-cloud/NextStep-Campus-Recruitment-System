@@ -8,30 +8,17 @@ import com.nextstep.model.Student;
 import com.nextstep.model.User;
 import com.nextstep.util.ValidationUtil;
 
-import javax.crypto.SecretKeyFactory;
-import javax.crypto.spec.PBEKeySpec;
+import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
-import java.security.SecureRandom;
 import java.sql.Connection;
 import java.sql.SQLException;
-import java.util.ArrayList;
+import java.util.Base64;
 import java.util.Collections;
-import java.util.HexFormat;
 import java.util.List;
 
-/**
- * AuthService — Handles Registration, Login, Password Hashing (PBKDF2), and Activation Security.
- */
 public class AuthService {
 
-    private static final String ALGORITHM = "PBKDF2WithHmacSHA256";
-    private static final int ITERATIONS = 10000;
-    private static final int SALT_BYTES = 16;
-    private static final int HASH_BITS = 256;
-
-    public static final String ACTIVATION_CODE_PROP = "nextstep.officer.activation.code";
-    public static final String ACTIVATION_CODE_ENV = "NEXTSTEP_OFFICER_ACTIVATION_CODE";
-    public static final String DEFAULT_ACTIVATION_CODE = "CAMPUS_OFFICER_2026";
+    public static final String OFFICER_ACTIVATION_CODE = "123456";
 
     private final UserDAO userDAO;
     private final StudentDAO studentDAO;
@@ -46,52 +33,25 @@ public class AuthService {
         this.studentDAO = studentDAO;
     }
 
-    // ==================== 1. PASSWORD SECURITY (PBKDF2) ====================
-
-    /** Hashes password with random salt. Format: PBKDF2$10000$salt$hash */
     public static String hashPassword(String password) {
         if (password == null || password.isEmpty()) {
             throw new IllegalArgumentException("Password cannot be empty");
         }
         try {
-            byte[] salt = new byte[SALT_BYTES];
-            new SecureRandom().nextBytes(salt);
-
-            byte[] hash = pbkdf2(password, salt, ITERATIONS, HASH_BITS);
-            HexFormat hex = HexFormat.of();
-            return "PBKDF2$" + ITERATIONS + "$" + hex.formatHex(salt) + "$" + hex.formatHex(hash);
+            MessageDigest md = MessageDigest.getInstance("SHA-256");
+            byte[] hash = md.digest(password.getBytes(StandardCharsets.UTF_8));
+            return Base64.getEncoder().encodeToString(hash);
         } catch (Exception e) {
             throw new RuntimeException("Error hashing password", e);
         }
     }
 
-    /** Verifies plain password against stored PBKDF2 hash. */
     public static boolean verifyPassword(String password, String storedHash) {
-        if (password == null || storedHash == null || !storedHash.startsWith("PBKDF2$")) {
+        if (password == null || storedHash == null) {
             return false;
         }
-        try {
-            String[] parts = storedHash.split("\\$");
-            if (parts.length != 4) return false;
-
-            int iterations = Integer.parseInt(parts[1]);
-            HexFormat hex = HexFormat.of();
-            byte[] salt = hex.parseHex(parts[2]);
-            byte[] expectedHash = hex.parseHex(parts[3]);
-
-            byte[] actualHash = pbkdf2(password, salt, iterations, expectedHash.length * 8);
-            return MessageDigest.isEqual(expectedHash, actualHash);
-        } catch (Exception e) {
-            return false;
-        }
+        return hashPassword(password).equals(storedHash);
     }
-
-    private static byte[] pbkdf2(String password, byte[] salt, int iterations, int bits) throws Exception {
-        PBEKeySpec spec = new PBEKeySpec(password.toCharArray(), salt, iterations, bits);
-        return SecretKeyFactory.getInstance(ALGORITHM).generateSecret(spec).getEncoded();
-    }
-
-    // ==================== 2. STUDENT REGISTRATION (TRANSACTION) ====================
 
     public Student registerStudent(String username, String password, String email,
                                    String studentId, String fullName,
@@ -112,17 +72,12 @@ public class AuthService {
                                    String studentId, String fullName, String phone,
                                    String branch, double cgpa, int activeBacklogs,
                                    int graduationYear, List<String> skills) throws SQLException {
-        // Step 1: Validate inputs
         validateStudentInput(username, password, email, studentId, fullName, phone, branch, cgpa, activeBacklogs, graduationYear);
-
-        // Step 2: Check duplicates
         if (userDAO.existsByUsername(username)) throw new IllegalArgumentException("Username is already taken.");
+        if (userDAO.existsByEmail(email)) throw new IllegalArgumentException("Email is already registered.");
         if (studentDAO.existsByStudentId(studentId)) throw new IllegalArgumentException("Student ID / USN is already registered.");
 
-        // Step 3: Hash password
         String passwordHash = hashPassword(password);
-
-        // Step 4: Atomic MySQL Transaction (Insert User + Student + Skills)
         try (Connection conn = DatabaseConnection.getConnection()) {
             conn.setAutoCommit(false);
             try {
@@ -130,23 +85,22 @@ public class AuthService {
                 if (!userDAO.createUser(conn, user) || user.getId() == 0) {
                     throw new SQLException("Failed to create user record.");
                 }
-
                 Student student = new Student(user.getId(), studentId, fullName, phone, branch, cgpa, activeBacklogs, graduationYear);
                 if (!studentDAO.createStudent(conn, student) || student.getId() == 0) {
                     throw new SQLException("Failed to create student profile.");
                 }
-
-                List<String> cleanSkills = deduplicateSkills(skills);
-                if (!cleanSkills.isEmpty()) {
-                    studentDAO.saveStudentSkills(conn, student.getId(), cleanSkills);
-                    cleanSkills.forEach(student::addSkill);
+                if (skills != null && !skills.isEmpty()) {
+                    List<String> cleanSkills = ValidationUtil.parseCommaSeparatedList(String.join(",", skills));
+                    if (!cleanSkills.isEmpty()) {
+                        studentDAO.saveStudentSkills(conn, student.getId(), cleanSkills);
+                        cleanSkills.forEach(student::addSkill);
+                    }
                 }
-
                 conn.commit();
                 return student;
             } catch (Exception e) {
                 conn.rollback();
-                throw new SQLException("Registration failed (rolled back): " + e.getMessage(), e);
+                throw new SQLException("Registration failed: " + e.getMessage(), e);
             } finally {
                 conn.setAutoCommit(true);
             }
@@ -169,33 +123,18 @@ public class AuthService {
         if (!ValidationUtil.isValidGraduationYear(gradYear)) throw new IllegalArgumentException("Graduation year must be between 2020 and 2035.");
     }
 
-    private List<String> deduplicateSkills(List<String> skills) {
-        if (skills == null || skills.isEmpty()) return Collections.emptyList();
-        return ValidationUtil.parseCommaSeparatedList(String.join(",", skills));
-    }
-
-    // ==================== 3. PLACEMENT OFFICER SECURITY ====================
-
-    public String getAuthorizedActivationCode() {
-        String code = System.getProperty(ACTIVATION_CODE_PROP);
-        if (ValidationUtil.isNullOrBlank(code)) code = System.getenv(ACTIVATION_CODE_ENV);
-        if (ValidationUtil.isNullOrBlank(code)) code = DEFAULT_ACTIVATION_CODE;
-        return code.trim();
-    }
-
     public boolean isOfficerActivationConfigured() {
         return true;
     }
 
     public boolean verifyOfficerActivationCode(String activationCode) {
-        return !ValidationUtil.isNullOrBlank(activationCode)
-                && getAuthorizedActivationCode().equalsIgnoreCase(activationCode.trim());
+        return activationCode != null && OFFICER_ACTIVATION_CODE.equals(activationCode.trim());
     }
 
     public User registerPlacementOfficer(String officerId, String fullName, String email,
                                          String username, String password, String activationCode) throws SQLException {
         if (!verifyOfficerActivationCode(activationCode)) {
-            throw new IllegalArgumentException("Invalid activation code. Officer registration unauthorized.");
+            throw new IllegalArgumentException("Invalid 6-digit activation code.");
         }
         if (ValidationUtil.isNullOrBlank(officerId)) throw new IllegalArgumentException("Officer ID cannot be empty.");
         if (ValidationUtil.isNullOrBlank(fullName)) throw new IllegalArgumentException("Full name cannot be empty.");
@@ -207,6 +146,7 @@ public class AuthService {
         if (!ValidationUtil.isValidPassword(password)) throw new IllegalArgumentException("Password must be at least 6 characters.");
         if (!ValidationUtil.isValidEmail(email)) throw new IllegalArgumentException("Invalid email format.");
         if (userDAO.existsByUsername(username)) throw new IllegalArgumentException("Username is already taken.");
+        if (userDAO.existsByEmail(email)) throw new IllegalArgumentException("Email is already registered.");
 
         User officer = new User(username.trim(), hashPassword(password), Role.PLACEMENT_OFFICER, email.trim());
         if (!userDAO.createUser(officer) || officer.getId() == 0) {
@@ -219,15 +159,11 @@ public class AuthService {
         return userDAO.existsByRole(Role.PLACEMENT_OFFICER);
     }
 
-    // ==================== 4. LOGIN (USERNAME OR USN) ====================
-
     public User login(String identifier, String password) throws SQLException {
         if (ValidationUtil.isNullOrBlank(identifier) || ValidationUtil.isNullOrBlank(password)) {
             return null;
         }
         String trimmed = identifier.trim();
-
-        // Try finding by username first; if not found, try Student ID (USN)
         User user = userDAO.findByUsername(trimmed);
         if (user == null) {
             Student student = studentDAO.findByStudentId(trimmed);
@@ -235,7 +171,6 @@ public class AuthService {
                 user = userDAO.findById(student.getUserId());
             }
         }
-
         if (user != null && verifyPassword(password, user.getPasswordHash())) {
             return user;
         }

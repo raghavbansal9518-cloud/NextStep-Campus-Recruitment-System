@@ -1530,9 +1530,7 @@ public class Main {
                 System.out.println(ConsoleTheme.divider("----------------------------------------------------------------"));
                 if (hasUnsetActivation) {
                     System.out.println();
-                    System.out.println(ConsoleTheme.warn("  [NOTICE] Officer activation code is not configured in system environment."));
-                    System.out.println(ConsoleTheme.dim("  (Set property '" + AuthService.ACTIVATION_CODE_PROP + "' or env '" + AuthService.ACTIVATION_CODE_ENV + "')."));
-                    System.out.println(ConsoleTheme.dim("  Activation code was NOT auto-filled with any default secret; enter it manually to proceed."));
+                    System.out.println(ConsoleTheme.warn("  [NOTICE] Officer activation code is required (default: " + AuthService.OFFICER_ACTIVATION_CODE + ")."));
                 }
                 System.out.println();
                 System.out.println(ConsoleTheme.dim("  All fields auto-filled! Press Enter to accept, or enter field number (1-" + n + ") to edit:"));
@@ -1737,14 +1735,7 @@ public class Main {
             return null;
         }
 
-        String actCode = System.getProperty(AuthService.ACTIVATION_CODE_PROP);
-        if (actCode == null || actCode.trim().isEmpty()) {
-            actCode = System.getenv(AuthService.ACTIVATION_CODE_ENV);
-        }
-        if (actCode == null || actCode.trim().isEmpty()) {
-            actCode = DemoService.DEMO_OFFICER_ACTIVATION_CODE;
-        }
-        String resolvedCode = actCode.trim();
+        String resolvedCode = AuthService.OFFICER_ACTIVATION_CODE;
 
         String tempPass = DemoService.DEMO_PASSWORD;
         return new String[] {
@@ -2191,7 +2182,7 @@ public class Main {
                     while (true) {
                         for (int k = 0; k < prompts.length; k++) {
                             if (k == 6 && (values[k] == null || values[k].trim().isEmpty())) {
-                                values[k] = authService.getAuthorizedActivationCode();
+                                values[k] = AuthService.OFFICER_ACTIVATION_CODE;
                             }
                             System.out.println(formatFormFieldRow(prompts[k], values[k], isPassword[k]));
                         }
@@ -2381,14 +2372,8 @@ public class Main {
         }
 
         // 3. Activation Code verification
-        if (!authService.isOfficerActivationConfigured()) {
-            System.out.println("\n[ERROR] Configuration error: Officer registration is disabled.");
-            System.out.println("System administrator has not configured an activation code.");
-            System.out.println("Please set '-Dnextstep.officer.activation.code=<CODE>' or environment variable 'NEXTSTEP_OFFICER_ACTIVATION_CODE'.");
-            return false;
-        }
         if (!authService.verifyOfficerActivationCode(activationCode)) {
-            System.out.println("\n[ERROR] Invalid activation code. Placement officer registration unauthorized.");
+            System.out.println("\n[ERROR] Invalid 6-digit activation code. Placement officer registration unauthorized.");
             return false;
         }
 

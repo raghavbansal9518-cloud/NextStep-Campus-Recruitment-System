@@ -43,7 +43,7 @@ public class DemoService {
 
     // Documented, stable demonstration credentials
     public static final String DEMO_PASSWORD = "NextStep@2026";
-    public static final String DEMO_OFFICER_ACTIVATION_CODE = "CAMPUS_OFFICER_2026";
+    public static final String DEMO_OFFICER_ACTIVATION_CODE = "123456";
 
     // Scenario A: Fully Eligible Student
     public static final String DEMO_STUDENT_USERNAME = "vihaan_demo";
@@ -324,10 +324,6 @@ public class DemoService {
             return false;
         }
 
-        if (profile.getActivationCode() != null && !profile.getActivationCode().trim().isEmpty()) {
-            System.setProperty(AuthService.ACTIVATION_CODE_PROP, profile.getActivationCode().trim());
-        }
-
         User existing = userDAO.findByUsername(profile.getUsername());
         if (existing != null) {
             existing.setEmail(profile.getEmail());
@@ -533,13 +529,9 @@ public class DemoService {
             // Non-fatal if sample_data already executed
         }
 
-        // Ensure officer activation code is set in environment for registration
-        if (!authService.isOfficerActivationConfigured()) {
-            System.setProperty(AuthService.ACTIVATION_CODE_PROP, officerProfile.getActivationCode());
-        }
-
-        // 2. Provision Placement Officer if missing
-        if (!userDAO.existsByUsername(officerProfile.getUsername())) {
+        // 2. Provision Placement Officer if missing (or update password hash if format changed)
+        User existingOfficer = userDAO.findByUsername(officerProfile.getUsername());
+        if (existingOfficer == null) {
             authService.registerPlacementOfficer(
                     officerProfile.getOfficerId(),
                     officerProfile.getFullName(),
@@ -549,11 +541,14 @@ public class DemoService {
                     officerProfile.getActivationCode()
             );
             createdOfficers++;
+        } else if (!AuthService.verifyPassword(officerProfile.getPassword(), existingOfficer.getPasswordHash())) {
+            userDAO.updatePassword(officerProfile.getUsername(), AuthService.hashPassword(officerProfile.getPassword()));
         }
 
         // 3. Provision Student Profiles (Scenario A, B, C)
         for (DemoStudentProfile profile : studentProfiles) {
-            if (!userDAO.existsByUsername(profile.getUsername())) {
+            User existingStudentUser = userDAO.findByUsername(profile.getUsername());
+            if (existingStudentUser == null) {
                 if (studentDAO.existsByStudentId(profile.getStudentId())) {
                     try (Connection conn = DatabaseConnection.getConnection();
                          PreparedStatement stmt = conn.prepareStatement("DELETE FROM students WHERE student_id = ?")) {
@@ -576,6 +571,9 @@ public class DemoService {
                 );
                 createdStudents++;
             } else {
+                if (!AuthService.verifyPassword(profile.getPassword(), existingStudentUser.getPasswordHash())) {
+                    userDAO.updatePassword(profile.getUsername(), AuthService.hashPassword(profile.getPassword()));
+                }
                 Student s = studentDAO.findByStudentId(profile.getStudentId());
                 if (s != null && (s.getSkills() == null || s.getSkills().size() < profile.getSkills().size())) {
                     try (Connection conn = DatabaseConnection.getConnection()) {
@@ -799,14 +797,6 @@ public class DemoService {
         }
 
         public String[] toFormValues() {
-            String configuredCode = System.getProperty(AuthService.ACTIVATION_CODE_PROP);
-            if (configuredCode == null || configuredCode.trim().isEmpty()) {
-                configuredCode = System.getenv(AuthService.ACTIVATION_CODE_ENV);
-            }
-            if (configuredCode == null || configuredCode.trim().isEmpty()) {
-                configuredCode = DemoService.DEMO_OFFICER_ACTIVATION_CODE;
-            }
-            String resolvedCode = configuredCode.trim();
             return new String[] {
                     officerId,
                     fullName,
@@ -814,7 +804,7 @@ public class DemoService {
                     username,
                     password,
                     password,
-                    resolvedCode
+                    AuthService.OFFICER_ACTIVATION_CODE
             };
         }
 
