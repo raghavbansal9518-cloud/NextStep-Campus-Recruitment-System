@@ -22,7 +22,6 @@ import com.nextstep.util.ValidationUtil;
 
 import java.io.File;
 import java.math.BigDecimal;
-import java.security.SecureRandom;
 import java.sql.SQLException;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
@@ -37,22 +36,7 @@ import java.util.Scanner;
 import java.util.Set;
 import java.util.stream.Collectors;
 
-/**
- * Main
- * 
- * Interactive Console Application for the NextStep Campus Recruitment System.
- * 
- * Features:
- * - Student registration with multi-table transaction and PBKDF2 hashing.
- * - Secure role-based login and session navigation (Student vs. Placement Officer).
- * - Student job browsing, automated eligibility verification, and application submission.
- * - Student personal application history tracking.
- * - Placement officer application oversight, status updates, and recruitment summaries.
- * - CSV report generation, parsing into ArrayList, and audit file archiving.
- * - Java Streams (filter, map, distinct, sorted, count, anyMatch) & Lambdas.
- * - Collectors (groupingBy, partitioningBy, counting).
- * - Presentation visibility toggles for live academic demos.
- */
+// Main Console Application for NextStep Campus Recruitment System
 public class Main {
 
     private final AuthService authService;
@@ -64,61 +48,39 @@ public class Main {
     private final UserDAO userDAO;
     private final DemoService demoService;
 
-    private static final SecureRandom SECURE_RANDOM = new SecureRandom();
-    private static final String PASSWORD_CHARS = "ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz23456789!@#$%";
-
-    /**
-     * Generates a strong, unpredictable temporary demo password at runtime using SecureRandom.
-     * Never stores hardcoded passwords in source code, configuration, or documentation.
-     */
-    public static String generateTemporaryDemoPassword() {
-        StringBuilder sb = new StringBuilder(12);
-        for (int i = 0; i < 12; i++) {
-            sb.append(PASSWORD_CHARS.charAt(SECURE_RANDOM.nextInt(PASSWORD_CHARS.length())));
-        }
-        return sb.toString();
-    }
-
-    /**
-     * Formats a form field row with fixed-width label, colon, opening bracket, value slot, and closing bracket.
-     * Ensures strict 64-character frame alignment across all form pages.
-     *
-     * @param label form field label (e.g. "Full Name" or "Full Name            : ")
-     * @param value field value to display inside brackets
-     * @param isPassword whether to mask the value with bullet characters
-     * @return fully formatted and colorized form row string
-     */
     public static String formatFormFieldRow(String label, String value, boolean isPassword) {
         return formatFormFieldRow(label, value, isPassword, false);
     }
 
-    /**
-     * Formats a form field row with optional warning styling for unconfigured values.
-     */
     public static String formatFormFieldRow(String label, String value, boolean isPassword, boolean isWarning) {
-        String cleanLabel = label.contains(":") ? label.substring(0, label.indexOf(":")).trim() : label.trim();
-        String labelPart = String.format("%-22s: ", cleanLabel);
-        String rawVal = isPassword ? "************" : (value != null ? value.trim() : "");
-        if (rawVal.length() > 33) {
-            rawVal = rawVal.substring(0, 30) + "...";
+        String name = label.replace(":", "").trim();
+        String text = value == null ? "" : value.trim();
+        if (isPassword) {
+            text = "************";
         }
-        String bracketedPart = String.format("[ %-33s ]", rawVal);
-        String coloredBracketed = isWarning ? ConsoleTheme.warn(bracketedPart) : ConsoleTheme.cyan(bracketedPart);
-        return "  " + ConsoleTheme.label(labelPart) + coloredBracketed;
+        if (text.length() > 33) {
+            text = text.substring(0, 30) + "...";
+        }
+        String rowLabel = String.format("%-22s: ", name);
+        String box = String.format("[ %-33s ]", text);
+        if (isWarning) {
+            return "  " + ConsoleTheme.label(rowLabel) + ConsoleTheme.warn(box);
+        }
+        return "  " + ConsoleTheme.label(rowLabel) + ConsoleTheme.cyan(box);
     }
 
-    /**
-     * Formats an indexed form field row (e.g. "[ 1] Full Name : [ ... ]") strictly fitting within 64 columns.
-     */
     public static String formatIndexedFormFieldRow(int index, String label, String value, boolean isPassword) {
-        String cleanLabel = label.contains(":") ? label.substring(0, label.indexOf(":")).trim() : label.trim();
-        String labelPart = String.format("[%2d] %-18s: ", index, cleanLabel);
-        String rawVal = isPassword ? "************" : (value != null ? value.trim() : "");
-        if (rawVal.length() > 29) {
-            rawVal = rawVal.substring(0, 26) + "...";
+        String name = label.replace(":", "").trim();
+        String text = value == null ? "" : value.trim();
+        if (isPassword) {
+            text = "************";
         }
-        String bracketedPart = String.format("[ %-29s ]", rawVal);
-        return "  " + ConsoleTheme.label(labelPart) + ConsoleTheme.cyan(bracketedPart);
+        if (text.length() > 29) {
+            text = text.substring(0, 26) + "...";
+        }
+        String rowLabel = String.format("[%2d] %-18s: ", index, name);
+        String box = String.format("[ %-29s ]", text);
+        return "  " + ConsoleTheme.label(rowLabel) + ConsoleTheme.cyan(box);
     }
 
     public Main() {
