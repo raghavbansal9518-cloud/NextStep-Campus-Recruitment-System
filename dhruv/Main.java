@@ -2549,21 +2549,6 @@ public class Main {
         }
     }
 
-    private void checkFirstRunOfficerSetup(Scanner scanner) {
-        try {
-            if (!authService.hasAnyPlacementOfficer()) {
-                System.out.println("\n[SYSTEM NOTICE] No Placement Officer account found in database.");
-                System.out.print("Would you like to initialize an administrative Placement Officer account now? (y/n): ");
-                String answer = scanner.nextLine().trim();
-                if ("y".equalsIgnoreCase(answer) || "yes".equalsIgnoreCase(answer)) {
-                    handleAdminOfficerSetup(scanner);
-                }
-            }
-        } catch (SQLException e) {
-            System.out.println("[WARN] Could not verify placement officer presence: " + e.getMessage());
-        }
-    }
-
     private void handleAdminOfficerSetup(Scanner scanner) {
         System.out.println("\n--- INITIAL PLACEMENT OFFICER PROVISIONING ---");
         try {
