@@ -13,13 +13,22 @@
 
 ---
 
-## 📚 Documentation Directory
+## 📚 Master Documentation Index
 
-| Document | Purpose |
+| Document | Purpose / Highlights |
 | :--- | :--- |
-| 📘 [**Demo & Operational User Manual**](docs/DEMO_USER_MANUAL.md) | Step-by-step presentation manual, copy-ready demo data, Pages 1–10 walkthroughs, and live oral demo scripts. |
-| 🧪 [**Testing & Verification Guide**](docs/TESTING.md) | Documentation of all 7 regression test suites (297 tests), visual verifier (30 inspections), and database isolation. |
-| 🎓 [**Viva Preparation Guide**](docs/VIVA_PREPARATION.md) | Syllabus mappings, architectural breakdowns, database schema details, and 50+ oral examination Q&A. |
+| 📋 [**Project Overview & Problem Statement**](docs/PROJECT_OVERVIEW.md) | Problem statement, background, collegiate context, target users, objectives, and scope. |
+| 🏛️ [**System Architecture & Design Patterns**](docs/SYSTEM_ARCHITECTURE.md) | 4-Tier layered architecture, DAO pattern, package breakdown, and Mermaid sequence diagrams. |
+| ☕ [**Java SE, OOP & Syllabus Concepts**](docs/JAVA_AND_OOP_CONCEPTS.md) | 4 OOP pillars, Collections, Streams, Lambdas, Generics, File I/O, with source code references. |
+| 🔌 [**Complete JDBC Architecture Guide**](docs/JDBC_COMPLETE_GUIDE.md) | JDBC API, 4 Driver types, PreparedStatement vs Statement, connection lifecycle, and transactions. |
+| 🗄️ [**Database Design & SQL Schema**](docs/DATABASE_DESIGN_AND_SQL.md) | MySQL schema (`nextstep_db`), 8 tables inventory, foreign keys, 3NF normalization, and ER diagram. |
+| 🔄 [**Data Lifecycles & Modules Directory**](docs/DATA_FLOW_AND_MODULES.md) | 6 complete data lifecycles (Registration to CSV) and documentation of all 10 application pages. |
+| 🔒 [**Security & Validation Architecture**](docs/SECURITY_AND_VALIDATION.md) | Salted PBKDF2 cryptography, RBAC authorization, timing attack defense, and input validation bounds. |
+| 🧪 [**Testing & Verification Guide**](docs/TESTING_AND_RESULTS.md) | 297 automated tests (100% pass rate) across 7 test suites, and 30 visual layout inspections. |
+| 🚀 [**Future Scope & System Roadmap**](docs/FUTURE_SCOPE.md) | 12 planned future enhancements (Web UI, JavaFX, Resume parsing, Docker, ML matching). |
+| 🎓 [**Master Viva Question Bank (105 Q&A)**](docs/VIVA_QUESTION_BANK.md) | 105 professor viva questions and spoken answers across 7 comprehensive categories. |
+| 🎙️ [**Professor Presentation Script**](docs/PROJECT_PRESENTATION_SCRIPT.md) | 10–15 minute complete oral demo script and 2-minute quick pitch version. |
+| 📘 [**Demo & Operational User Manual**](docs/DEMO_USER_MANUAL.md) | Step-by-step presentation manual, copy-ready demo data, Pages 1–10 walkthroughs. |
 | 🤝 [**Contributing Guide**](CONTRIBUTING.md) | Guidelines for collaborators, Git branching workflow, coding standards, and local database isolation rules. |
 
 ---
