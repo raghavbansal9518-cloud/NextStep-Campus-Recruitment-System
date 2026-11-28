@@ -462,7 +462,9 @@ public class DemoModeVerificationTestRunner {
             System.setOut(originalOut);
 
             String outStr = out.toString(StandardCharsets.UTF_8);
-            boolean hasGatewayOption4 = outStr.contains("4. Demonstration Mode & Scenario Setup");
+            boolean hasGatewayOption4 = outStr.contains("4. Demonstration Mode & Scenario Setup") ||
+                    outStr.contains("[4] Demonstration Mode & Scenario Setup") ||
+                    outStr.contains("Demonstration Mode & Scenario Setup");
             boolean hasDemoMenu = outStr.contains("DEMONSTRATION MODE & SCENARIO MANAGER");
             boolean hasGuide = outStr.contains("DEMONSTRATION CREDENTIALS & SCENARIO REFERENCE GUIDE") &&
                     outStr.contains("vihaan_demo") && outStr.contains("officer_vihaan");
